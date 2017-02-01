@@ -1,0 +1,5 @@
+pytest>=2.7
+pytest-cov
+pytest-randomly
+pylint
+autopep8
