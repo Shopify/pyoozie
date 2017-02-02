@@ -1,0 +1,6 @@
+*.py[cod]
+*.egg-info
+.DS_Store
+htmlcov
+.coverage
+.cache
