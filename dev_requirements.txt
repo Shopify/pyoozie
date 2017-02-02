@@ -1,5 +1,8 @@
 pytest>=2.7
 pytest-cov
 pytest-randomly
+pytest-mock
 pylint
+xmltodict
 autopep8
+flake8
