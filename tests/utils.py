@@ -10,7 +10,7 @@ def xml_to_dict_unordered(xml):
         if hasattr(value, 'items'):
             return {k: unorder(v) for k, v in value.items()}
         elif isinstance(value, list):
-            return sorted([unorder(v) for v in value])
+            return sorted([unorder(v) for v in value], key=str)
         else:
             return value
     return unorder(xmltodict.parse(xml))

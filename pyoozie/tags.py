@@ -87,9 +87,9 @@ class _PropertyList(Xml, dict):
             for name, value in sorted(self.items()):
                 with tag('property'):
                     with tag('name'):
-                        doc.text(unicode(name))
+                        doc.text('%s' % name)
                     with tag('value'):
-                        doc.text(unicode(value) if value is not None else '')
+                        doc.text('%s' % value if value is not None else '')
         return doc
 
 
@@ -291,7 +291,8 @@ class Email(Xml):
 
     def _xml(self, doc, tag, text):
         def format_list(emails):
-            return ','.join(sorted(emails)) if hasattr(emails, '__iter__') else emails
+            return ','.join(sorted(emails)) if hasattr(emails, '__iter__') and not \
+                isinstance(emails, str) else emails
 
         with tag(self.xml_tag, xmlns='uri:oozie:email-action:0.2'):
             with tag('to'):

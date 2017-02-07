@@ -71,7 +71,7 @@ class Coordinator(Xml):
         self.parameters = Parameters(parameters)
 
     def _xml(self, doc, tag, text):
-        with tag(self.xml_tag, xmlns="uri:oozie:coordinator:0.5", name=self.name, frequency=unicode(self.frequency),
+        with tag(self.xml_tag, xmlns="uri:oozie:coordinator:0.5", name=self.name, frequency=str(self.frequency),
                  start=format_datetime(self.start), end=format_datetime(self.end), timezone=self.timezone):
 
             if self.parameters:

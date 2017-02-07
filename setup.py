@@ -33,6 +33,7 @@ setup(
         'enum34>=0.9.23',
         'yattag>=1.7.2',
         'setuptools>=0.9',
+        'mock',  # TODO remove once the API calls are implemented
     ],
     license="BSD",
     keywords=['oozie'],

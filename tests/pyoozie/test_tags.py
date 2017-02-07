@@ -18,7 +18,6 @@ def expected_property_values():
         'decimal': decimal.Decimal('0.75'),
         'float': 0.5,
         'int': 0,
-        'list': ['one', 'two', 'three', 'four'],
         'long': 10,
         'none': None,
         'unicode': 'ǝnlɐʌ',
@@ -44,10 +43,6 @@ def expected_property_values_xml():
         <property>
             <name>int</name>
             <value>0</value>
-        </property>
-        <property>
-            <name>list</name>
-            <value>[u'one', u'two', u'three', u'four']</value>
         </property>
         <property>
             <name>long</name>

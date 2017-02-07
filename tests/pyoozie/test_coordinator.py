@@ -69,7 +69,7 @@ def test_coordinator_bad_frequency(expected_coordinator_options):
     expected_coordinator_options['frequency'] = 0
     with pytest.raises(AssertionError) as assertion_info:
         Coordinator(**expected_coordinator_options)
-    assert unicode(assertion_info.value) == \
+    assert str(assertion_info.value) == \
         'Frequency (0 min) must be greater than or equal to 5 min'
 
 
@@ -77,5 +77,5 @@ def test_coordinator_end_before_start(expected_coordinator_options):
     expected_coordinator_options['end'] = expected_coordinator_options['start'] - timedelta(days=10)
     with pytest.raises(AssertionError) as assertion_info:
         Coordinator(**expected_coordinator_options)
-    assert unicode(assertion_info.value) == \
+    assert str(assertion_info.value) == \
         'End time (2014-12-22T10:56Z) must be greater than the start time (2015-01-01T10:56Z)'
