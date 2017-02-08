@@ -12,23 +12,9 @@ class ExecutionOrder(Enum):
     """Execution order used for coordinator jobs."""
 
     FIFO = 'FIFO'
-
     LIFO = 'LIFO'
-
     LAST_ONLY = 'LAST_ONLY'
-    # "When LAST_ONLY is set, an action that is WAITING or READY will be SKIPPED when the current time is past the
-    # next action's nominal time.  For example, suppose action 1 and 2 are both WAITING , the current time is
-    # 5:00pm, and action 2's nominal time is 5:10pm. In 10 minutes from now, at 5:10pm, action 1 will become
-    # SKIPPED, assuming it doesn't transition to SUBMITTED (or a terminal state) before then. Another way of
-    # thinking about this is to view it as similar to setting the timeout equal to the frequency, except that the
-    # SKIPPED status doesn't cause the coordinator job to eventually become DONEWITHERROR and can actually become
-    # SUCCEEDED (i.e. it's a "good" version of TIMEDOUT ). LAST_ONLY is useful if you want a recurring job, but do
-    # not actually care about the individual instances and just always want the latest action."
-
     NONE = 'NONE'
-    # "Similar to LAST_ONLY except all older materializations are skipped. When NONE is set, an action that is
-    # WAITING or READY will be SKIPPED when the current time is more than a certain configured number of minutes
-    # (tolerance) past the action's nominal time."
 
     def __str__(self):
         return self.value
