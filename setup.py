@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
+# Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 import re
 
 
@@ -34,12 +34,12 @@ setup(
         'yattag>=1.7.2',
         'setuptools>=0.9',
     ],
-    license="BSD",
+    license="MIT",
     keywords=['oozie'],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
+        'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
