@@ -80,7 +80,7 @@ class _PropertyList(Xml, dict):
             dict.__init__(self, values)
         else:
             dict.__init__(self)
-        self.attributes = attributes if attributes else dict()
+        self.attributes = attributes or {}
 
     def _xml(self, doc, tag, text):
         with tag(self.xml_tag, **self.attributes):
