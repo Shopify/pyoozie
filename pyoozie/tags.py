@@ -291,8 +291,10 @@ class Email(Xml):
 
     def _xml(self, doc, tag, text):
         def format_list(emails):
-            return ','.join(sorted(emails)) if hasattr(emails, '__iter__') and not \
-                isinstance(emails, str) else emails
+            if hasattr(emails, '__iter__') and not isinstance(emails, str):
+                return ','.join(sorted(emails))
+            else:
+                return emails
 
         with tag(self.xml_tag, xmlns='uri:oozie:email-action:0.2'):
             with tag('to'):
