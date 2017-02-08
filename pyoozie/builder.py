@@ -39,14 +39,14 @@ class workflow(object):
     def add_action(self, name, action, action_on_error, kill_on_error='${wf:lastErrorNode()} - ${wf:id()}'):
         # Today you can't rename your action and you can only have one, but in the future you can add multiple
         # named actions
-        if self._action_name is None and self._action_payload is None and self._action_error is None and \
-           self._kill_message is None:
+        if any((self._action_name, self._action_payload, self._action_error, self._kill_message)):
+            raise NotImplementedError("Can only add one action in this version")
+        else:
             self._action_name = name
             self._action_payload = action
             self._action_error = action_on_error
             self._kill_message = kill_on_error
-        else:
-            raise NotImplementedError("Can only add one action in this version")
+
         return self
 
     def build(self, indent=False):
@@ -78,15 +78,18 @@ class workflow(object):
            action_name=self._action_name,
            name=self._name).strip()
 
-    def submit(self, oozie_url, hdfs_path, hadoop_user, hdfs_callback, timeout_in_seconds=None,
-               verbose=False, start=False, indent=False):
+    def submit_via(self, api, hdfs_path, hdfs_callback, start=False, indent=False):
         xml = self.build(indent=indent)
         hdfs_callback(hdfs_path, xml)
+        return api.jobs_submit_workflow(hdfs_path=hdfs_path, start=start)
+
+    def submit(self, oozie_url, hdfs_path, hadoop_user, hdfs_callback, timeout_in_seconds=None,
+               verbose=False, start=False, indent=False):
         # TODO create Oozie API and submit
         from mock import Mock
         OozieAPI = Mock()
         api = OozieAPI(url=oozie_url, user=hadoop_user, timeout=timeout_in_seconds, verbose=verbose)
-        api.jobs_submit_workflow(hdfs_path=hdfs_path, start=start)
+        self.submit_via(api=api, hdfs_path=hdfs_path, hdfs_callback=hdfs_callback, start=start, indent=indent)
         raise NotImplementedError()
 
 
@@ -116,20 +119,19 @@ class coordinator(object):
         self._coordinator.workflow_app_path = workflow_hdfs_path
         return self._coordinator.xml(indent)
 
-    def submit(self, oozie_url, workflow_hdfs_path, coord_hdfs_path, hadoop_user, hdfs_callback,
-               timeout_in_seconds=None, verbose=False, indent=False):
-        self._workflow.submit(
-            oozie_url=oozie_url,
-            hdfs_path=workflow_hdfs_path,
-            hadoop_user=hadoop_user,
-            hdfs_callback=hdfs_callback,
-            start=False,
-            indent=False)
+    def submit_via(self, api, workflow_hdfs_path, coord_hdfs_path, hdfs_callback, indent=False):
+        self._workflow.submit_via(api=api, hdfs_path=workflow_hdfs_path, hdfs_callback=hdfs_callback, start=False,
+                                  indent=False)
         xml = self.build(workflow_hdfs_path, indent=indent)
         hdfs_callback(coord_hdfs_path, xml)
+        return api.jobs_submit_coordinator(hdfs_path=coord_hdfs_path)
+
+    def submit(self, oozie_url, workflow_hdfs_path, coord_hdfs_path, hadoop_user, hdfs_callback,
+               timeout_in_seconds=None, verbose=False, indent=False):
         # TODO create Oozie API and submit
         from mock import Mock
         OozieAPI = Mock()
         api = OozieAPI(url=oozie_url, user=hadoop_user, timeout=timeout_in_seconds, verbose=verbose)
-        api.job_submit_coordinator(hdfs_path=coord_hdfs_path)
+        self.submit_via(api=api, workflow_hdfs_path=workflow_hdfs_path, coord_hdfs_path=coord_hdfs_path,
+                        hdfs_callback=hdfs_callback, indent=indent)
         raise NotImplementedError()

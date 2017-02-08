@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from datetime import timedelta
 from enum import Enum
 
-from pyoozie.tags import  _validate, Xml, Parameters
+from pyoozie.tags import _validate, Xml, Parameters
 
 
 class ExecutionOrder(Enum):

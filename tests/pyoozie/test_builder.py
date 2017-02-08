@@ -6,7 +6,7 @@ from datetime import datetime
 
 import pytest
 
-from mock import Mock
+from mock import Mock, call
 
 from tests.utils import xml_to_dict_unordered
 from pyoozie import workflow, coordinator, Shell, Email, ExecutionOrder
@@ -148,6 +148,15 @@ def test_workflow_builder(workflow_builder, hadoop_user, workflow_app_path):
                                 hdfs_callback=mock_hdfs_callback)
     mock_hdfs_callback.assert_called_once_with(workflow_app_path, actual_xml)
 
+    # Can it dance with a pre-supplied OozieAPI?
+    mock_oozie_api = Mock()
+    mock_hdfs_callback = Mock()
+    workflow_builder.submit_via(api=mock_oozie_api,
+                                hdfs_path=workflow_app_path,
+                                hdfs_callback=mock_hdfs_callback)
+    mock_hdfs_callback.assert_called_once_with(workflow_app_path, actual_xml)
+    mock_oozie_api.jobs_submit_workflow.assert_called_once_with(hdfs_path=workflow_app_path, start=False)
+
 
 def test_coordinator_builder(coordinator_xml_with_controls, workflow_builder, workflow_app_path, coord_app_path,
                              hadoop_user):
@@ -174,7 +183,6 @@ def test_coordinator_builder(coordinator_xml_with_controls, workflow_builder, wo
     assert xml_to_dict_unordered(coordinator_xml_with_controls) == xml_to_dict_unordered(expected_xml)
 
     # Can it dance with Oozie? (not quite)
-
     mock_hdfs_callback = Mock()
     with pytest.raises(NotImplementedError):
         coord_builder.submit(oozie_url='https://my.oozie.server',
@@ -184,5 +192,21 @@ def test_coordinator_builder(coordinator_xml_with_controls, workflow_builder, wo
                              hdfs_callback=mock_hdfs_callback,
                              timeout_in_seconds=5,
                              verbose=True)
-    mock_hdfs_callback.assert_called_once_with(workflow_app_path, workflow_builder.build())
-    # TODO test that we also got to the point where we used the callback to store coordinator XML
+    mock_hdfs_callback.assert_has_calls([
+        call(workflow_app_path, workflow_builder.build()),
+        call(coord_app_path, coord_builder.build(workflow_app_path)),
+    ])
+
+    # Can it dance with a pre-supplied OozieAPI?
+    mock_oozie_api = Mock()
+    mock_hdfs_callback = Mock()
+    coord_builder.submit_via(api=mock_oozie_api,
+                             workflow_hdfs_path=workflow_app_path,
+                             coord_hdfs_path=coord_app_path,
+                             hdfs_callback=mock_hdfs_callback)
+    mock_hdfs_callback.assert_has_calls([
+        call(workflow_app_path, workflow_builder.build()),
+        call(coord_app_path, coord_builder.build(workflow_app_path)),
+    ])
+    mock_oozie_api.jobs_submit_workflow.assert_called_once_with(hdfs_path=workflow_app_path, start=False)
+    mock_oozie_api.jobs_submit_coordinator.assert_called_once_with(hdfs_path=coord_app_path)
