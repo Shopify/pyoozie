@@ -11,20 +11,13 @@ REGEX_IDENTIFIER = r'^[a-zA-Z_][\-_a-zA-Z0-9]{0,38}$'
 COMPILED_REGEX_IDENTIFIER = re.compile(REGEX_IDENTIFIER)
 
 
-class IdentifierTooLongError(AssertionError):
-
-    def __init__(self, identifier):
-        AssertionError.__init__(self, "Identifier must be less than {max_length} chars long, '{identifier}' is "
-                                "{length}".format(max_length=MAX_IDENTIFIER_LENGTH,
-                                                  identifier=identifier,
-                                                  length=len(identifier)))
-        self.length = len(identifier)
-
-
 def _validate(identifier):
 
-    if len(identifier) > MAX_IDENTIFIER_LENGTH:
-        raise IdentifierTooLongError(identifier)
+    assert len(identifier) <= MAX_IDENTIFIER_LENGTH, \
+        "Identifier must be less than {max_length} chars long, '{identifier}' is {length}".format(
+            max_length=MAX_IDENTIFIER_LENGTH,
+            identifier=identifier,
+            length=len(identifier))
 
     assert COMPILED_REGEX_IDENTIFIER.match(identifier), \
         "Identifier must match {regex}, '{identifier}' does not".format(

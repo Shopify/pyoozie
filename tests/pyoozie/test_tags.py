@@ -6,8 +6,7 @@ from __future__ import unicode_literals, print_function
 import decimal
 import pytest
 
-from pyoozie import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, \
-    Email, IdentifierTooLongError
+from pyoozie import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, Email
 from pyoozie.tags import _validate
 from tests.utils import xml_to_dict_unordered
 
@@ -68,11 +67,10 @@ def test_validate():
 
     _validate('very-long-flow-name-that-spans-39-chars')
 
-    with pytest.raises(IdentifierTooLongError) as assertion_info:
+    with pytest.raises(AssertionError) as assertion_info:
         _validate('too-long-flow-name-that-spans-more-than-39-chars')
     assert str(assertion_info.value) == "Identifier must be less than 39 " \
         "chars long, 'too-long-flow-name-that-spans-more-than-39-chars' is 48"
-    assert assertion_info.value.length == 48
 
     with pytest.raises(AssertionError) as assertion_info:
         _validate('0-id-starting-with-a-non-alpha-char')

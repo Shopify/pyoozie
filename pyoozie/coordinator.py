@@ -8,6 +8,9 @@ from enum import Enum
 from pyoozie.tags import _validate, Xml, Parameters, Configuration
 
 
+ONE_HUNDRED_YEARS = 100 * 365.24
+
+
 class ExecutionOrder(Enum):
     """Execution order used for coordinator jobs."""
 
@@ -32,10 +35,11 @@ class Coordinator(Xml):
         super(Coordinator, self).__init__('coordinator-app')
         # Compose and validate dates/frequencies
         if end is None:
-            end = start + timedelta(days=100 * 365.24)
-        assert end > start, "End time (%s) must be greater than the start time (%s)" % \
-            (format_datetime(end), format_datetime(start))
-        assert frequency >= 5, "Frequency (%d min) must be greater than or equal to 5 min" % frequency
+            end = start + timedelta(days=ONE_HUNDRED_YEARS)
+        assert end > start, "End time ({end}) must be greater than the start time ({start})".format(
+            end=format_datetime(end), start=format_datetime(start))
+        assert frequency >= 5, "Frequency ({frequency} min) must be greater than or equal to 5 min".format(
+            frequency=frequency)
 
         # Coordinator
         self.name = _validate(name)
