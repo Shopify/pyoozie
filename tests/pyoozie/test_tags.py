@@ -235,56 +235,56 @@ def test_global_configuration():
 
 def test_email():
     actual = Email(
-        to='mrt@theateam.com',
+        to='mrt@example.com',
         subject='Chains',
         body='Do you need more?',
     ).xml(indent=True)
     assert xml_to_dict_unordered('''
     <email xmlns="uri:oozie:email-action:0.2">
-        <to>mrt@theateam.com</to>
+        <to>mrt@example.com</to>
         <subject>Chains</subject>
         <body>Do you need more?</body>
     </email>
     ''') == xml_to_dict_unordered(actual)
 
     actual = Email(
-        to='mrt@theateam.com',
+        to='mrt@example.com',
         subject='Chains',
         body='Do you need more?',
         cc='ateam@ateam.com',
-        bcc='jewelrystore@myshopify.com',
+        bcc='jewelrystore@example.com',
         content_type='text/plain',
         attachments='/path/to/attachment/on/hdfs.txt',
     ).xml(indent=True)
     assert xml_to_dict_unordered('''
     <email xmlns="uri:oozie:email-action:0.2">
-        <to>mrt@theateam.com</to>
+        <to>mrt@example.com</to>
         <subject>Chains</subject>
         <body>Do you need more?</body>
         <cc>ateam@ateam.com</cc>
-        <bcc>jewelrystore@myshopify.com</bcc>
+        <bcc>jewelrystore@example.com</bcc>
         <content_type>text/plain</content_type>
         <attachment>/path/to/attachment/on/hdfs.txt</attachment>
     </email>
     ''') == xml_to_dict_unordered(actual)
 
     actual = Email(
-        to=['mrt@theateam.com', 'b.a.baracus@theateam.com'],
+        to=['mrt@example.com', 'b.a.baracus@example.com'],
         subject='Chains',
         body='Do you need more?',
-        cc=('ateam@ateam.com', 'webmaster@theateam.com'),
-        bcc=set(['jewelrystore@myshopify.com', 'goldchains4u@myshopify.com']),
+        cc=('ateam@ateam.com', 'webmaster@example.com'),
+        bcc=set(['jewelrystore@example.com', 'goldchains4u@example.com']),
         content_type='text/plain',
         attachments=['/path/on/hdfs.txt',
                      '/another/path/on/hdfs.txt'],
     ).xml(indent=True)
     assert xml_to_dict_unordered('''
     <email xmlns="uri:oozie:email-action:0.2">
-        <to>b.a.baracus@theateam.com,mrt@theateam.com</to>
+        <to>b.a.baracus@example.com,mrt@example.com</to>
         <subject>Chains</subject>
         <body>Do you need more?</body>
-        <cc>ateam@ateam.com,webmaster@theateam.com</cc>
-        <bcc>goldchains4u@myshopify.com,jewelrystore@myshopify.com</bcc>
+        <cc>ateam@ateam.com,webmaster@example.com</cc>
+        <bcc>goldchains4u@example.com,jewelrystore@example.com</bcc>
         <content_type>text/plain</content_type>
         <attachment>/another/path/on/hdfs.txt,/path/on/hdfs.txt</attachment>
     </email>
