@@ -269,9 +269,6 @@ class GlobalConfiguration(Xml):
 
         return doc
 
-    def __nonzero__(self):
-        return any((self.job_tracker, self.name_node, self.job_xml_files, self.configuration))
-
 
 class Email(Xml):
     """Email action for use within a workflow."""
