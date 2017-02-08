@@ -27,7 +27,7 @@ def _validate(identifier):
     return identifier
 
 
-class Xml(object):
+class XMLSerializable(object):
     """An abstract object that can be serialized to XML."""
 
     __metaclass__ = ABCMeta
@@ -52,7 +52,7 @@ class Xml(object):
         return self.xml_tag
 
 
-class _PropertyList(Xml, dict):
+class _PropertyList(XMLSerializable, dict):
     """
     Object used to represent Oozie workflow/coordinator property-value sets.
 
@@ -68,7 +68,7 @@ class _PropertyList(Xml, dict):
     """
 
     def __init__(self, xml_tag, attributes=None, values=None):
-        Xml.__init__(self, xml_tag)
+        XMLSerializable.__init__(self, xml_tag)
         if values:
             dict.__init__(self, values)
         else:
@@ -138,12 +138,12 @@ class Credentials(_PropertyList):
         self.name = _validate(credential_name)
 
 
-class Shell(Xml):
+class Shell(XMLSerializable):
     """Workflow shell action (v0.3)."""
 
     def __init__(self, exec_command, job_tracker=None, name_node=None, prepares=None, job_xml_files=None,
                  configuration=None, arguments=None, env_vars=None, files=None, archives=None, capture_output=False):
-        Xml.__init__(self, 'shell')
+        XMLSerializable.__init__(self, 'shell')
         self.exec_command = exec_command
         self.job_tracker = job_tracker
         self.name_node = name_node
@@ -201,7 +201,7 @@ class Shell(Xml):
         return doc
 
 
-class SubWorkflow(Xml):
+class SubWorkflow(XMLSerializable):
     """Run another workflow defined in another XML file on HDFS.
 
     An Oozie sub-workflow is an "action [that] runs a child workflow job [...]. The parent workflow job will wait
@@ -209,7 +209,7 @@ class SubWorkflow(Xml):
     """
 
     def __init__(self, app_path, propagate_configuration=True, configuration=None):
-        Xml.__init__(self, 'sub-workflow')
+        XMLSerializable.__init__(self, 'sub-workflow')
         self.app_path = app_path
         self.propagate_configuration = propagate_configuration
         self.configuration = Configuration(configuration)
@@ -226,7 +226,7 @@ class SubWorkflow(Xml):
         return doc
 
 
-class GlobalConfiguration(Xml):
+class GlobalConfiguration(XMLSerializable):
     """Global configuration values for all actions in a workflow.
 
     "Oozie allows a global section to reduce the redundant job-tracker and name-node declarations for each action.
@@ -239,7 +239,7 @@ class GlobalConfiguration(Xml):
     """
 
     def __init__(self, job_tracker='', name_node='', job_xml_files=None, configuration=None):
-        Xml.__init__(self, 'global')
+        XMLSerializable.__init__(self, 'global')
         self.job_tracker = job_tracker
         self.name_node = name_node
         self.job_xml_files = job_xml_files if job_xml_files else list()
@@ -263,11 +263,11 @@ class GlobalConfiguration(Xml):
         return doc
 
 
-class Email(Xml):
+class Email(XMLSerializable):
     """Email action for use within a workflow."""
 
     def __init__(self, to, subject, body, cc=None, bcc=None, content_type=None, attachments=None):
-        Xml.__init__(self, 'email')
+        XMLSerializable.__init__(self, 'email')
         self.to = to
         self.subject = subject
         self.body = body

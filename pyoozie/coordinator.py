@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from datetime import timedelta
 from enum import Enum
 
-from pyoozie.tags import _validate, Xml, Parameters, Configuration
+from pyoozie.tags import _validate, XMLSerializable, Parameters, Configuration
 
 
 ONE_HUNDRED_YEARS = 100 * 365.24
@@ -27,7 +27,7 @@ def format_datetime(value):
     return value.strftime('%Y-%m-%dT%H:%MZ')
 
 
-class Coordinator(Xml):
+class Coordinator(XMLSerializable):
 
     def __init__(self, name, workflow_app_path, frequency, start, end=None, timezone=None,
                  workflow_configuration=None, timeout=None, concurrency=None, execution_order=None, throttle=None,
