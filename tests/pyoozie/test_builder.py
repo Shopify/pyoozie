@@ -6,23 +6,9 @@ from datetime import datetime
 
 import pytest
 
-from mock import Mock, call
-
 from tests.utils import xml_to_dict_unordered
-from pyoozie import workflow, coordinator, Shell, Email, ExecutionOrder
+from pyoozie import WorkflowBuilder, CoordinatorBuilder, Shell, Email, ExecutionOrder
 from pyoozie.builder import _workflow_submission_xml, _coordinator_submission_xml
-
-
-@pytest.fixture
-def workflow_builder():
-    return workflow(
-        name='descriptive-name'
-    ).add_action(
-        name='payload',
-        action=Shell(exec_command='echo "test"'),
-        action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
-        kill_on_error='Failure message',
-    )
 
 
 @pytest.fixture
@@ -36,14 +22,14 @@ def coord_app_path():
 
 
 @pytest.fixture
-def hadoop_user():
+def username():
     return 'test'
 
 
-def test_workflow_submission_xml(hadoop_user, workflow_app_path):
+def test_workflow_submission_xml(username, workflow_app_path):
     actual = _workflow_submission_xml(
-        hadoop_user=hadoop_user,
-        hdfs_path=workflow_app_path,
+        username=username,
+        workflow_xml_path=workflow_app_path,
         indent=True,
     )
     assert xml_to_dict_unordered('''
@@ -59,10 +45,10 @@ def test_workflow_submission_xml(hadoop_user, workflow_app_path):
     </configuration>''') == xml_to_dict_unordered(actual)
 
 
-def test_workflow_submission_xml_with_configuration(hadoop_user, workflow_app_path):
+def test_workflow_submission_xml_with_configuration(username, workflow_app_path):
     actual = _workflow_submission_xml(
-        hadoop_user=hadoop_user,
-        hdfs_path=workflow_app_path,
+        username=username,
+        workflow_xml_path=workflow_app_path,
         configuration={
             'other.key': 'other value',
         },
@@ -86,10 +72,10 @@ def test_workflow_submission_xml_with_configuration(hadoop_user, workflow_app_pa
     </configuration>''') == xml_to_dict_unordered(actual)
 
 
-def test_coordinator_submission_xml(hadoop_user, coord_app_path):
+def test_coordinator_submission_xml(username, coord_app_path):
     actual = _coordinator_submission_xml(
-        hadoop_user=hadoop_user,
-        hdfs_path=coord_app_path,
+        username=username,
+        coord_xml_path=coord_app_path,
         indent=True
     )
     assert xml_to_dict_unordered('''
@@ -105,10 +91,10 @@ def test_coordinator_submission_xml(hadoop_user, coord_app_path):
     </configuration>''') == xml_to_dict_unordered(actual)
 
 
-def test_coordinator_submission_xml_with_configuration(hadoop_user, coord_app_path):
+def test_coordinator_submission_xml_with_configuration(username, coord_app_path):
     actual = _coordinator_submission_xml(
-        hadoop_user=hadoop_user,
-        hdfs_path=coord_app_path,
+        username=username,
+        coord_xml_path=coord_app_path,
         configuration={
             'oozie.coord.group.name': 'descriptive-group',
         },
@@ -131,38 +117,29 @@ def test_coordinator_submission_xml_with_configuration(hadoop_user, coord_app_pa
     </configuration>''') == xml_to_dict_unordered(actual)
 
 
-def test_workflow_builder(workflow_builder, hadoop_user, workflow_app_path):
+def test_workflow_builder():
     with open('tests/data/workflow.xml', 'r') as fh:
         expected = fh.read()
 
     # Can it XML?
-    actual_xml = workflow_builder.build()
+    builder = WorkflowBuilder(
+        name='descriptive-name'
+    ).add_action(
+        name='payload',
+        action=Shell(exec_command='echo "test"'),
+        action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
+        kill_on_error='Failure message',
+    )
+
+    actual_xml = builder.build()
     assert xml_to_dict_unordered(expected) == xml_to_dict_unordered(actual_xml)
 
-    # Can it dance with Oozie? (not quite)
-    mock_hdfs_callback = Mock()
-    with pytest.raises(NotImplementedError):
-        workflow_builder.submit(oozie_url='https://my.oozie.server',
-                                hadoop_user=hadoop_user,
-                                hdfs_path=workflow_app_path,
-                                hdfs_callback=mock_hdfs_callback)
-    mock_hdfs_callback.assert_called_once_with(workflow_app_path, actual_xml)
 
-    # Can it dance with a pre-supplied OozieAPI?
-    mock_oozie_api = Mock()
-    mock_hdfs_callback = Mock()
-    workflow_builder.submit_via(api=mock_oozie_api,
-                                hdfs_path=workflow_app_path,
-                                hdfs_callback=mock_hdfs_callback)
-    mock_hdfs_callback.assert_called_once_with(workflow_app_path, actual_xml)
-    mock_oozie_api.jobs_submit_workflow.assert_called_once_with(hdfs_path=workflow_app_path, start=False)
+def test_coordinator_builder(coordinator_xml_with_controls, workflow_app_path):
 
-
-def test_coordinator_builder(coordinator_xml_with_controls, workflow_builder, workflow_app_path, coord_app_path,
-                             hadoop_user):
-
-    coord_builder = coordinator(
+    builder = CoordinatorBuilder(
         name='coordinator-name',
+        workflow_xml_path=workflow_app_path,
         frequency_in_minutes=24 * 60,  # In minutes
         start=datetime(2015, 1, 1, 10, 56),
         end=datetime(2115, 1, 1, 10, 56),
@@ -170,7 +147,6 @@ def test_coordinator_builder(coordinator_xml_with_controls, workflow_builder, wo
         throttle='${throttle}',
         timeout_in_minutes=10,
         execution_order=ExecutionOrder.LAST_ONLY,
-        workflow=workflow_builder,
         parameters={
             'throttle': 1,
         },
@@ -179,34 +155,5 @@ def test_coordinator_builder(coordinator_xml_with_controls, workflow_builder, wo
         })
 
     # Can it XML?
-    expected_xml = coord_builder.build(workflow_app_path)
+    expected_xml = builder.build()
     assert xml_to_dict_unordered(coordinator_xml_with_controls) == xml_to_dict_unordered(expected_xml)
-
-    # Can it dance with Oozie? (not quite)
-    mock_hdfs_callback = Mock()
-    with pytest.raises(NotImplementedError):
-        coord_builder.submit(oozie_url='https://my.oozie.server',
-                             workflow_hdfs_path=workflow_app_path,
-                             coord_hdfs_path=coord_app_path,
-                             hadoop_user=hadoop_user,
-                             hdfs_callback=mock_hdfs_callback,
-                             timeout_in_seconds=5,
-                             verbose=True)
-    mock_hdfs_callback.assert_has_calls([
-        call(workflow_app_path, workflow_builder.build()),
-        call(coord_app_path, coord_builder.build(workflow_app_path)),
-    ])
-
-    # Can it dance with a pre-supplied OozieAPI?
-    mock_oozie_api = Mock()
-    mock_hdfs_callback = Mock()
-    coord_builder.submit_via(api=mock_oozie_api,
-                             workflow_hdfs_path=workflow_app_path,
-                             coord_hdfs_path=coord_app_path,
-                             hdfs_callback=mock_hdfs_callback)
-    mock_hdfs_callback.assert_has_calls([
-        call(workflow_app_path, workflow_builder.build()),
-        call(coord_app_path, coord_builder.build(workflow_app_path)),
-    ])
-    mock_oozie_api.jobs_submit_workflow.assert_called_once_with(hdfs_path=workflow_app_path, start=False)
-    mock_oozie_api.jobs_submit_coordinator.assert_called_once_with(hdfs_path=coord_app_path)

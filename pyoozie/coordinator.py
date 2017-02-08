@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from datetime import timedelta
 from enum import Enum
 
-from pyoozie.tags import _validate, Xml, Parameters
+from pyoozie.tags import _validate, Xml, Parameters, Configuration
 
 
 class ExecutionOrder(Enum):
@@ -46,7 +46,7 @@ class Coordinator(Xml):
 
         # Workflow action
         self.workflow_app_path = workflow_app_path
-        self.workflow_configuration = workflow_configuration
+        self.workflow_configuration = Configuration(workflow_configuration)
 
         # Controls
         self.timeout = timeout

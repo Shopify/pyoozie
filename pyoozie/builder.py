@@ -3,30 +3,30 @@
 from __future__ import unicode_literals
 
 from pyoozie.coordinator import Coordinator
-from pyoozie.tags import Configuration, Parameters
+from pyoozie.tags import Configuration
 
 
-def _workflow_submission_xml(hadoop_user, hdfs_path, configuration=None, indent=False):
+def _workflow_submission_xml(username, workflow_xml_path, configuration=None, indent=False):
     """Generate a Workflow XML submission message to POST to Oozie."""
     submission = Configuration(configuration)
     submission.update({
-        'user.name': hadoop_user,
-        'oozie.wf.application.path': hdfs_path
+        'user.name': username,
+        'oozie.wf.application.path': workflow_xml_path,
     })
     return submission.xml(indent)
 
 
-def _coordinator_submission_xml(hadoop_user, hdfs_path, configuration=None, indent=False):
+def _coordinator_submission_xml(username, coord_xml_path, configuration=None, indent=False):
     """Generate a Coordinator XML submission message to POST to Oozie."""
     submission = Configuration(configuration)
     submission.update({
-        'user.name': hadoop_user,
-        'oozie.coord.application.path': hdfs_path,
+        'user.name': username,
+        'oozie.coord.application.path': coord_xml_path,
     })
     return submission.xml(indent)
 
 
-class workflow(object):
+class WorkflowBuilder(object):
 
     def __init__(self, name):
         # Initially, let's just use a static template and only one action payload and one action on error
@@ -50,20 +50,21 @@ class workflow(object):
         return self
 
     def build(self, indent=False):
-        def remove_header(xml):
-            return xml.replace("<?xml version='1.0' encoding='UTF-8'?>", '')
+        def format_xml(xml):
+            xml = xml.replace("<?xml version='1.0' encoding='UTF-8'?>", '')
+            return '\n'.join([(' ' * 8) + line for line in xml.strip().split('\n')])
         return '''
 <?xml version="1.0" encoding="UTF-8"?>
 <workflow-app xmlns="uri:oozie:workflow:0.5"
               name="{name}">
     <start to="action-{action_name}" />
     <action name="action-{action_name}">
-        {action_payload_xml}
+{action_payload_xml}
         <ok to="end" />
         <error to="action-error" />
     </action>
     <action name="action-error">
-        {action_error_xml}
+{action_error_xml}
         <ok to="kill" />
         <error to="kill" />
     </action>
@@ -72,36 +73,21 @@ class workflow(object):
     </kill>
     <end name="end" />
 </workflow-app>
-'''.format(action_payload_xml=remove_header(self._action_payload.xml(indent=indent)),
-           action_error_xml=remove_header(self._action_error.xml(indent=indent)),
+'''.format(action_payload_xml=format_xml(self._action_payload.xml(indent=indent)),
+           action_error_xml=format_xml(self._action_error.xml(indent=indent)),
            kill_message=self._kill_message,
            action_name=self._action_name,
            name=self._name).strip()
 
-    def submit_via(self, api, hdfs_path, hdfs_callback, start=False, indent=False):
-        xml = self.build(indent=indent)
-        hdfs_callback(hdfs_path, xml)
-        return api.jobs_submit_workflow(hdfs_path=hdfs_path, start=start)
 
-    def submit(self, oozie_url, hdfs_path, hadoop_user, hdfs_callback, timeout_in_seconds=None,
-               verbose=False, start=False, indent=False):
-        # TODO create Oozie API and submit
-        from mock import Mock
-        OozieAPI = Mock()
-        api = OozieAPI(url=oozie_url, user=hadoop_user, timeout=timeout_in_seconds, verbose=verbose)
-        self.submit_via(api=api, hdfs_path=hdfs_path, hdfs_callback=hdfs_callback, start=start, indent=indent)
-        raise NotImplementedError()
+class CoordinatorBuilder(object):
 
-
-class coordinator(object):
-
-    def __init__(self, name, workflow, frequency_in_minutes, start, end=None, timezone=None,
+    def __init__(self, name, workflow_xml_path, frequency_in_minutes, start, end=None, timezone=None,
                  workflow_configuration=None, timeout_in_minutes=None, concurrency=None, execution_order=None,
                  throttle=None, parameters=None):
-        workflow_configuration = Configuration(workflow_configuration) if workflow_configuration else None
         self._coordinator = Coordinator(
             name=name,
-            workflow_app_path=None,  # Defer this until the build
+            workflow_app_path=workflow_xml_path,
             frequency=frequency_in_minutes,
             start=start,
             end=end,
@@ -111,27 +97,8 @@ class coordinator(object):
             concurrency=concurrency,
             execution_order=execution_order,
             throttle=throttle,
-            parameters=Parameters(parameters) if parameters else None
+            parameters=parameters,
         )
-        self._workflow = workflow
 
-    def build(self, workflow_hdfs_path, indent=False):
-        self._coordinator.workflow_app_path = workflow_hdfs_path
+    def build(self, indent=False):
         return self._coordinator.xml(indent)
-
-    def submit_via(self, api, workflow_hdfs_path, coord_hdfs_path, hdfs_callback, indent=False):
-        self._workflow.submit_via(api=api, hdfs_path=workflow_hdfs_path, hdfs_callback=hdfs_callback, start=False,
-                                  indent=False)
-        xml = self.build(workflow_hdfs_path, indent=indent)
-        hdfs_callback(coord_hdfs_path, xml)
-        return api.jobs_submit_coordinator(hdfs_path=coord_hdfs_path)
-
-    def submit(self, oozie_url, workflow_hdfs_path, coord_hdfs_path, hadoop_user, hdfs_callback,
-               timeout_in_seconds=None, verbose=False, indent=False):
-        # TODO create Oozie API and submit
-        from mock import Mock
-        OozieAPI = Mock()
-        api = OozieAPI(url=oozie_url, user=hadoop_user, timeout=timeout_in_seconds, verbose=verbose)
-        self.submit_via(api=api, workflow_hdfs_path=workflow_hdfs_path, coord_hdfs_path=coord_hdfs_path,
-                        hdfs_callback=hdfs_callback, indent=indent)
-        raise NotImplementedError()
