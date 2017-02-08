@@ -46,7 +46,8 @@ load-plugins=
 # D101 Missing docstring in public class
 # D102 Missing docstring in public method
 # D105 Missing docstring in magic method
-disable=C0111,D101,D102,D105,too-few-public-methods,too-many-instance-attributes,too-many-arguments,protected-access,invalid-name,redefined-outer-name,fixme
+disable=C0111,D101,D102,D105,too-few-public-methods,too-many-instance-attributes,too-many-arguments,
+ protected-access,invalid-name,redefined-outer-name,fixme
 
 
 [REPORTS]
