@@ -238,7 +238,7 @@ class GlobalConfiguration(XMLSerializable):
     application."
     """
 
-    def __init__(self, job_tracker='', name_node='', job_xml_files=None, configuration=None):
+    def __init__(self, job_tracker=None, name_node=None, job_xml_files=None, configuration=None):
         XMLSerializable.__init__(self, 'global')
         self.job_tracker = job_tracker
         self.name_node = name_node
