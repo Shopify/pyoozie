@@ -9,8 +9,8 @@ import pytest
 from mock import Mock
 
 from tests.utils import xml_to_dict_unordered
-from pyoozie import workflow, coordinator, Shell, Email, ExecutionOrder, _workflow_submission_xml, \
-    _coordinator_submission_xml
+from pyoozie import workflow, coordinator, Shell, Email, ExecutionOrder
+from pyoozie.builder import _workflow_submission_xml, _coordinator_submission_xml
 
 
 @pytest.fixture

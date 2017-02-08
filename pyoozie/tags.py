@@ -21,7 +21,7 @@ class IdentifierTooLongError(AssertionError):
         self.length = len(identifier)
 
 
-def validate(identifier):
+def _validate(identifier):
 
     if len(identifier) > MAX_IDENTIFIER_LENGTH:
         raise IdentifierTooLongError(identifier)
@@ -142,7 +142,7 @@ class Credentials(_PropertyList):
                                    'type': credential_type,
                                },
                                values=values)
-        self.name = validate(credential_name)
+        self.name = _validate(credential_name)
 
 
 class Shell(Xml):

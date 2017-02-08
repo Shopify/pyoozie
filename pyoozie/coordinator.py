@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from datetime import timedelta
 from enum import Enum
 
-from pyoozie.tags import Xml, Parameters, validate
+from pyoozie.tags import  _validate, Xml, Parameters
 
 
 class ExecutionOrder(Enum):
@@ -52,7 +52,7 @@ class Coordinator(Xml):
         assert frequency >= 5, "Frequency (%d min) must be greater than or equal to 5 min" % frequency
 
         # Coordinator
-        self.name = validate(name)
+        self.name = _validate(name)
         self.frequency = frequency
         self.start = start
         self.end = end
