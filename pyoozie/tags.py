@@ -270,10 +270,7 @@ class GlobalConfiguration(Xml):
         return doc
 
     def __nonzero__(self):
-        return any(x for x in [
-            self.job_tracker, self.name_node, self.job_xml_files,
-            self.configuration
-        ])
+        return any((self.job_tracker, self.name_node, self.job_xml_files, self.configuration))
 
 
 class Email(Xml):
