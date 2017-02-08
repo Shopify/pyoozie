@@ -86,14 +86,13 @@ def test_validate():
 
 def test_parameters(expected_property_values, expected_property_values_xml):
     actual = Parameters(expected_property_values).xml(indent=True)
-    expected = '''<parameters>%s</parameters>''' % expected_property_values_xml
+    expected = '<parameters>{xml}</parameters>'.format(xml=expected_property_values_xml)
     assert xml_to_dict_unordered(expected) == xml_to_dict_unordered(actual)
 
 
 def test_configuration(expected_property_values, expected_property_values_xml):
     actual = Configuration(expected_property_values).xml(indent=True)
-    expected = '''<configuration>%s</configuration>''' % \
-        expected_property_values_xml
+    expected = '<configuration>{xml}</configuration>'.format(xml=expected_property_values_xml)
     assert xml_to_dict_unordered(expected) == xml_to_dict_unordered(actual)
 
 
@@ -101,9 +100,8 @@ def test_credentials(expected_property_values, expected_property_values_xml):
     actual = Credentials(expected_property_values,
                          credential_name='my-hcat-creds',
                          credential_type='hcat').xml(indent=True)
-    expected = '''
-        <credentials name='my-hcat-creds' type='hcat'>%s</credentials>
-        ''' % expected_property_values_xml
+    expected = "<credentials name='my-hcat-creds' type='hcat'>{xml}</credentials>".format(
+        xml=expected_property_values_xml)
     assert xml_to_dict_unordered(expected) == xml_to_dict_unordered(actual)
 
 

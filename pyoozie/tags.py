@@ -80,9 +80,9 @@ class _PropertyList(XMLSerializable, dict):
             for name, value in sorted(self.items()):
                 with tag('property'):
                     with tag('name'):
-                        doc.text('%s' % name)
+                        doc.text('{}'.format(name))
                     with tag('value'):
-                        doc.text('%s' % value if value is not None else '')
+                        doc.text('{}'.format(value) if value is not None else '')
         return doc
 
 
@@ -183,9 +183,9 @@ class Shell(XMLSerializable):
                 with tag('argument'):
                     doc.text(argument)
 
-            for env_var in self.env_vars.items():
+            for key, value in self.env_vars.items():
                 with tag('env-var'):
-                    doc.text('%s=%s' % env_var)
+                    doc.text('{key}={value}'.format(key=key, value=value))
 
             for filename in self.files:
                 with tag('file'):
