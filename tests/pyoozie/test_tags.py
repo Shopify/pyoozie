@@ -249,7 +249,7 @@ def test_email():
         to='mrt@example.com',
         subject='Chains',
         body='Do you need more?',
-        cc='ateam@ateam.com',
+        cc='ateam@example.com',
         bcc='jewelrystore@example.com',
         content_type='text/plain',
         attachments='/path/to/attachment/on/hdfs.txt',
@@ -259,7 +259,7 @@ def test_email():
         <to>mrt@example.com</to>
         <subject>Chains</subject>
         <body>Do you need more?</body>
-        <cc>ateam@ateam.com</cc>
+        <cc>ateam@example.com</cc>
         <bcc>jewelrystore@example.com</bcc>
         <content_type>text/plain</content_type>
         <attachment>/path/to/attachment/on/hdfs.txt</attachment>
@@ -270,7 +270,7 @@ def test_email():
         to=['mrt@example.com', 'b.a.baracus@example.com'],
         subject='Chains',
         body='Do you need more?',
-        cc=('ateam@ateam.com', 'webmaster@example.com'),
+        cc=('ateam@example.com', 'webmaster@example.com'),
         bcc=set(['jewelrystore@example.com', 'goldchains4u@example.com']),
         content_type='text/plain',
         attachments=['/path/on/hdfs.txt',
@@ -281,7 +281,7 @@ def test_email():
         <to>b.a.baracus@example.com,mrt@example.com</to>
         <subject>Chains</subject>
         <body>Do you need more?</body>
-        <cc>ateam@ateam.com,webmaster@example.com</cc>
+        <cc>ateam@example.com,webmaster@example.com</cc>
         <bcc>goldchains4u@example.com,jewelrystore@example.com</bcc>
         <content_type>text/plain</content_type>
         <attachment>/another/path/on/hdfs.txt,/path/on/hdfs.txt</attachment>
