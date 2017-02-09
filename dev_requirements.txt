@@ -1,8 +1,8 @@
-pytest>=2.7
-pytest-cov
-pytest-randomly
-pytest-mock
-pylint
-xmltodict
 autopep8
 flake8
+pylint
+pytest-cov
+pytest-mock
+pytest-randomly
+pytest>=2.7
+xmltodict

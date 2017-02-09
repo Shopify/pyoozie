@@ -2,20 +2,21 @@ from __future__ import unicode_literals
 
 from collections import namedtuple
 from datetime import datetime
-from enum import Enum
 import re
+
+from enum import Enum
 import untangle
 
-from starscream.scheduling.oozie.exceptions import OozieException
+from pyoozie.exceptions import OozieException
 
 
 _StatusValue = namedtuple('_StatusValue', ['id', 'is_active', 'is_running', 'is_suspendable', 'is_suspended'])
 
 
-def _status(id, is_active=False, is_running=False, is_suspendable=False, is_suspended=False):
+def _status(status_id, is_active=False, is_running=False, is_suspendable=False, is_suspended=False):
     if is_running and not is_active:
         raise OozieException.parse_error("A running status implies active")
-    return _StatusValue(id, is_active, is_running, is_suspendable, is_suspended)
+    return _StatusValue(status_id, is_active, is_running, is_suspendable, is_suspended)
 
 
 _COORD_ID_RE = re.compile('^(?P<id>.*-C)(?:@(?P<action>[1-9][0-9]*))?$')
@@ -24,65 +25,65 @@ _WORKFLOW_ID_RE = re.compile('^(?P<id>.*-W)(?:@(?P<action>.*))?$')
 
 def parse_coordinator_id(string):
     parts = _COORD_ID_RE.match(string) if string else None
-    id = parts.group('id') if parts else None
+    coord_id = parts.group('id') if parts else None
     action = parts.group('action') if parts else None
     action = int(action) if action else None
-    return id, action
+    return coord_id, action
 
 
 def parse_workflow_id(string):
     parts = _WORKFLOW_ID_RE.match(string) if string else None
-    id = parts.group('id') if parts else None
+    coord_id = parts.group('id') if parts else None
     action = parts.group('action') if parts else None
-    return id, action
+    return coord_id, action
 
 
-def _parse_coordinator_id(artifact, job_id):
-    id, action = parse_coordinator_id(job_id)
-    if id and not action:
+def _parse_coordinator_id(_, job_id):
+    coord_id, action = parse_coordinator_id(job_id)
+    if coord_id and not action:
         return job_id
     raise OozieException.parse_error("Invalid coordinator id: {}".format(job_id))
 
 
-def _parse_coordinator_action_id(artifact, job_id):
-    id, action = parse_coordinator_id(job_id)
-    if id and action:
+def _parse_coordinator_action_id(_, job_id):
+    coord_id, action = parse_coordinator_id(job_id)
+    if coord_id and action:
         return job_id
     raise OozieException.parse_error("Invalid coordinator action id: {}".format(job_id))
 
 
-def _parse_workflow_id(artifact, job_id):
-    id, action = parse_workflow_id(job_id)
-    if id and not action:
+def _parse_workflow_id(_, job_id):
+    wf_id, action = parse_workflow_id(job_id)
+    if wf_id and not action:
         return job_id
     raise OozieException.parse_error("Invalid workflow id: {}".format(job_id))
 
 
-def _parse_workflow_action_id(artifact, job_id):
-    id, action = parse_workflow_id(job_id)
-    if id and action:
+def _parse_workflow_action_id(_, job_id):
+    wf_id, action = parse_workflow_id(job_id)
+    if wf_id and action:
         return job_id
     raise OozieException.parse_error("Invalid workflow action id: {}".format(job_id))
 
 
-def _parse_workflow_parent_id(artifact, job_id):
-    id, action = parse_coordinator_id(job_id)
-    if id and action:
+def _parse_workflow_parent_id(_, job_id):
+    wf_id, action = parse_coordinator_id(job_id)
+    if wf_id and action:
         return job_id
-    id, action = parse_workflow_id(job_id)
-    if id and not action:
+    wf_id, action = parse_workflow_id(job_id)
+    if wf_id and not action:
         return job_id
     raise OozieException.parse_error("Invalid workflow parent id: {}".format(job_id))
 
 
-def _parse_time(artifact, time_string):
+def _parse_time(_, time_string):
     try:
         return datetime.strptime(time_string, '%a, %d %b %Y %H:%M:%S %Z')
     except ValueError as err:
         raise OozieException.parse_error("Error parsing time '{}'".format(time_string), err)
 
 
-def _parse_configuration(artifact, conf_string):
+def _parse_configuration(_, conf_string):
     conf = untangle.parse(conf_string).configuration
     return {prop.name.cdata: prop.value.cdata for prop in conf.property}
 
@@ -97,19 +98,19 @@ def _parse_coordinator_actions(artifact, actions_list):
     return {action.actionNumber: action for action in actions}
 
 
-def _parse_coordinator_status(artifact, status_string):
+def _parse_coordinator_status(_, status_string):
     return Coordinator.Status.parse(status_string)
 
 
-def _parse_coordinator_action_status(artifact, status_string):
+def _parse_coordinator_action_status(_, status_string):
     return CoordinatorAction.Status.parse(status_string)
 
 
-def _parse_workflow_status(artifact, status_string):
+def _parse_workflow_status(_, status_string):
     return Workflow.Status.parse(status_string)
 
 
-def _parse_workflow_action_status(artifact, status_string):
+def _parse_workflow_action_status(_, status_string):
     return WorkflowAction.Status.parse(status_string)
 
 
@@ -126,33 +127,39 @@ class _OozieArtifact(object):
 
     SUPPORTED_KEYS = {'toString': None}
 
-    class _StatusEnum(Enum):
+    class StatusEnum(Enum):
 
         def __str__(self):
             return self.name
 
         @classmethod
+        def as_dict(cls):
+            # Since pylint doesn't know about __MEMBERS__
+            return {value.name: value for value in cls}
+
+        @classmethod
         def parse(cls, status_string):
-            return cls.__members__.get(status_string, cls.UNKNOWN)
+            values = cls.as_dict()
+            return values.get(status_string, values['UNKNOWN'])
 
         @classmethod
         def active(cls):
-            return [status for status in cls.__members__.values() if status.is_active()]
+            return [status for status in cls if status.is_active()]
 
         @classmethod
         def running(cls):
-            return [status for status in cls.__members__.values() if status.is_running()]
+            return [status for status in cls if status.is_running()]
 
         @classmethod
         def suspendable(cls):
-            return [status for status in cls.__members__.values() if status.is_suspendable()]
+            return [status for status in cls if status.is_suspendable()]
 
         @classmethod
         def suspended(cls):
-            return [status for status in cls.__members__.values() if status.is_suspended()]
+            return [status for status in cls if status.is_suspended()]
 
         def is_unknown(self):
-            return self.value.id == 0
+            return self.value.status_id == 0
 
         def is_active(self):
             return self.value.is_active
@@ -169,6 +176,7 @@ class _OozieArtifact(object):
     def __init__(self, oozie_api, details, parent=None):
         self._oozie_api = oozie_api
         self._parent = parent
+        self.toString = None
         details = dict(details)
         for key, func in self.REQUIRED_KEYS.iteritems():
             value = details.pop(key, None)
@@ -243,7 +251,7 @@ class Coordinator(_OozieArtifact):
         'user': None,
     }
 
-    class Status(_OozieArtifact._StatusEnum):
+    class Status(_OozieArtifact.StatusEnum):
         UNKNOWN = _status(0)
         DONEWITHERROR = _status(1)
         FAILED = _status(2)
@@ -260,6 +268,36 @@ class Coordinator(_OozieArtifact):
         SUCCEEDED = _status(13)
         SUSPENDED = _status(14, is_active=True, is_running=True, is_suspended=True)
         SUSPENDEDWITHERROR = _status(15, is_active=True, is_running=True, is_suspended=True)
+
+    def __init__(self, *args, **kwargs):
+        # Phony declarations to appease pylint
+        self.acl = None
+        self.actions = {}
+        self.bundleId = None
+        self.concurrency = None
+        self.conf = None
+        self.consoleUrl = None
+        self.coordExternalId = None
+        self.coordJobId = None
+        self.coordJobName = None
+        self.coordJobPath = None
+        self.endTime = None
+        self.executionPolicy = None
+        self.frequency = None
+        self.group = None
+        self.lastAction = None
+        self.mat_throttling = None
+        self.nextMaterializedTime = None
+        self.pauseTime = None
+        self.startTime = None
+        self.status = None
+        self.timeOut = None
+        self.timeUnit = None
+        self.timeZone = None
+        self.toString = None
+        self.total = None
+        self.user = None
+        super(Coordinator, self).__init__(self, *args, **kwargs)
 
     def fill_in_details(self):
         # Undefined `conf` is probably bad, empty is ok
@@ -324,7 +362,7 @@ class CoordinatorAction(_OozieArtifact):
         'type': None,
     }
 
-    class Status(_OozieArtifact._StatusEnum):
+    class Status(_OozieArtifact.StatusEnum):
         UNKNOWN = _status(0)
         FAILED = _status(1)
         IGNORED = _status(2)
@@ -338,15 +376,40 @@ class CoordinatorAction(_OozieArtifact):
         TIMEDOUT = _status(10)
         WAITING = _status(11)
 
+    def __init__(self, *args, **kwargs):
+        # Phony declarations to appease pylint
+        self.actionNumber = None
+        self.consoleUrl = None
+        self.coordJobId = None
+        self.createdConf = None
+        self.createdTime = None
+        self.errorCode = None
+        self.errorMessage = None
+        self.externalId = None
+        self.externalStatus = None
+        self.id = None
+        self.lastModifiedTime = None
+        self.missingDependencies = None
+        self.nominalTime = None
+        self.pushMissingDependencies = None
+        self.runConf = None
+        self.status = None
+        self.toString = None
+        self.trackerUri = None
+        self.type = None
+        self._parent = None
+        self._workflow = None
+        super(CoordinatorAction, self).__init__(self, *args, **kwargs)
+
     def _validate_degenerate_fields(self):
         # For any fields that must be in sync, ensure they are.
         # If values are missing, extrapolate them
-        id, action = parse_coordinator_id(self.id)
+        coord_id, action = parse_coordinator_id(self.id)
         if self.coordJobId:
-            if self.coordJobId != id:
+            if self.coordJobId != coord_id:
                 raise OozieException.parse_error("coordJobId does not match coordinator action ID")
         else:
-            self.coordJobId = id
+            self.coordJobId = coord_id
         if self.actionNumber:
             if str(self.actionNumber) != str(action):
                 raise OozieException.parse_error("actionNumber does not match coordinator action ID")
@@ -369,22 +432,18 @@ class CoordinatorAction(_OozieArtifact):
     def workflow(self):
         # TODO: revisit this to support multiple runs
         # Use .../job/...-C@xx?show=allruns to query
-        if hasattr(self, '_workflow'):
-            return self._workflow
-
-        if self.externalId:
-            wf = self._oozie_api.job_workflow_info(workflow_id=self.externalId)
-            if wf:
-                wf._parent = self
-                self._workflow = wf
-                return wf
+        if not self._workflow and self.externalId:
+            workflow = self._oozie_api.job_workflow_info(workflow_id=self.externalId)
+            if workflow:
+                workflow._parent = self
+                self._workflow = workflow
+                return workflow
             else:
                 # Otherwise, *do not* cache the None
                 # it might be there next time we ask
                 return None
 
-        self._workflow = None
-        return None
+        return self._workflow
 
     def coordinator(self):
         if not self._parent:
@@ -424,7 +483,7 @@ class Workflow(_OozieArtifact):
         'user': None,
     }
 
-    class Status(_OozieArtifact._StatusEnum):
+    class Status(_OozieArtifact.StatusEnum):
         UNKNOWN = _status(0)
         FAILED = _status(1)
         KILLED = _status(2)
@@ -433,11 +492,34 @@ class Workflow(_OozieArtifact):
         SUCCEEDED = _status(5)
         SUSPENDED = _status(6, is_active=True, is_running=True, is_suspended=True)
 
+    def __init__(self, *args, **kwargs):
+        # Phony declarations to appease pylint
+        self.acl = None
+        self.actions = {}
+        self.appName = None
+        self.appPath = None
+        self.conf = None
+        self.consoleUrl = None
+        self.createdTime = None
+        self.endTime = None
+        self.externalId = None
+        self.id = None
+        self.group = None
+        self.lastModTime = None
+        self.parentId = None
+        self.run = None
+        self.startTime = None
+        self.status = None
+        self.toString = None
+        self.user = None
+        self._parent = None
+        super(Workflow, self).__init__(self, *args, **kwargs)
+
     def fill_in_details(self):
         # Undefined `conf` is probably bad, empty is ok
         if self.conf is None:
-            wf = self._oozie_api.job_workflow_info(workflow_id=self.id)
-            return wf
+            workflow = self._oozie_api.job_workflow_info(workflow_id=self.id)
+            return workflow
         else:
             return self
 
@@ -505,7 +587,7 @@ class WorkflowAction(_OozieArtifact):
         'userRetryMax': None,
     }
 
-    class Status(_OozieArtifact._StatusEnum):
+    class Status(_OozieArtifact.StatusEnum):
         UNKNOWN = _status(0)
         DONE = _status(1)
         END_MANUAL = _status(2)
@@ -519,6 +601,35 @@ class WorkflowAction(_OozieArtifact):
         START_MANUAL = _status(10)
         START_RETRY = _status(11)
         USER_RETRY = _status(12, is_active=True)
+
+    def __init__(self, *args, **kwargs):
+        # Phony declarations to appease pylint
+        self.conf = None
+        self.consoleUrl = None
+        self.cred = None
+        self.data = None
+        self.endTime = None
+        self.errorCode = None
+        self.errorMessage = None
+        self.externalChildIDs = None
+        self.externalId = None
+        self.externalStatus = None
+        self.id = None
+        self.name = None
+        self.retries = None
+        self.startTime = None
+        self.stats = None
+        self.status = None
+        self.toString = None
+        self.trackerUri = None
+        self.transition = None
+        self.type = None
+        self.userRetryCount = None
+        self.userRetryInterval = None
+        self.userRetryMax = None
+        self._parent = None
+        self._subworkflow = None
+        super(WorkflowAction, self).__init__(self, *args, **kwargs)
 
     def _validate_degenerate_fields(self):
         # For any fields that must be in sync, ensure they are.
@@ -544,22 +655,19 @@ class WorkflowAction(_OozieArtifact):
         return True
 
     def subworkflow(self):
-        if hasattr(self, '_subworkflow'):
-            return self._subworkflow
+        if not self._subworkflow:
+            if self.type == 'sub-workflow' and self.externalId:
+                workflow = self._oozie_api.job_workflow_info(self.externalId)
+                if workflow:
+                    workflow._parent = self
+                    self._subworkflow = workflow
+                    return workflow
+                else:
+                    # Otherwise, *do not* cache the None
+                    # it might be there next time we ask
+                    return None
 
-        if self.type == 'sub-workflow' and self.externalId:
-            wf = self._oozie_api.job_workflow_info(self.externalId)
-            if wf:
-                wf._parent = self
-                self._subworkflow = wf
-                return wf
-            else:
-                # Otherwise, *do not* cache the None
-                # it might be there next time we ask
-                return None
-
-        self._subworkflow = None
-        return None
+        return self._subworkflow
 
     def coordinator(self):
         parent = self.parent()

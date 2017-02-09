@@ -11,28 +11,34 @@ class OozieException(Exception):
         self.caused_by = caused_by
 
     @classmethod
-    def coordinator_not_found(cls, id, caused_by=None):
-        return OozieArtifactNotFoundException("Coordinator '{}' not found".format(id), caused_by)
+    def coordinator_not_found(cls, artifact_id, caused_by=None):
+        message = "Coordinator '{}' not found".format(artifact_id)
+        return OozieArtifactNotFoundException(message, caused_by)
 
     @classmethod
-    def coordinator_action_not_found(cls, id, action, caused_by=None):
-        return OozieArtifactNotFoundException("Coordinator action '{}@{}' not found".format(id, action), caused_by)
+    def coordinator_action_not_found(cls, artifact_id, action, caused_by=None):
+        message = "Coordinator action '{}@{}' not found".format(artifact_id, action)
+        return OozieArtifactNotFoundException(message, caused_by)
 
     @classmethod
-    def workflow_not_found(cls, id, caused_by=None):
-        return OozieArtifactNotFoundException("Workflow '{}' not found".format(id), caused_by)
+    def workflow_not_found(cls, artifact_id, caused_by=None):
+        message = "Workflow '{}' not found".format(artifact_id)
+        return OozieArtifactNotFoundException(message, caused_by)
 
     @classmethod
-    def workflow_action_not_found(cls, id, action, caused_by=None):
-        return OozieArtifactNotFoundException("Workflow action '{}@{}' not found".format(id, action), caused_by)
+    def workflow_action_not_found(cls, artifact_id, action, caused_by=None):
+        message = "Workflow action '{}@{}' not found".format(artifact_id, action)
+        return OozieArtifactNotFoundException(message, caused_by)
 
     @classmethod
-    def job_not_found(cls, id, caused_by=None):
-        return OozieArtifactNotFoundException("'{}' does not match any known job".format(id), caused_by)
+    def job_not_found(cls, artifact_id, caused_by=None):
+        message = "'{}' does not match any known job".format(artifact_id)
+        return OozieArtifactNotFoundException(message, caused_by)
 
     @classmethod
-    def operation_failed(cls, op, caused_by=None):
-        return OozieOperationFailedException("Operation failed: {}".format(op), caused_by)
+    def operation_failed(cls, operation, caused_by=None):
+        message = "Operation failed: {}".format(operation)
+        return OozieOperationFailedException(message, caused_by)
 
     @classmethod
     def parse_error(cls, message, caused_by=None):
@@ -40,7 +46,8 @@ class OozieException(Exception):
 
     @classmethod
     def required_key_missing(cls, key, artifact, caused_by=None):
-        return OozieParsingException("Required key '{}' missing or invalid in {}".format(key, artifact.__class__.__name__), caused_by)
+        message = "Required key '{}' missing or invalid in {}".format(key, artifact.__class__.__name__)
+        return OozieParsingException(message, caused_by)
 
     @classmethod
     def communication_error(cls, message=None, caused_by=None):
