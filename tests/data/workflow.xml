@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workflow-app xmlns="uri:oozie:workflow:0.5"
+              name="descriptive-name">
+    <start to="action-payload" />
+    <action name="action-payload">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo "test"</exec>
+        </shell>
+        <ok to="end" />
+        <error to="action-error" />
+    </action>
+    <action name="action-error">
+        <email xmlns="uri:oozie:email-action:0.2">
+            <to>person@example.com</to>
+            <subject>Error</subject>
+            <body>A bad thing happened</body>
+        </email>
+        <ok to="kill" />
+        <error to="kill" />
+    </action>
+    <kill name="kill">
+        <message>Failure message</message>
+    </kill>
+    <end name="end" />
+</workflow-app>

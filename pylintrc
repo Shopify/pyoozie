@@ -35,8 +35,19 @@ load-plugins=
 # it should appear only once).
 
 # CHANGED:
+# too-few-public-methods
+# too-many-instance-attributes
+# too-many-arguments
+# protected-access; _xml() calls
+# invalid-name; some 2-letter variables are OK
+# redefined-outer-name; doesn't play well with pytest fixtures
+# fixme; we're in-development, so we need some of these
 # C0111: Missing docstring
-disable=C0111
+# D101 Missing docstring in public class
+# D102 Missing docstring in public method
+# D105 Missing docstring in magic method
+disable=C0111,D101,D102,D105,too-few-public-methods,too-many-instance-attributes,too-many-arguments,
+ protected-access,invalid-name,redefined-outer-name,fixme
 
 
 [REPORTS]

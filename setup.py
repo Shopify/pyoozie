@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
-# Use of this source code is governed by a BSD-style license that can be found in the LICENSE file.
+# Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 import re
 
-from distutils.core import setup
+
+try:
+    from setuptools import setup
+except:
+    from distutils.core import setup
 
 
 with open('README.md') as fh:
@@ -15,7 +19,7 @@ with open('pyoozie/__init__.py', 'r') as fd:
 
 if not version:
     raise RuntimeError('Cannot find version information')
-    
+
 setup(
     name='pyoozie',
     version=version,
@@ -26,15 +30,16 @@ setup(
     url='https://github.com/Shopify/pyoozie',
     packages=['pyoozie'],
     install_requires=[
-        'requests>=2.12.3'
+        'enum34>=0.9.23',
+        'yattag>=1.7.2',
+        'setuptools>=0.9',
     ],
-    license="BSD",
-    zip_safe=False,
-    keywords='oozie',
+    license="MIT",
+    keywords=['oozie'],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
+        'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',

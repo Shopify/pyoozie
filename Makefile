@@ -24,5 +24,6 @@ autopep8:
 lint:
 		@echo 'Linting...'
 		@pylint --rcfile=pylintrc pyoozie tests
+		@flake8
 
 autolint: autopep8 lint
