@@ -7,7 +7,7 @@ import requests
 class OozieException(Exception):
 
     def __init__(self, message='', caused_by=None):
-        super(OozieException, self).__init__(message or caused_by and caused_by.message)
+        super(OozieException, self).__init__(message or caused_by and str(caused_by))
         self.caused_by = caused_by
 
     @classmethod

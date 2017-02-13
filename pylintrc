@@ -41,6 +41,10 @@ load-plugins=
 # protected-access; _xml() calls
 # invalid-name; some 2-letter variables are OK
 # redefined-outer-name; doesn't play well with pytest fixtures
+# no-self-use; doesn't like grouping tests into classes
+# too-many-public-methods; Oozie API is extensive
+# too-many-lines; ditto
+# duplicate-code; flagging test fixtures vs. implementation
 # fixme; we're in-development, so we need some of these
 # C0111: Missing docstring
 # D101 Missing docstring in public class
@@ -48,7 +52,7 @@ load-plugins=
 # D105 Missing docstring in magic method
 disable=C0111,D101,D102,D105,too-few-public-methods,too-many-instance-attributes,too-many-arguments,
  protected-access,invalid-name,redefined-outer-name,no-self-use,too-many-public-methods,too-many-lines,
- fixme
+ duplicate-code,fixme
 
 
 
@@ -101,7 +105,10 @@ ignore-mixin-members=yes
 
 # List of classes names for which member attributes should not be checked
 # (useful for classes with attributes dynamically set).
-ignored-classes=
+ignored-classes=pyoozie.model._OozieArtifact,
+ pyoozie.model._StatusValue, pyoozie.model._OozieArtifact.StatusEnum,
+ pyoozie.model.Coordinator, pyoozie.model.CoordinatorAction,
+ pyoozie.model.Workflow, pyoozie.model.WorkflowAction,
 
 # When zope mode is activated, add a predefined set of Zope acquired attributes
 # to generated-members.

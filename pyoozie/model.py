@@ -10,7 +10,7 @@ import untangle
 from pyoozie.exceptions import OozieException
 
 
-_StatusValue = namedtuple('_StatusValue', ['id', 'is_active', 'is_running', 'is_suspendable', 'is_suspended'])
+_StatusValue = namedtuple('_StatusValue', ['status_id', 'is_active', 'is_running', 'is_suspendable', 'is_suspended'])
 
 
 def _status(status_id, is_active=False, is_running=False, is_suspendable=False, is_suspended=False):
@@ -39,61 +39,77 @@ def parse_workflow_id(string):
 
 
 def _parse_coordinator_id(_, job_id):
-    coord_id, action = parse_coordinator_id(job_id)
-    if coord_id and not action:
-        return job_id
-    raise OozieException.parse_error("Invalid coordinator id: {}".format(job_id))
+    if job_id:
+        coord_id, action = parse_coordinator_id(job_id)
+        if coord_id and not action:
+            return job_id
+        raise OozieException.parse_error("Invalid coordinator id: {}".format(job_id))
+    return None
 
 
 def _parse_coordinator_action_id(_, job_id):
-    coord_id, action = parse_coordinator_id(job_id)
-    if coord_id and action:
-        return job_id
-    raise OozieException.parse_error("Invalid coordinator action id: {}".format(job_id))
+    if job_id:
+        coord_id, action = parse_coordinator_id(job_id)
+        if coord_id and action:
+            return job_id
+        raise OozieException.parse_error("Invalid coordinator action id: {}".format(job_id))
+    return None
 
 
 def _parse_workflow_id(_, job_id):
-    wf_id, action = parse_workflow_id(job_id)
-    if wf_id and not action:
-        return job_id
-    raise OozieException.parse_error("Invalid workflow id: {}".format(job_id))
+    if job_id:
+        wf_id, action = parse_workflow_id(job_id)
+        if wf_id and not action:
+            return job_id
+        raise OozieException.parse_error("Invalid workflow id: {}".format(job_id))
+    return None
 
 
 def _parse_workflow_action_id(_, job_id):
-    wf_id, action = parse_workflow_id(job_id)
-    if wf_id and action:
-        return job_id
-    raise OozieException.parse_error("Invalid workflow action id: {}".format(job_id))
+    if job_id:
+        wf_id, action = parse_workflow_id(job_id)
+        if wf_id and action:
+            return job_id
+        raise OozieException.parse_error("Invalid workflow action id: {}".format(job_id))
+    return None
 
 
 def _parse_workflow_parent_id(_, job_id):
-    wf_id, action = parse_coordinator_id(job_id)
-    if wf_id and action:
-        return job_id
-    wf_id, action = parse_workflow_id(job_id)
-    if wf_id and not action:
-        return job_id
-    raise OozieException.parse_error("Invalid workflow parent id: {}".format(job_id))
+    if job_id:
+        wf_id, action = parse_coordinator_id(job_id)
+        if wf_id and action:
+            return job_id
+        wf_id, action = parse_workflow_id(job_id)
+        if wf_id and not action:
+            return job_id
+        raise OozieException.parse_error("Invalid workflow parent id: {}".format(job_id))
+    return None
 
 
 def _parse_time(_, time_string):
-    try:
-        return datetime.strptime(time_string, '%a, %d %b %Y %H:%M:%S %Z')
-    except ValueError as err:
-        raise OozieException.parse_error("Error parsing time '{}'".format(time_string), err)
+    if time_string:
+        try:
+            return datetime.strptime(time_string, '%a, %d %b %Y %H:%M:%S %Z')
+        except ValueError as err:
+            raise OozieException.parse_error("Error parsing time '{}'".format(time_string), err)
+    return None
 
 
 def _parse_configuration(_, conf_string):
-    conf = untangle.parse(conf_string).configuration
-    return {prop.name.cdata: prop.value.cdata for prop in conf.property}
+    if conf_string:
+        conf = untangle.parse(conf_string).configuration
+        return {prop.name.cdata: prop.value.cdata for prop in conf.property}
+    return {}
 
 
 def _parse_workflow_actions(artifact, actions_list):
+    actions_list = actions_list or []
     actions = [WorkflowAction(artifact._oozie_api, action, parent=artifact) for action in actions_list]
     return {action.name: action for action in actions}
 
 
 def _parse_coordinator_actions(artifact, actions_list):
+    actions_list = actions_list or []
     actions = [CoordinatorAction(artifact._oozie_api, action, parent=artifact) for action in actions_list]
     return {action.actionNumber: action for action in actions}
 
@@ -133,13 +149,8 @@ class _OozieArtifact(object):
             return self.name
 
         @classmethod
-        def as_dict(cls):
-            # Since pylint doesn't know about __MEMBERS__
-            return {value.name: value for value in cls}
-
-        @classmethod
         def parse(cls, status_string):
-            values = cls.as_dict()
+            values = cls.__members__
             return values.get(status_string, values['UNKNOWN'])
 
         @classmethod
@@ -159,38 +170,37 @@ class _OozieArtifact(object):
             return [status for status in cls if status.is_suspended()]
 
         def is_unknown(self):
-            return self.value.status_id == 0
+            return self._value_.status_id == 0
 
         def is_active(self):
-            return self.value.is_active
+            return self._value_.is_active
 
         def is_running(self):
-            return self.value.is_running
+            return self._value_.is_running
 
         def is_suspendable(self):
-            return self.value.is_suspendable
+            return self._value_.is_suspendable
 
         def is_suspended(self):
-            return self.value.is_suspended
+            return self._value_.is_suspended
 
     def __init__(self, oozie_api, details, parent=None):
         self._oozie_api = oozie_api
         self._parent = parent
-        self.toString = None
         details = dict(details)
-        for key, func in self.REQUIRED_KEYS.iteritems():
+        for key, func in self.REQUIRED_KEYS.items():
             value = details.pop(key, None)
             try:
-                parsed_value = func(self, value) if func and value is not None else value
+                parsed_value = func(self, value) if func else value
             except OozieException as err:
                 raise OozieException.required_key_missing(key, self, err)
             if parsed_value is None:
                 raise OozieException.required_key_missing(key, self)
             else:
                 setattr(self, key, parsed_value)
-        for key, func in self.SUPPORTED_KEYS.iteritems():
+        for key, func in self.SUPPORTED_KEYS.items():
             value = details.pop(key, None)
-            value = func(self, value) if func and value is not None else value
+            value = func(self, value) if func else value
             setattr(self, key, value)
         self._details = details
         self._validate_degenerate_fields()
@@ -270,34 +280,8 @@ class Coordinator(_OozieArtifact):
         SUSPENDEDWITHERROR = _status(15, is_active=True, is_running=True, is_suspended=True)
 
     def __init__(self, *args, **kwargs):
-        # Phony declarations to appease pylint
-        self.acl = None
-        self.actions = {}
-        self.bundleId = None
-        self.concurrency = None
-        self.conf = None
-        self.consoleUrl = None
-        self.coordExternalId = None
-        self.coordJobId = None
-        self.coordJobName = None
-        self.coordJobPath = None
-        self.endTime = None
-        self.executionPolicy = None
-        self.frequency = None
-        self.group = None
-        self.lastAction = None
-        self.mat_throttling = None
-        self.nextMaterializedTime = None
-        self.pauseTime = None
-        self.startTime = None
-        self.status = None
-        self.timeOut = None
-        self.timeUnit = None
-        self.timeZone = None
-        self.toString = None
-        self.total = None
-        self.user = None
-        super(Coordinator, self).__init__(self, *args, **kwargs)
+        super(Coordinator, self).__init__(*args, **kwargs)
+        self._workflow = None
 
     def fill_in_details(self):
         # Undefined `conf` is probably bad, empty is ok
@@ -310,13 +294,13 @@ class Coordinator(_OozieArtifact):
     def _validate_degenerate_fields(self):
         # For any fields that must be in sync, ensure they are.
         # If values are missing, extrapolate them
-        if self.toString:
-            if self.coordJobId not in self.toString:
-                raise OozieException.parse_error("toString does not contain coordinator ID")
-            if not self.status.is_unknown() and str(self.status) not in self.toString:
-                raise OozieException.parse_error("toString does not contain status")
-        else:
-            self.toString = 'Coordinator application id[{}] status[{}]'.format(self.coordJobId, self.status)
+        self.toString = self.toString or 'Coordinator application id[{}] status[{}]'.format(
+            self.coordJobId,
+            self.status)
+        if self.coordJobId not in self.toString:
+            raise OozieException.parse_error("toString does not contain coordinator ID")
+        if not self.status.is_unknown() and str(self.status) not in self.toString:
+            raise OozieException.parse_error("toString does not contain status")
 
     def is_coordinator(self):
         return True
@@ -377,51 +361,25 @@ class CoordinatorAction(_OozieArtifact):
         WAITING = _status(11)
 
     def __init__(self, *args, **kwargs):
-        # Phony declarations to appease pylint
-        self.actionNumber = None
-        self.consoleUrl = None
-        self.coordJobId = None
-        self.createdConf = None
-        self.createdTime = None
-        self.errorCode = None
-        self.errorMessage = None
-        self.externalId = None
-        self.externalStatus = None
-        self.id = None
-        self.lastModifiedTime = None
-        self.missingDependencies = None
-        self.nominalTime = None
-        self.pushMissingDependencies = None
-        self.runConf = None
-        self.status = None
-        self.toString = None
-        self.trackerUri = None
-        self.type = None
-        self._parent = None
+        self.status = CoordinatorAction.Status.UNKNOWN
+        super(CoordinatorAction, self).__init__(*args, **kwargs)
         self._workflow = None
-        super(CoordinatorAction, self).__init__(self, *args, **kwargs)
 
     def _validate_degenerate_fields(self):
         # For any fields that must be in sync, ensure they are.
         # If values are missing, extrapolate them
         coord_id, action = parse_coordinator_id(self.id)
-        if self.coordJobId:
-            if self.coordJobId != coord_id:
-                raise OozieException.parse_error("coordJobId does not match coordinator action ID")
-        else:
-            self.coordJobId = coord_id
-        if self.actionNumber:
-            if str(self.actionNumber) != str(action):
-                raise OozieException.parse_error("actionNumber does not match coordinator action ID")
-        else:
-            self.actionNumber = action
-        if self.toString:
-            if self.id not in self.toString:
-                raise OozieException.parse_error("toString does not contain coordinator action ID")
-            if not self.status.is_unknown() and str(self.status) not in self.toString:
-                raise OozieException.parse_error("toString does not contain status")
-        else:
-            self.toString = 'CoordinatorAction name[{}] status[{}]'.format(self.id, self.status)
+        self.coordJobId = self.coordJobId or coord_id
+        if self.coordJobId != coord_id:
+            raise OozieException.parse_error("coordJobId does not match coordinator action ID")
+        self.actionNumber = self.actionNumber or action
+        if self.actionNumber != action:
+            raise OozieException.parse_error("actionNumber does not match coordinator action ID")
+        self.toString = self.toString or 'CoordinatorAction name[{}] status[{}]'.format(self.id, self.status)
+        if self.id not in self.toString:
+            raise OozieException.parse_error("toString does not contain coordinator action ID")
+        if not self.status.is_unknown() and str(self.status) not in self.toString:
+            raise OozieException.parse_error("toString does not contain status")
 
     def is_coordinator(self):
         return True
@@ -437,12 +395,6 @@ class CoordinatorAction(_OozieArtifact):
             if workflow:
                 workflow._parent = self
                 self._workflow = workflow
-                return workflow
-            else:
-                # Otherwise, *do not* cache the None
-                # it might be there next time we ask
-                return None
-
         return self._workflow
 
     def coordinator(self):
@@ -493,27 +445,8 @@ class Workflow(_OozieArtifact):
         SUSPENDED = _status(6, is_active=True, is_running=True, is_suspended=True)
 
     def __init__(self, *args, **kwargs):
-        # Phony declarations to appease pylint
-        self.acl = None
-        self.actions = {}
-        self.appName = None
-        self.appPath = None
-        self.conf = None
-        self.consoleUrl = None
-        self.createdTime = None
-        self.endTime = None
-        self.externalId = None
-        self.id = None
-        self.group = None
-        self.lastModTime = None
-        self.parentId = None
-        self.run = None
-        self.startTime = None
-        self.status = None
-        self.toString = None
-        self.user = None
-        self._parent = None
-        super(Workflow, self).__init__(self, *args, **kwargs)
+        super(Workflow, self).__init__(*args, **kwargs)
+        self._workflow = None
 
     def fill_in_details(self):
         # Undefined `conf` is probably bad, empty is ok
@@ -526,13 +459,11 @@ class Workflow(_OozieArtifact):
     def _validate_degenerate_fields(self):
         # For any fields that must be in sync, ensure they are.
         # If values are missing, extrapolate them
-        if self.toString:
-            if self.id not in self.toString:
-                raise OozieException.parse_error("toString does not contain workflow ID")
-            if not self.status.is_unknown() and str(self.status) not in self.toString:
-                raise OozieException.parse_error("toString does not contain status")
-        else:
-            self.toString = 'Workflow id[{}] status[{}]'.format(self.id, self.status)
+        self.toString = self.toString or 'Workflow id[{}] status[{}]'.format(self.id, self.status)
+        if self.id not in self.toString:
+            raise OozieException.parse_error("toString does not contain workflow ID")
+        if not self.status.is_unknown() and str(self.status) not in self.toString:
+            raise OozieException.parse_error("toString does not contain status")
 
     def is_workflow(self):
         return True
@@ -603,50 +534,21 @@ class WorkflowAction(_OozieArtifact):
         USER_RETRY = _status(12, is_active=True)
 
     def __init__(self, *args, **kwargs):
-        # Phony declarations to appease pylint
-        self.conf = None
-        self.consoleUrl = None
-        self.cred = None
-        self.data = None
-        self.endTime = None
-        self.errorCode = None
-        self.errorMessage = None
-        self.externalChildIDs = None
-        self.externalId = None
-        self.externalStatus = None
-        self.id = None
-        self.name = None
-        self.retries = None
-        self.startTime = None
-        self.stats = None
-        self.status = None
-        self.toString = None
-        self.trackerUri = None
-        self.transition = None
-        self.type = None
-        self.userRetryCount = None
-        self.userRetryInterval = None
-        self.userRetryMax = None
-        self._parent = None
+        super(WorkflowAction, self).__init__(*args, **kwargs)
         self._subworkflow = None
-        super(WorkflowAction, self).__init__(self, *args, **kwargs)
 
     def _validate_degenerate_fields(self):
         # For any fields that must be in sync, ensure they are.
         # If values are missing, extrapolate them
         _, action = parse_workflow_id(self.id)
-        if self.name:
-            if self.name != action:
-                raise OozieException.parse_error("name does not match workflow action ID")
-        else:
-            self.name = action
-        if self.toString:
-            if self.name not in self.toString:
-                raise OozieException.parse_error("toString does not contain workflow action name")
-            if not self.status.is_unknown() and str(self.status) not in self.toString:
-                raise OozieException.parse_error("toString does not contain status")
-        else:
-            self.toString = 'Action name[{}] status[{}]'.format(self.name, self.status)
+        self.name = self.name or action
+        if self.name != action:
+            raise OozieException.parse_error("name does not match workflow action ID")
+        self.toString = self.toString or 'Action name[{}] status[{}]'.format(self.name, self.status)
+        if self.name not in self.toString:
+            raise OozieException.parse_error("toString does not contain workflow action name")
+        if not self.status.is_unknown() and str(self.status) not in self.toString:
+            raise OozieException.parse_error("toString does not contain status")
 
     def is_workflow(self):
         return True
@@ -655,18 +557,11 @@ class WorkflowAction(_OozieArtifact):
         return True
 
     def subworkflow(self):
-        if not self._subworkflow:
-            if self.type == 'sub-workflow' and self.externalId:
-                workflow = self._oozie_api.job_workflow_info(self.externalId)
-                if workflow:
-                    workflow._parent = self
-                    self._subworkflow = workflow
-                    return workflow
-                else:
-                    # Otherwise, *do not* cache the None
-                    # it might be there next time we ask
-                    return None
-
+        if not self._subworkflow and self.type == 'sub-workflow' and self.externalId:
+            workflow = self._oozie_api.job_workflow_info(self.externalId)
+            if workflow:
+                workflow._parent = self
+                self._subworkflow = workflow
         return self._subworkflow
 
     def coordinator(self):

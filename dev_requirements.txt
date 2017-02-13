@@ -1,8 +1,8 @@
 autopep8
 flake8
+mock
 pylint
 pytest-cov
-pytest-mock
 pytest-randomly
 pytest>=2.7
 requests-mock

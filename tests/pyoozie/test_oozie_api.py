@@ -18,8 +18,20 @@ SAMPLE_WF_ACTION = '0123456-123456789012345-oozie-oozi-W@foo'
 
 
 @pytest.fixture
+def oozie_config():
+    return {
+        'url': 'http://localhost:11000/oozie',
+        'user': 'oozie',
+        'timeout': 30,
+        'verbose': False,
+        'launcher_memory_in_mb': '5000',
+        'launcher_queue': 'test.ignore',
+    }
+
+
+@pytest.fixture
 def api(oozie_config):
-    with mock.patch('starscream.scheduling.oozie.oozie_api.OozieAPI._test_connection'):
+    with mock.patch('pyoozie.oozie_api.OozieAPI._test_connection'):
         api = OozieAPI(**oozie_config)
     return api
 
@@ -122,7 +134,7 @@ def sample_workflow_prep(api):
 
 class TestOozieAPICore(object):
 
-    @mock.patch('starscream.scheduling.oozie.oozie_api.OozieAPI._test_connection')
+    @mock.patch('pyoozie.oozie_api.OozieAPI._test_connection')
     def test_construction(self, mock_test_conn, oozie_config):
         api = OozieAPI(**oozie_config)
         assert mock_test_conn.called
@@ -143,7 +155,7 @@ class TestOozieAPICore(object):
             with requests_mock.mock() as m:
                 m.get('http://localhost:11000/oozie/versions', status_code=404)
                 OozieAPI(**oozie_config)
-        assert 'Unable to contact Oozie REST server' in str(err)
+        assert 'Unable to contact Oozie server' in str(err)
 
     def test_get(self, api):
         with requests_mock.mock() as m:
@@ -317,13 +329,13 @@ class TestOozieAPIJobsQuery(object):
             ]
         )
         with mock.patch.object(api, '_get') as mock_get:
-            mock_get.side_effect = lambda url: mock_results.next()
+            mock_get.side_effect = lambda url: next(mock_results)
             result = api._jobs_query(model.ArtifactType.Workflow)
             assert len(result) == 3
             mock_get.assert_any_call('jobs?jobtype=wf&offset=1&len=500')
             mock_get.assert_any_call('jobs?jobtype=wf&offset=501&len=500')
             with pytest.raises(StopIteration):
-                mock_results.next()
+                next(mock_results)
 
     @mock.patch.object(model.Coordinator, 'fill_in_details', side_effect=lambda c: c, autospec=True)
     def test_jobs_query_coordinator_pagination(self, _, api):
@@ -341,13 +353,13 @@ class TestOozieAPIJobsQuery(object):
         )
 
         with mock.patch.object(api, '_get') as mock_get:
-            mock_get.side_effect = lambda url: mock_results.next()
+            mock_get.side_effect = lambda url: next(mock_results)
             result = api._jobs_query(model.ArtifactType.Coordinator)
             assert len(result) == 3
             mock_get.assert_any_call('jobs?jobtype=coordinator&offset=1&len=500')
             mock_get.assert_any_call('jobs?jobtype=coordinator&offset=501&len=500')
             with pytest.raises(StopIteration):
-                mock_results.next()
+                next(mock_results)
 
     @mock.patch.object(model.Workflow, 'fill_in_details', side_effect=lambda c: c, autospec=True)
     def test_jobs_query_workflow_details(self, fill_in_details, api):
@@ -1180,7 +1192,7 @@ class TestOozieAPIJobSubmit(object):
                 assert '<name>user.name</name><value>oozie</value>' in conf
                 mock_post.reset_mock()
 
-                api.jobs_submit_coordinator('/dummy/coord-path', additional_properties={'test.prop': 'this is a test'})
+                api.jobs_submit_coordinator('/dummy/coord-path', configuration={'test.prop': 'this is a test'})
                 conf = mock_post.call_args[0][1]
                 assert '<name>test.prop</name><value>this is a test</value>' in conf
                 mock_post.reset_mock()
@@ -1222,7 +1234,7 @@ class TestOozieAPIJobSubmit(object):
                 assert '<name>user.name</name><value>oozie</value>' in conf
                 mock_post.reset_mock()
 
-                api.jobs_submit_workflow('/dummy/wf-path', additional_properties={'test.prop': 'this is a test'})
+                api.jobs_submit_workflow('/dummy/wf-path', configuration={'test.prop': 'this is a test'})
                 conf = mock_post.call_args[0][1]
                 assert '<name>test.prop</name><value>this is a test</value>' in conf
                 mock_post.reset_mock()

@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 
 from datetime import datetime
+from six import string_types
 import mock
 import pytest
 
@@ -715,7 +716,7 @@ def test_parse_workflow_action(valid_workflow_action):
     assert wf.startTime == datetime(2016, 6, 2, 13, 16, 48)
     assert wf.endTime == datetime(2016, 6, 2, 13, 23, 47)
     assert wf.status == model.WorkflowAction.Status.OK
-    assert isinstance(wf.conf, basestring)  # Does NOT get parsed
+    assert isinstance(wf.conf, string_types)  # Does NOT get parsed
     assert wf._details == {'wat?': 'blarg'}
 
 

@@ -223,7 +223,7 @@ class OozieAPI(object):
 
     def _jobs_query(self, type_enum, user=None, name=None, status=None, limit=0, details=True):
         job_type, result_type = self.JOB_TYPE_STRINGS[type_enum]
-        filters = self._filter_string(type_enum, user, name, status)
+        filters = self._filter_string(type_enum, user=user, name=name, status=status)
         offset = 1
         chunk = limit if limit else 500
         jobs = []
@@ -302,7 +302,7 @@ class OozieAPI(object):
                 start = int(action)
                 limit = 1
 
-        filters = self._filter_string(ArtifactType.CoordinatorAction, status)
+        filters = self._filter_string(ArtifactType.CoordinatorAction, status=status)
         try:
             if start == 0 and limit:
                 # Fetch the most recent `limit` actions
@@ -391,7 +391,8 @@ class OozieAPI(object):
         coord = self._coordinator_query(coord_id, status=CoordinatorAction.Status.active())
         if coordinator:
             # Copy over any actions to the existing object
-            for number, action in coord.actions.iteritems():
+            coordinator.actions = coordinator.actions or {}
+            for number, action in coord.actions.items():
                 action._parent = coordinator
                 coordinator.actions[number] = action
             coord = coordinator
