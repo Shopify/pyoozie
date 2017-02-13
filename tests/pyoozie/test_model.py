@@ -1,10 +1,10 @@
 from __future__ import unicode_literals
 
+from datetime import datetime
 import mock
 import pytest
-from datetime import datetime
 
-from starscream.scheduling.oozie import model, exceptions
+from pyoozie import model, exceptions
 
 
 SAMPLE_COORD_ID = '0123456-123456789012345-oozie-oozi-C'
@@ -55,7 +55,17 @@ def valid_coordinator():
         'actions': [],
         'bundleId': None,
         'concurrency': 1,
-        'conf': '<configuration> <property> <name>key1</name> <value>value1</value> </property> <property> <name>key two</name> <value>value two</value> </property> </configuration>',
+        'conf': '''
+<configuration>
+    <property>
+        <name>key1</name>
+        <value>value1</value>
+    </property>
+    <property>
+        <name>key two</name>
+        <value>value two</value>
+    </property>
+</configuration>''',
         'consoleUrl': None,
         'coordExternalId': None,
         'coordJobId': SAMPLE_COORD_ID,
@@ -175,7 +185,17 @@ def valid_workflow():
         'actions': [],
         'appName': 'my-test-workflow',
         'appPath': '/user/oozie/workflows/my-test-workflow',
-        'conf': '<configuration> <property> <name>key1</name> <value>value1</value> </property> <property> <name>key two</name> <value>value two</value> </property> </configuration>',
+        'conf': '''
+<configuration>
+    <property>
+        <name>key1</name>
+        <value>value1</value>
+    </property>
+    <property>
+        <name>key two</name>
+        <value>value two</value>
+    </property>
+</configuration>''',
         'consoleUrl': None,
         'createdTime': 'Thu, 02 Jun 2016 13:16:46 GMT',
         'endTime': 'Thu, 02 Jun 2016 21:40:38 GMT',
@@ -231,7 +251,14 @@ def empty_workflow_action():
 @pytest.fixture
 def valid_workflow_action():
     return {
-        'conf': '<sub-workflow xmlns="uri:oozie:workflow:0.5"> <app-path>/user/oozie/workflows/currency-lookup</app-path> <propagate-configuration /> <name-node>hdfs://hadoop-production</name-node> <job-tracker>yarnRM</job-tracker> <configuration /> </sub-workflow>',
+        'conf': '''
+<sub-workflow xmlns="uri:oozie:workflow:0.5">
+    <app-path>/user/oozie/workflows/currency-lookup</app-path>
+    <propagate-configuration />
+    <name-node>hdfs://hadoop-production</name-node>
+    <job-tracker>yarnRM</job-tracker>
+    <configuration />
+</sub-workflow>''',
         'consoleUrl': 'http://localhost/oozie?job=' + SAMPLE_WF_ID,
         'cred': 'null',
         'data': None,
@@ -337,7 +364,7 @@ def test_parse_configuration():
     assert result == {'key1': 'value1', 'key2': 'value2'}
 
 
-@pytest.mark.parametrize("input, expected", [
+@pytest.mark.parametrize("string, expected", [
     ('DONEWITHERROR', model.Coordinator.Status.DONEWITHERROR),
     ('FAILED', model.Coordinator.Status.FAILED),
     ('IGNORED', model.Coordinator.Status.IGNORED),
@@ -355,11 +382,11 @@ def test_parse_configuration():
     ('SUSPENDEDWITHERROR', model.Coordinator.Status.SUSPENDEDWITHERROR),
     ('wat?', model.Coordinator.Status.UNKNOWN),
 ])
-def test_parse_coordinator_status(input, expected):
-    assert model._parse_coordinator_status(None, input) == expected
+def test_parse_coordinator_status(string, expected):
+    assert model._parse_coordinator_status(None, string) == expected
 
 
-@pytest.mark.parametrize("input, expected", [
+@pytest.mark.parametrize("string, expected", [
     ('FAILED', model.CoordinatorAction.Status.FAILED),
     ('IGNORED', model.CoordinatorAction.Status.IGNORED),
     ('KILLED', model.CoordinatorAction.Status.KILLED),
@@ -373,11 +400,11 @@ def test_parse_coordinator_status(input, expected):
     ('WAITING', model.CoordinatorAction.Status.WAITING),
     ('wat?', model.CoordinatorAction.Status.UNKNOWN),
 ])
-def test_parse_coordinator_action_status(input, expected):
-    assert model._parse_coordinator_action_status(None, input) == expected
+def test_parse_coordinator_action_status(string, expected):
+    assert model._parse_coordinator_action_status(None, string) == expected
 
 
-@pytest.mark.parametrize("input, expected", [
+@pytest.mark.parametrize("string, expected", [
     ('FAILED', model.Workflow.Status.FAILED),
     ('KILLED', model.Workflow.Status.KILLED),
     ('PREP', model.Workflow.Status.PREP),
@@ -386,11 +413,11 @@ def test_parse_coordinator_action_status(input, expected):
     ('SUSPENDED', model.Workflow.Status.SUSPENDED),
     ('wat?', model.Workflow.Status.UNKNOWN),
 ])
-def test_parse_workflow_status(input, expected):
-    assert model._parse_workflow_status(None, input) == expected
+def test_parse_workflow_status(string, expected):
+    assert model._parse_workflow_status(None, string) == expected
 
 
-@pytest.mark.parametrize("input, expected", [
+@pytest.mark.parametrize("string, expected", [
     ('DONE', model.WorkflowAction.Status.DONE),
     ('END_MANUAL', model.WorkflowAction.Status.END_MANUAL),
     ('END_RETRY', model.WorkflowAction.Status.END_RETRY),
@@ -405,8 +432,8 @@ def test_parse_workflow_status(input, expected):
     ('USER_RETRY', model.WorkflowAction.Status.USER_RETRY),
     ('wat?', model.WorkflowAction.Status.UNKNOWN),
 ])
-def test_parse_workflow_action_status(input, expected):
-    assert model._parse_workflow_action_status(None, input) == expected
+def test_parse_workflow_action_status(string, expected):
+    assert model._parse_workflow_action_status(None, string) == expected
 
 
 @pytest.mark.parametrize("status, active, running, suspendable, suspended", [
@@ -420,7 +447,7 @@ def test_parse_workflow_action_status(input, expected):
     (model.Coordinator.Status.PREMATER, True, False, False, False),
     (model.Coordinator.Status.PREP, True, False, True, False),
     (model.Coordinator.Status.PREPPAUSED, True, False, False, False),
-    (model.Coordinator.Status.PREPSUSPENDED,  True, False, False, True),
+    (model.Coordinator.Status.PREPSUSPENDED, True, False, False, True),
     (model.Coordinator.Status.RUNNING, True, True, True, False),
     (model.Coordinator.Status.RUNNINGWITHERROR, True, True, True, False),
     (model.Coordinator.Status.SUCCEEDED, False, False, False, False),

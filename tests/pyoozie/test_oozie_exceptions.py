@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 import requests
 
-from starscream.scheduling.oozie import exceptions
+from pyoozie import exceptions
 
 
 class TestOozieException(object):
@@ -52,10 +52,10 @@ class TestOozieException(object):
         outer = exceptions.OozieException.coordinator_not_found('bad-coord', inner)
         assert outer.caused_by is inner
 
-        inner = exceptions.OozieException.operation_failed('Op failed')
-        outer = exceptions.OozieException.communication_error(caused_by=inner)
-        assert outer.caused_by is inner
-        assert 'Op failed' in str(outer)
+        inner2 = exceptions.OozieException.operation_failed('Op failed')
+        outer2 = exceptions.OozieException.communication_error(caused_by=inner2)
+        assert outer2.caused_by is inner2
+        assert 'Op failed' in str(outer2)
 
     def test_oozie_error_message(self):
         response = requests.Response()
@@ -74,5 +74,5 @@ class TestOozieException(object):
             'Content-Length': '968',
             'Content-Type': 'text/html;charset=utf-8',
         }
-        outer = exceptions.OozieException.communication_error(caused_by=inner)
-        assert 'Bad request' in str(outer)
+        outer2 = exceptions.OozieException.communication_error(caused_by=inner)
+        assert 'Bad request' in str(outer2)

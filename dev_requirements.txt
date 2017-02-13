@@ -5,4 +5,5 @@ pytest-cov
 pytest-mock
 pytest-randomly
 pytest>=2.7
+requests-mock
 xmltodict
