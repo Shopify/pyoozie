@@ -134,6 +134,19 @@ def test_workflow_builder():
     actual_xml = builder.build()
     assert xml_to_dict_unordered(expected) == xml_to_dict_unordered(actual_xml)
 
+    # Does it throw an exception on a bad name?
+    with pytest.raises(AssertionError) as assertion_info:
+        WorkflowBuilder(
+            name='descriptive-name'
+        ).add_action(
+            name='Name with invalid characters',
+            action=Shell(exec_command='echo "test"'),
+            action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
+            kill_on_error='Failure message',
+        )
+    assert str(assertion_info.value) == \
+        "Identifier must match ^[a-zA-Z_][\\-_a-zA-Z0-9]{0,38}$, 'Name with invalid characters' does not"
+
 
 def test_coordinator_builder(coordinator_xml_with_controls, workflow_app_path):
 
