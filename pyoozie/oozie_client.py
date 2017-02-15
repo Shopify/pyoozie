@@ -2,7 +2,6 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
-import json
 import logging
 import requests
 
@@ -97,7 +96,11 @@ class OozieClient(object):
                 logger.error(response.headers)
             message = "Unable to contact Oozie server at {}".format(self._url)
             raise OozieException.communication_error(message, err)
-        versions = json.loads(response.content)
+        try:
+            versions = response.json()
+        except ValueError as err:
+            message = "Unexpected response from Oozie server at {} ".format(self._url)
+            raise OozieException.communication_error(message, err)
         if 2 not in versions:
             message = "Oozie server at {} does not support API version 2 (supported: {})".format(self._url, versions)
             raise OozieException.communication_error(message)
@@ -134,7 +137,10 @@ class OozieClient(object):
                              response.reason,
                              response.elapsed.microseconds / 1000.0)
             raise OozieException.communication_error(caused_by=err)
-        return json.loads(response.content) if response.content else None
+        try:
+            return response.json() if len(response.content) else None
+        except ValueError as err:
+            raise OozieException.communication_error(caused_by=err)
 
     def _get(self, endpoint, content_type=None):
         return self._request('GET', endpoint, content_type)

@@ -159,6 +159,29 @@ class TestOozieClientCore(object):
                 OozieClient(**oozie_config)
         assert 'Unable to contact Oozie server' in str(err)
 
+        with pytest.raises(OozieException) as err:
+            with requests_mock.mock() as m:
+                m.get('http://localhost:11000/oozie/versions', text='] bad JSON! [')
+                OozieClient(**oozie_config)
+        assert 'Unexpected response from Oozie server' in str(err)
+
+    def test_request(self, api):
+        with requests_mock.mock() as m:
+            m.get('http://localhost:11000/oozie/v2/endpoint', text='{"result": "pass"}')
+            result = api._request('GET', 'endpoint', None, None)
+            assert result['result'] == 'pass'
+
+        with requests_mock.mock() as m:
+            m.get('http://localhost:11000/oozie/v2/endpoint')
+            result = api._request('GET', 'endpoint', None, None)
+            assert result is None
+
+        with requests_mock.mock() as m:
+            m.get('http://localhost:11000/oozie/v2/endpoint', text='>>> fail <<<')
+            with pytest.raises(OozieException) as err:
+                api._request('GET', 'endpoint', None, None)
+            assert 'No JSON object could be decoded' in str(err)
+
     def test_get(self, api):
         with requests_mock.mock() as m:
             m.get('http://localhost:11000/oozie/v2/endpoint', text='{"result": "pass"}')
