@@ -46,10 +46,7 @@ class XMLSerializable(object):
 
     @abstractmethod
     def _xml(self, doc, tag, text):
-        raise NotImplementedError
-
-    def __str__(self):
-        return self.xml_tag
+        raise NotImplementedError()
 
 
 class _PropertyList(XMLSerializable, dict):

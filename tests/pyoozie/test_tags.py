@@ -7,7 +7,7 @@ import decimal
 import pytest
 
 from pyoozie import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, Email
-from pyoozie.tags import _validate
+from pyoozie.tags import _validate, XMLSerializable
 from tests.utils import xml_to_dict_unordered
 
 
@@ -84,6 +84,16 @@ def test_validate():
         "[\\-_a-zA-Z0-9]{0,38}$, 'id.with.illlegal.chars' does not"
 
 
+def test_xml_serializable():
+    class MyTag(XMLSerializable):
+        def _xml(self, doc, tag, text):
+            super(MyTag, self)._xml(doc, tag, text)
+
+    my_tag = MyTag('tag')
+    with pytest.raises(NotImplementedError):
+        my_tag.xml()
+
+
 def test_parameters(expected_property_values, expected_property_values_xml):
     actual = Parameters(expected_property_values).xml(indent=True)
     expected = '<parameters>{xml}</parameters>'.format(xml=expected_property_values_xml)
@@ -116,10 +126,13 @@ def test_shell():
             'mapred.job.queue.name': '${queueName}'
         },
         arguments=['A', 'B'],
-        env_vars=None,
+        env_vars={
+            'ENVIRONMENT': 'production',
+            'RESOURCES': 'large',
+        },
         files=['/users/blabla/testfile.sh#testfile'],
         archives=['/users/blabla/testarchive.jar#testarchive'],
-        capture_output=False
+        capture_output=True,
     ).xml(indent=True)
     assert xml_to_dict_unordered('''
     <shell xmlns="uri:oozie:shell-action:0.3">
@@ -137,7 +150,18 @@ def test_shell():
         <argument>B</argument>
         <file>/users/blabla/testfile.sh#testfile</file>
         <archive>/users/blabla/testarchive.jar#testarchive</archive>
+        <env-var>ENVIRONMENT=production</env-var>
+        <env-var>RESOURCES=large</env-var>
+        <capture-output />
     </shell>''') == xml_to_dict_unordered(actual)
+
+    # Test using prepares fails
+    with pytest.raises(NotImplementedError) as assertion_info:
+        Shell(
+            exec_command='${EXEC}',
+            prepares=['anything'],
+        ).xml()
+    assert str(assertion_info.value) == "Shell action's prepares has not yet been implemented"
 
 
 def test_subworkflow():
