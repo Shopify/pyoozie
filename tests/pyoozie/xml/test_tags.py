@@ -7,7 +7,7 @@ import decimal
 import pytest
 
 from pyoozie import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, Email
-from pyoozie.tags import _validate, XMLSerializable
+from pyoozie.xml._tags import _validate, XMLSerializable
 from tests.utils import xml_to_dict_unordered
 
 

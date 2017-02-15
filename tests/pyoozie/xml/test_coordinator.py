@@ -4,7 +4,8 @@ from datetime import datetime, timedelta
 
 import pytest
 
-from pyoozie.coordinator import Coordinator, ExecutionOrder, Configuration, Parameters
+from pyoozie import ExecutionOrder, Configuration, Parameters
+from pyoozie.xml import Coordinator
 from tests.utils import xml_to_dict_unordered
 
 
