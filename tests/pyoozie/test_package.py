@@ -8,14 +8,17 @@ def test_version():
 
 
 def test_imports():
-    # pylint: disable=unused-variable
-
     # pyoozie.xml._coordinator imports
-    from pyoozie import ExecutionOrder  # noqa: ignore=F401
+    from pyoozie import ExecutionOrder
 
     # pyoozie.xml._tags imports
-    from pyoozie import Parameters, Configuration, Credentials, Shell, SubWorkflow  # noqa: ignore=F401
-    from pyoozie import GlobalConfiguration, Email  # noqa: ignore=F401
+    from pyoozie import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, Email
 
     # pyoozie.xml._builder imports
-    from pyoozie import WorkflowBuilder, CoordinatorBuilder  # noqa: ignore=F401
+    from pyoozie import WorkflowBuilder, CoordinatorBuilder
+
+    # Does all contain what we expect?
+    expected_all = set(_.__name__ for _ in (ExecutionOrder, Parameters, Configuration, Credentials, Shell,
+                                            SubWorkflow, GlobalConfiguration, Email, WorkflowBuilder,
+                                            CoordinatorBuilder))
+    assert set(pyoozie.__all__) == expected_all
