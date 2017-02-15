@@ -1,19 +1,22 @@
+# Copyright (c) 2017 "Shopify inc." All rights reserved.
+# Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
+import json
 import logging
 import requests
-import simplejson as json
 
 from pyoozie.exceptions import OozieException
 from pyoozie.model import ArtifactType, Coordinator, CoordinatorAction, \
-    Workflow, WorkflowAction, parse_coordinator_id, parse_workflow_id
+    Workflow, WorkflowAction, parse_coordinator_id, parse_workflow_id, \
+    CoordinatorStatus, CoordinatorActionStatus, WorkflowStatus, WorkflowActionStatus
 from pyoozie.builder import _coordinator_submission_xml, _workflow_submission_xml
 
-logger = logging.getLogger('pyoozie.OozieAPI')
+logger = logging.getLogger('pyoozie.OozieClient')
 logging.getLogger('requests').setLevel(logging.WARNING)
 
 
-class OozieAPI(object):
+class OozieClient(object):
 
     JOB_TYPE_STRINGS = {
         ArtifactType.Coordinator: ('coordinator', 'coordinatorjobs'),
@@ -28,10 +31,10 @@ class OozieAPI(object):
     }
 
     STATUS_TYPES = {
-        ArtifactType.Coordinator: Coordinator.Status,
-        ArtifactType.CoordinatorAction: CoordinatorAction.Status,
-        ArtifactType.Workflow: Workflow.Status,
-        ArtifactType.WorkflowAction: WorkflowAction.Status,
+        ArtifactType.Coordinator: CoordinatorStatus,
+        ArtifactType.CoordinatorAction: CoordinatorActionStatus,
+        ArtifactType.Workflow: WorkflowStatus,
+        ArtifactType.WorkflowAction: WorkflowActionStatus,
     }
 
     class Stats(object):
@@ -79,7 +82,7 @@ class OozieAPI(object):
         self._user = user
         self._timeout = timeout or 30
         self._verbose = verbose  # Note: change default for verbose!
-        self._stats = OozieAPI.Stats()
+        self._stats = OozieClient.Stats()
         self._test_connection()
 
     def _test_connection(self):
@@ -146,7 +149,7 @@ class OozieAPI(object):
         if not to_logger:
             to_logger = logger
         to_logger.info(
-            "OozieAPI Stats: requests=%s errors=%s bytes=%s elapsed=%sms",
+            "OozieClient Stats: requests=%s errors=%s bytes=%s elapsed=%sms",
             self._stats.requests,
             self._stats.errors,
             self._stats.bytes_received,
@@ -243,13 +246,13 @@ class OozieAPI(object):
         return self._jobs_query(ArtifactType.Workflow, name=name, user=user, limit=limit)
 
     def jobs_all_active_workflows(self, user=None):
-        return self._jobs_query(ArtifactType.Workflow, status=Workflow.Status.active(), user=user)
+        return self._jobs_query(ArtifactType.Workflow, status=WorkflowStatus.active(), user=user)
 
     def jobs_all_running_workflows(self, user=None):
-        return self._jobs_query(ArtifactType.Workflow, status=Workflow.Status.running(), user=user)
+        return self._jobs_query(ArtifactType.Workflow, status=WorkflowStatus.running(), user=user)
 
     def jobs_running_workflows(self, name, user=None):
-        return self._jobs_query(ArtifactType.Workflow, name=name, status=Workflow.Status.running(), user=user)
+        return self._jobs_query(ArtifactType.Workflow, name=name, status=WorkflowStatus.running(), user=user)
 
     def jobs_last_workflow(self, name, user=None):
         jobs = self._jobs_query(ArtifactType.Workflow, name=name, user=user, limit=1)
@@ -266,13 +269,13 @@ class OozieAPI(object):
         return self._jobs_query(ArtifactType.Coordinator, name=name, user=user, limit=limit)
 
     def jobs_all_active_coordinators(self, user=None):
-        return self._jobs_query(ArtifactType.Coordinator, status=Coordinator.Status.active(), user=user)
+        return self._jobs_query(ArtifactType.Coordinator, status=CoordinatorStatus.active(), user=user)
 
     def jobs_all_running_coordinators(self, user=None):
-        return self._jobs_query(ArtifactType.Coordinator, status=Coordinator.Status.running(), user=user)
+        return self._jobs_query(ArtifactType.Coordinator, status=CoordinatorStatus.running(), user=user)
 
     def jobs_running_coordinators(self, name, user=None):
-        return self._jobs_query(ArtifactType.Coordinator, name=name, status=Coordinator.Status.running(), user=user)
+        return self._jobs_query(ArtifactType.Coordinator, name=name, status=CoordinatorStatus.running(), user=user)
 
     def jobs_last_coordinator(self, name, user=None):
         jobs = self._jobs_query(ArtifactType.Coordinator, name=name, user=user, limit=1)
@@ -388,7 +391,7 @@ class OozieAPI(object):
 
     def job_coordinator_all_active_actions(self, coordinator_id=None, name=None, user=None, coordinator=None):
         coord_id = self._decode_coord_id(coordinator_id, name, user, coordinator)
-        coord = self._coordinator_query(coord_id, status=CoordinatorAction.Status.active())
+        coord = self._coordinator_query(coord_id, status=CoordinatorActionStatus.active())
         if coordinator:
             # Copy over any actions to the existing object
             coordinator.actions = coordinator.actions or {}
@@ -517,7 +520,7 @@ class OozieAPI(object):
 
     def job_workflow_start(self, workflow_id=None, name=None, user=None):
         workflow = self.job_workflow_info(workflow_id, name, user)
-        if workflow.status == Workflow.Status.PREP:
+        if workflow.status == WorkflowStatus.PREP:
             self._put('job/{}?action=start'.format(workflow.id))
             return True
         return False

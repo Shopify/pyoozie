@@ -33,7 +33,6 @@ setup(
         'enum34>=0.9.23',
         'requests>=2.12.3',
         'setuptools>=0.9',
-        'simplejson',
         'six',
         'untangle',
         'yattag>=1.7.2',

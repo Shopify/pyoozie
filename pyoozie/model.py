@@ -1,3 +1,5 @@
+# Copyright (c) 2017 "Shopify inc." All rights reserved.
+# Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
 from collections import namedtuple
@@ -8,15 +10,6 @@ from enum import Enum
 import untangle
 
 from pyoozie.exceptions import OozieException
-
-
-_StatusValue = namedtuple('_StatusValue', ['status_id', 'is_active', 'is_running', 'is_suspendable', 'is_suspended'])
-
-
-def _status(status_id, is_active=False, is_running=False, is_suspendable=False, is_suspended=False):
-    if is_running and not is_active:
-        raise OozieException.parse_error("A running status implies active")
-    return _StatusValue(status_id, is_active, is_running, is_suspendable, is_suspended)
 
 
 _COORD_ID_RE = re.compile('^(?P<id>.*-C)(?:@(?P<action>[1-9][0-9]*))?$')
@@ -104,30 +97,30 @@ def _parse_configuration(_, conf_string):
 
 def _parse_workflow_actions(artifact, actions_list):
     actions_list = actions_list or []
-    actions = [WorkflowAction(artifact._oozie_api, action, parent=artifact) for action in actions_list]
+    actions = [WorkflowAction(artifact._client, action, parent=artifact) for action in actions_list]
     return {action.name: action for action in actions}
 
 
 def _parse_coordinator_actions(artifact, actions_list):
     actions_list = actions_list or []
-    actions = [CoordinatorAction(artifact._oozie_api, action, parent=artifact) for action in actions_list]
+    actions = [CoordinatorAction(artifact._client, action, parent=artifact) for action in actions_list]
     return {action.actionNumber: action for action in actions}
 
 
 def _parse_coordinator_status(_, status_string):
-    return Coordinator.Status.parse(status_string)
+    return CoordinatorStatus.parse(status_string)
 
 
 def _parse_coordinator_action_status(_, status_string):
-    return CoordinatorAction.Status.parse(status_string)
+    return CoordinatorActionStatus.parse(status_string)
 
 
 def _parse_workflow_status(_, status_string):
-    return Workflow.Status.parse(status_string)
+    return WorkflowStatus.parse(status_string)
 
 
 def _parse_workflow_action_status(_, status_string):
-    return WorkflowAction.Status.parse(status_string)
+    return WorkflowActionStatus.parse(status_string)
 
 
 class ArtifactType(Enum):
@@ -137,55 +130,125 @@ class ArtifactType(Enum):
     WorkflowAction = 4
 
 
+_StatusValue = namedtuple('_StatusValue', ['status_id', 'is_active', 'is_running', 'is_suspendable', 'is_suspended'])
+
+
+def _status(status_id, is_active=False, is_running=False, is_suspendable=False, is_suspended=False):
+    if is_running and not is_active:
+        raise OozieException.parse_error("A running status implies active")
+    return _StatusValue(status_id, is_active, is_running, is_suspendable, is_suspended)
+
+
+class _StatusEnum(Enum):
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def parse(cls, status_string):
+        values = cls.__members__
+        return values.get(status_string, values['UNKNOWN'])
+
+    @classmethod
+    def active(cls):
+        return [status for status in cls if status.is_active()]
+
+    @classmethod
+    def running(cls):
+        return [status for status in cls if status.is_running()]
+
+    @classmethod
+    def suspendable(cls):
+        return [status for status in cls if status.is_suspendable()]
+
+    @classmethod
+    def suspended(cls):
+        return [status for status in cls if status.is_suspended()]
+
+    def is_unknown(self):
+        return self._value_.status_id == 0
+
+    def is_active(self):
+        return self._value_.is_active
+
+    def is_running(self):
+        return self._value_.is_running
+
+    def is_suspendable(self):
+        return self._value_.is_suspendable
+
+    def is_suspended(self):
+        return self._value_.is_suspended
+
+
+class CoordinatorStatus(_StatusEnum):
+    UNKNOWN = _status(0)
+    DONEWITHERROR = _status(1)
+    FAILED = _status(2)
+    IGNORED = _status(3)
+    KILLED = _status(4)
+    PAUSED = _status(5, is_active=True)
+    PAUSEDWITHERROR = _status(6, is_active=True)
+    PREMATER = _status(7, is_active=True)
+    PREP = _status(8, is_active=True, is_suspendable=True)
+    PREPPAUSED = _status(9, is_active=True)
+    PREPSUSPENDED = _status(10, is_active=True, is_suspended=True)
+    RUNNING = _status(11, is_active=True, is_running=True, is_suspendable=True)
+    RUNNINGWITHERROR = _status(12, is_active=True, is_running=True, is_suspendable=True)
+    SUCCEEDED = _status(13)
+    SUSPENDED = _status(14, is_active=True, is_running=True, is_suspended=True)
+    SUSPENDEDWITHERROR = _status(15, is_active=True, is_running=True, is_suspended=True)
+
+
+class CoordinatorActionStatus(_StatusEnum):
+    UNKNOWN = _status(0)
+    FAILED = _status(1)
+    IGNORED = _status(2)
+    KILLED = _status(3)
+    READY = _status(4)
+    RUNNING = _status(5, is_active=True, is_running=True, is_suspendable=True)
+    SKIPPED = _status(6)
+    SUBMITTED = _status(7, is_active=True)
+    SUCCEEDED = _status(8)
+    SUSPENDED = _status(9, is_active=True, is_running=True, is_suspended=True)
+    TIMEDOUT = _status(10)
+    WAITING = _status(11)
+
+
+class WorkflowStatus(_StatusEnum):
+    UNKNOWN = _status(0)
+    FAILED = _status(1)
+    KILLED = _status(2)
+    PREP = _status(3, is_active=True)
+    RUNNING = _status(4, is_active=True, is_running=True, is_suspendable=True)
+    SUCCEEDED = _status(5)
+    SUSPENDED = _status(6, is_active=True, is_running=True, is_suspended=True)
+
+
+class WorkflowActionStatus(_StatusEnum):
+    UNKNOWN = _status(0)
+    DONE = _status(1)
+    END_MANUAL = _status(2)
+    END_RETRY = _status(3)
+    ERROR = _status(4)
+    FAILED = _status(5)
+    KILLED = _status(6)
+    OK = _status(7)
+    PREP = _status(8)
+    RUNNING = _status(9, is_active=True, is_running=True)
+    START_MANUAL = _status(10)
+    START_RETRY = _status(11)
+    USER_RETRY = _status(12, is_active=True)
+
+
 class _OozieArtifact(object):
 
     REQUIRED_KEYS = {}
 
     SUPPORTED_KEYS = {'toString': None}
 
-    class StatusEnum(Enum):
-
-        def __str__(self):
-            return self.name
-
-        @classmethod
-        def parse(cls, status_string):
-            values = cls.__members__
-            return values.get(status_string, values['UNKNOWN'])
-
-        @classmethod
-        def active(cls):
-            return [status for status in cls if status.is_active()]
-
-        @classmethod
-        def running(cls):
-            return [status for status in cls if status.is_running()]
-
-        @classmethod
-        def suspendable(cls):
-            return [status for status in cls if status.is_suspendable()]
-
-        @classmethod
-        def suspended(cls):
-            return [status for status in cls if status.is_suspended()]
-
-        def is_unknown(self):
-            return self._value_.status_id == 0
-
-        def is_active(self):
-            return self._value_.is_active
-
-        def is_running(self):
-            return self._value_.is_running
-
-        def is_suspendable(self):
-            return self._value_.is_suspendable
-
-        def is_suspended(self):
-            return self._value_.is_suspended
-
-    def __init__(self, oozie_api, details, parent=None):
-        self._oozie_api = oozie_api
+    def __init__(self, oozie_client, details, parent=None):
+        self._client = oozie_client
         self._parent = parent
         details = dict(details)
         for key, func in self.REQUIRED_KEYS.items():
@@ -261,24 +324,6 @@ class Coordinator(_OozieArtifact):
         'user': None,
     }
 
-    class Status(_OozieArtifact.StatusEnum):
-        UNKNOWN = _status(0)
-        DONEWITHERROR = _status(1)
-        FAILED = _status(2)
-        IGNORED = _status(3)
-        KILLED = _status(4)
-        PAUSED = _status(5, is_active=True)
-        PAUSEDWITHERROR = _status(6, is_active=True)
-        PREMATER = _status(7, is_active=True)
-        PREP = _status(8, is_active=True, is_suspendable=True)
-        PREPPAUSED = _status(9, is_active=True)
-        PREPSUSPENDED = _status(10, is_active=True, is_suspended=True)
-        RUNNING = _status(11, is_active=True, is_running=True, is_suspendable=True)
-        RUNNINGWITHERROR = _status(12, is_active=True, is_running=True, is_suspendable=True)
-        SUCCEEDED = _status(13)
-        SUSPENDED = _status(14, is_active=True, is_running=True, is_suspended=True)
-        SUSPENDEDWITHERROR = _status(15, is_active=True, is_running=True, is_suspended=True)
-
     def __init__(self, *args, **kwargs):
         super(Coordinator, self).__init__(*args, **kwargs)
         self._workflow = None
@@ -286,7 +331,7 @@ class Coordinator(_OozieArtifact):
     def fill_in_details(self):
         # Undefined `conf` is probably bad, empty is ok
         if self.conf is None:
-            coord = self._oozie_api.job_last_coordinator_info(coordinator_id=self.coordJobId)
+            coord = self._client.job_last_coordinator_info(coordinator_id=self.coordJobId)
             return coord
         else:
             return self
@@ -315,7 +360,7 @@ class Coordinator(_OozieArtifact):
         if number in self.actions:
             action = self.actions[number]
         else:
-            action = self._oozie_api.job_coordinator_action(action_number=number, coordinator=self)
+            action = self._client.job_coordinator_action(action_number=number, coordinator=self)
         return action
 
 
@@ -346,22 +391,8 @@ class CoordinatorAction(_OozieArtifact):
         'type': None,
     }
 
-    class Status(_OozieArtifact.StatusEnum):
-        UNKNOWN = _status(0)
-        FAILED = _status(1)
-        IGNORED = _status(2)
-        KILLED = _status(3)
-        READY = _status(4)
-        RUNNING = _status(5, is_active=True, is_running=True, is_suspendable=True)
-        SKIPPED = _status(6)
-        SUBMITTED = _status(7, is_active=True)
-        SUCCEEDED = _status(8)
-        SUSPENDED = _status(9, is_active=True, is_running=True, is_suspended=True)
-        TIMEDOUT = _status(10)
-        WAITING = _status(11)
-
     def __init__(self, *args, **kwargs):
-        self.status = CoordinatorAction.Status.UNKNOWN
+        self.status = CoordinatorActionStatus.UNKNOWN
         super(CoordinatorAction, self).__init__(*args, **kwargs)
         self._workflow = None
 
@@ -391,7 +422,7 @@ class CoordinatorAction(_OozieArtifact):
         # TODO: revisit this to support multiple runs
         # Use .../job/...-C@xx?show=allruns to query
         if not self._workflow and self.externalId:
-            workflow = self._oozie_api.job_workflow_info(workflow_id=self.externalId)
+            workflow = self._client.job_workflow_info(workflow_id=self.externalId)
             if workflow:
                 workflow._parent = self
                 self._workflow = workflow
@@ -399,7 +430,7 @@ class CoordinatorAction(_OozieArtifact):
 
     def coordinator(self):
         if not self._parent:
-            self._parent = self._oozie_api.job_coordinator_info(coordinator_id=self.coordJobId)
+            self._parent = self._client.job_coordinator_info(coordinator_id=self.coordJobId)
         return self._parent
 
     def coordinator_action(self):
@@ -435,15 +466,6 @@ class Workflow(_OozieArtifact):
         'user': None,
     }
 
-    class Status(_OozieArtifact.StatusEnum):
-        UNKNOWN = _status(0)
-        FAILED = _status(1)
-        KILLED = _status(2)
-        PREP = _status(3, is_active=True)
-        RUNNING = _status(4, is_active=True, is_running=True, is_suspendable=True)
-        SUCCEEDED = _status(5)
-        SUSPENDED = _status(6, is_active=True, is_running=True, is_suspended=True)
-
     def __init__(self, *args, **kwargs):
         super(Workflow, self).__init__(*args, **kwargs)
         self._workflow = None
@@ -451,7 +473,7 @@ class Workflow(_OozieArtifact):
     def fill_in_details(self):
         # Undefined `conf` is probably bad, empty is ok
         if self.conf is None:
-            workflow = self._oozie_api.job_workflow_info(workflow_id=self.id)
+            workflow = self._client.job_workflow_info(workflow_id=self.id)
             return workflow
         else:
             return self
@@ -480,7 +502,7 @@ class Workflow(_OozieArtifact):
 
     def parent(self):
         if not self._parent and self.parentId:
-            self._parent = self._oozie_api.job_action_info(self.parentId)
+            self._parent = self._client.job_action_info(self.parentId)
         return self._parent
 
     def action(self, name):
@@ -518,21 +540,6 @@ class WorkflowAction(_OozieArtifact):
         'userRetryMax': None,
     }
 
-    class Status(_OozieArtifact.StatusEnum):
-        UNKNOWN = _status(0)
-        DONE = _status(1)
-        END_MANUAL = _status(2)
-        END_RETRY = _status(3)
-        ERROR = _status(4)
-        FAILED = _status(5)
-        KILLED = _status(6)
-        OK = _status(7)
-        PREP = _status(8)
-        RUNNING = _status(9, is_active=True, is_running=True)
-        START_MANUAL = _status(10)
-        START_RETRY = _status(11)
-        USER_RETRY = _status(12, is_active=True)
-
     def __init__(self, *args, **kwargs):
         super(WorkflowAction, self).__init__(*args, **kwargs)
         self._subworkflow = None
@@ -558,7 +565,7 @@ class WorkflowAction(_OozieArtifact):
 
     def subworkflow(self):
         if not self._subworkflow and self.type == 'sub-workflow' and self.externalId:
-            workflow = self._oozie_api.job_workflow_info(self.externalId)
+            workflow = self._client.job_workflow_info(self.externalId)
             if workflow:
                 workflow._parent = self
                 self._subworkflow = workflow
@@ -576,5 +583,5 @@ class WorkflowAction(_OozieArtifact):
 
     def parent(self):
         if not self._parent and self.externalId:
-            self._parent = self._oozie_api.job_workflow_info(self.externalId)
+            self._parent = self._client.job_workflow_info(self.externalId)
         return self._parent

@@ -1,3 +1,5 @@
+# Copyright (c) 2017 "Shopify inc." All rights reserved.
+# Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
 from datetime import datetime
@@ -366,94 +368,94 @@ def test_parse_configuration():
 
 
 @pytest.mark.parametrize("string, expected", [
-    ('DONEWITHERROR', model.Coordinator.Status.DONEWITHERROR),
-    ('FAILED', model.Coordinator.Status.FAILED),
-    ('IGNORED', model.Coordinator.Status.IGNORED),
-    ('KILLED', model.Coordinator.Status.KILLED),
-    ('PAUSED', model.Coordinator.Status.PAUSED),
-    ('PAUSEDWITHERROR', model.Coordinator.Status.PAUSEDWITHERROR),
-    ('PREMATER', model.Coordinator.Status.PREMATER),
-    ('PREP', model.Coordinator.Status.PREP),
-    ('PREPPAUSED', model.Coordinator.Status.PREPPAUSED),
-    ('PREPSUSPENDED', model.Coordinator.Status.PREPSUSPENDED),
-    ('RUNNING', model.Coordinator.Status.RUNNING),
-    ('RUNNINGWITHERROR', model.Coordinator.Status.RUNNINGWITHERROR),
-    ('SUCCEEDED', model.Coordinator.Status.SUCCEEDED),
-    ('SUSPENDED', model.Coordinator.Status.SUSPENDED),
-    ('SUSPENDEDWITHERROR', model.Coordinator.Status.SUSPENDEDWITHERROR),
-    ('wat?', model.Coordinator.Status.UNKNOWN),
+    ('DONEWITHERROR', model.CoordinatorStatus.DONEWITHERROR),
+    ('FAILED', model.CoordinatorStatus.FAILED),
+    ('IGNORED', model.CoordinatorStatus.IGNORED),
+    ('KILLED', model.CoordinatorStatus.KILLED),
+    ('PAUSED', model.CoordinatorStatus.PAUSED),
+    ('PAUSEDWITHERROR', model.CoordinatorStatus.PAUSEDWITHERROR),
+    ('PREMATER', model.CoordinatorStatus.PREMATER),
+    ('PREP', model.CoordinatorStatus.PREP),
+    ('PREPPAUSED', model.CoordinatorStatus.PREPPAUSED),
+    ('PREPSUSPENDED', model.CoordinatorStatus.PREPSUSPENDED),
+    ('RUNNING', model.CoordinatorStatus.RUNNING),
+    ('RUNNINGWITHERROR', model.CoordinatorStatus.RUNNINGWITHERROR),
+    ('SUCCEEDED', model.CoordinatorStatus.SUCCEEDED),
+    ('SUSPENDED', model.CoordinatorStatus.SUSPENDED),
+    ('SUSPENDEDWITHERROR', model.CoordinatorStatus.SUSPENDEDWITHERROR),
+    ('wat?', model.CoordinatorStatus.UNKNOWN),
 ])
 def test_parse_coordinator_status(string, expected):
     assert model._parse_coordinator_status(None, string) == expected
 
 
 @pytest.mark.parametrize("string, expected", [
-    ('FAILED', model.CoordinatorAction.Status.FAILED),
-    ('IGNORED', model.CoordinatorAction.Status.IGNORED),
-    ('KILLED', model.CoordinatorAction.Status.KILLED),
-    ('READY', model.CoordinatorAction.Status.READY),
-    ('RUNNING', model.CoordinatorAction.Status.RUNNING),
-    ('SKIPPED', model.CoordinatorAction.Status.SKIPPED),
-    ('SUBMITTED', model.CoordinatorAction.Status.SUBMITTED),
-    ('SUCCEEDED', model.CoordinatorAction.Status.SUCCEEDED),
-    ('SUSPENDED', model.CoordinatorAction.Status.SUSPENDED),
-    ('TIMEDOUT', model.CoordinatorAction.Status.TIMEDOUT),
-    ('WAITING', model.CoordinatorAction.Status.WAITING),
-    ('wat?', model.CoordinatorAction.Status.UNKNOWN),
+    ('FAILED', model.CoordinatorActionStatus.FAILED),
+    ('IGNORED', model.CoordinatorActionStatus.IGNORED),
+    ('KILLED', model.CoordinatorActionStatus.KILLED),
+    ('READY', model.CoordinatorActionStatus.READY),
+    ('RUNNING', model.CoordinatorActionStatus.RUNNING),
+    ('SKIPPED', model.CoordinatorActionStatus.SKIPPED),
+    ('SUBMITTED', model.CoordinatorActionStatus.SUBMITTED),
+    ('SUCCEEDED', model.CoordinatorActionStatus.SUCCEEDED),
+    ('SUSPENDED', model.CoordinatorActionStatus.SUSPENDED),
+    ('TIMEDOUT', model.CoordinatorActionStatus.TIMEDOUT),
+    ('WAITING', model.CoordinatorActionStatus.WAITING),
+    ('wat?', model.CoordinatorActionStatus.UNKNOWN),
 ])
 def test_parse_coordinator_action_status(string, expected):
     assert model._parse_coordinator_action_status(None, string) == expected
 
 
 @pytest.mark.parametrize("string, expected", [
-    ('FAILED', model.Workflow.Status.FAILED),
-    ('KILLED', model.Workflow.Status.KILLED),
-    ('PREP', model.Workflow.Status.PREP),
-    ('RUNNING', model.Workflow.Status.RUNNING),
-    ('SUCCEEDED', model.Workflow.Status.SUCCEEDED),
-    ('SUSPENDED', model.Workflow.Status.SUSPENDED),
-    ('wat?', model.Workflow.Status.UNKNOWN),
+    ('FAILED', model.WorkflowStatus.FAILED),
+    ('KILLED', model.WorkflowStatus.KILLED),
+    ('PREP', model.WorkflowStatus.PREP),
+    ('RUNNING', model.WorkflowStatus.RUNNING),
+    ('SUCCEEDED', model.WorkflowStatus.SUCCEEDED),
+    ('SUSPENDED', model.WorkflowStatus.SUSPENDED),
+    ('wat?', model.WorkflowStatus.UNKNOWN),
 ])
 def test_parse_workflow_status(string, expected):
     assert model._parse_workflow_status(None, string) == expected
 
 
 @pytest.mark.parametrize("string, expected", [
-    ('DONE', model.WorkflowAction.Status.DONE),
-    ('END_MANUAL', model.WorkflowAction.Status.END_MANUAL),
-    ('END_RETRY', model.WorkflowAction.Status.END_RETRY),
-    ('ERROR', model.WorkflowAction.Status.ERROR),
-    ('FAILED', model.WorkflowAction.Status.FAILED),
-    ('KILLED', model.WorkflowAction.Status.KILLED),
-    ('OK', model.WorkflowAction.Status.OK),
-    ('PREP', model.WorkflowAction.Status.PREP),
-    ('RUNNING', model.WorkflowAction.Status.RUNNING),
-    ('START_MANUAL', model.WorkflowAction.Status.START_MANUAL),
-    ('START_RETRY', model.WorkflowAction.Status.START_RETRY),
-    ('USER_RETRY', model.WorkflowAction.Status.USER_RETRY),
-    ('wat?', model.WorkflowAction.Status.UNKNOWN),
+    ('DONE', model.WorkflowActionStatus.DONE),
+    ('END_MANUAL', model.WorkflowActionStatus.END_MANUAL),
+    ('END_RETRY', model.WorkflowActionStatus.END_RETRY),
+    ('ERROR', model.WorkflowActionStatus.ERROR),
+    ('FAILED', model.WorkflowActionStatus.FAILED),
+    ('KILLED', model.WorkflowActionStatus.KILLED),
+    ('OK', model.WorkflowActionStatus.OK),
+    ('PREP', model.WorkflowActionStatus.PREP),
+    ('RUNNING', model.WorkflowActionStatus.RUNNING),
+    ('START_MANUAL', model.WorkflowActionStatus.START_MANUAL),
+    ('START_RETRY', model.WorkflowActionStatus.START_RETRY),
+    ('USER_RETRY', model.WorkflowActionStatus.USER_RETRY),
+    ('wat?', model.WorkflowActionStatus.UNKNOWN),
 ])
 def test_parse_workflow_action_status(string, expected):
     assert model._parse_workflow_action_status(None, string) == expected
 
 
 @pytest.mark.parametrize("status, active, running, suspendable, suspended", [
-    (model.Coordinator.Status.UNKNOWN, False, False, False, False),
-    (model.Coordinator.Status.DONEWITHERROR, False, False, False, False),
-    (model.Coordinator.Status.FAILED, False, False, False, False),
-    (model.Coordinator.Status.IGNORED, False, False, False, False),
-    (model.Coordinator.Status.KILLED, False, False, False, False),
-    (model.Coordinator.Status.PAUSED, True, False, False, False),
-    (model.Coordinator.Status.PAUSEDWITHERROR, True, False, False, False),
-    (model.Coordinator.Status.PREMATER, True, False, False, False),
-    (model.Coordinator.Status.PREP, True, False, True, False),
-    (model.Coordinator.Status.PREPPAUSED, True, False, False, False),
-    (model.Coordinator.Status.PREPSUSPENDED, True, False, False, True),
-    (model.Coordinator.Status.RUNNING, True, True, True, False),
-    (model.Coordinator.Status.RUNNINGWITHERROR, True, True, True, False),
-    (model.Coordinator.Status.SUCCEEDED, False, False, False, False),
-    (model.Coordinator.Status.SUSPENDED, True, True, False, True),
-    (model.Coordinator.Status.SUSPENDEDWITHERROR, True, True, False, True),
+    (model.CoordinatorStatus.UNKNOWN, False, False, False, False),
+    (model.CoordinatorStatus.DONEWITHERROR, False, False, False, False),
+    (model.CoordinatorStatus.FAILED, False, False, False, False),
+    (model.CoordinatorStatus.IGNORED, False, False, False, False),
+    (model.CoordinatorStatus.KILLED, False, False, False, False),
+    (model.CoordinatorStatus.PAUSED, True, False, False, False),
+    (model.CoordinatorStatus.PAUSEDWITHERROR, True, False, False, False),
+    (model.CoordinatorStatus.PREMATER, True, False, False, False),
+    (model.CoordinatorStatus.PREP, True, False, True, False),
+    (model.CoordinatorStatus.PREPPAUSED, True, False, False, False),
+    (model.CoordinatorStatus.PREPSUSPENDED, True, False, False, True),
+    (model.CoordinatorStatus.RUNNING, True, True, True, False),
+    (model.CoordinatorStatus.RUNNINGWITHERROR, True, True, True, False),
+    (model.CoordinatorStatus.SUCCEEDED, False, False, False, False),
+    (model.CoordinatorStatus.SUSPENDED, True, True, False, True),
+    (model.CoordinatorStatus.SUSPENDEDWITHERROR, True, True, False, True),
 ])
 def test_coordinator_status_predicates(status, active, running, suspendable, suspended):
     assert status.is_active() == active
@@ -463,18 +465,18 @@ def test_coordinator_status_predicates(status, active, running, suspendable, sus
 
 
 @pytest.mark.parametrize("status, active, running, suspendable, suspended", [
-    (model.CoordinatorAction.Status.UNKNOWN, False, False, False, False),
-    (model.CoordinatorAction.Status.FAILED, False, False, False, False),
-    (model.CoordinatorAction.Status.IGNORED, False, False, False, False),
-    (model.CoordinatorAction.Status.KILLED, False, False, False, False),
-    (model.CoordinatorAction.Status.READY, False, False, False, False),
-    (model.CoordinatorAction.Status.RUNNING, True, True, True, False),
-    (model.CoordinatorAction.Status.SKIPPED, False, False, False, False),
-    (model.CoordinatorAction.Status.SUBMITTED, True, False, False, False),
-    (model.CoordinatorAction.Status.SUCCEEDED, False, False, False, False),
-    (model.CoordinatorAction.Status.SUSPENDED, True, True, False, True),
-    (model.CoordinatorAction.Status.TIMEDOUT, False, False, False, False),
-    (model.CoordinatorAction.Status.WAITING, False, False, False, False),
+    (model.CoordinatorActionStatus.UNKNOWN, False, False, False, False),
+    (model.CoordinatorActionStatus.FAILED, False, False, False, False),
+    (model.CoordinatorActionStatus.IGNORED, False, False, False, False),
+    (model.CoordinatorActionStatus.KILLED, False, False, False, False),
+    (model.CoordinatorActionStatus.READY, False, False, False, False),
+    (model.CoordinatorActionStatus.RUNNING, True, True, True, False),
+    (model.CoordinatorActionStatus.SKIPPED, False, False, False, False),
+    (model.CoordinatorActionStatus.SUBMITTED, True, False, False, False),
+    (model.CoordinatorActionStatus.SUCCEEDED, False, False, False, False),
+    (model.CoordinatorActionStatus.SUSPENDED, True, True, False, True),
+    (model.CoordinatorActionStatus.TIMEDOUT, False, False, False, False),
+    (model.CoordinatorActionStatus.WAITING, False, False, False, False),
 ])
 def test_coordinator_action_status_predicates(status, active, running, suspendable, suspended):
     assert status.is_active() == active
@@ -484,13 +486,13 @@ def test_coordinator_action_status_predicates(status, active, running, suspendab
 
 
 @pytest.mark.parametrize("status, active, running, suspendable, suspended", [
-    (model.Workflow.Status.SUSPENDED, True, True, False, True),
-    (model.Workflow.Status.SUCCEEDED, False, False, False, False),
-    (model.Workflow.Status.RUNNING, True, True, True, False),
-    (model.Workflow.Status.PREP, True, False, False, False),
-    (model.Workflow.Status.KILLED, False, False, False, False),
-    (model.Workflow.Status.FAILED, False, False, False, False),
-    (model.Workflow.Status.UNKNOWN, False, False, False, False),
+    (model.WorkflowStatus.SUSPENDED, True, True, False, True),
+    (model.WorkflowStatus.SUCCEEDED, False, False, False, False),
+    (model.WorkflowStatus.RUNNING, True, True, True, False),
+    (model.WorkflowStatus.PREP, True, False, False, False),
+    (model.WorkflowStatus.KILLED, False, False, False, False),
+    (model.WorkflowStatus.FAILED, False, False, False, False),
+    (model.WorkflowStatus.UNKNOWN, False, False, False, False),
 ])
 def test_workflow_status_predicates(status, active, running, suspendable, suspended):
     assert status.is_active() == active
@@ -500,19 +502,19 @@ def test_workflow_status_predicates(status, active, running, suspendable, suspen
 
 
 @pytest.mark.parametrize("status, active, running, suspendable, suspended", [
-    (model.WorkflowAction.Status.UNKNOWN, False, False, False, False),
-    (model.WorkflowAction.Status.DONE, False, False, False, False),
-    (model.WorkflowAction.Status.END_MANUAL, False, False, False, False),
-    (model.WorkflowAction.Status.END_RETRY, False, False, False, False),
-    (model.WorkflowAction.Status.ERROR, False, False, False, False),
-    (model.WorkflowAction.Status.FAILED, False, False, False, False),
-    (model.WorkflowAction.Status.KILLED, False, False, False, False),
-    (model.WorkflowAction.Status.OK, False, False, False, False),
-    (model.WorkflowAction.Status.PREP, False, False, False, False),
-    (model.WorkflowAction.Status.RUNNING, True, True, False, False),
-    (model.WorkflowAction.Status.START_MANUAL, False, False, False, False),
-    (model.WorkflowAction.Status.START_RETRY, False, False, False, False),
-    (model.WorkflowAction.Status.USER_RETRY, True, False, False, False),
+    (model.WorkflowActionStatus.UNKNOWN, False, False, False, False),
+    (model.WorkflowActionStatus.DONE, False, False, False, False),
+    (model.WorkflowActionStatus.END_MANUAL, False, False, False, False),
+    (model.WorkflowActionStatus.END_RETRY, False, False, False, False),
+    (model.WorkflowActionStatus.ERROR, False, False, False, False),
+    (model.WorkflowActionStatus.FAILED, False, False, False, False),
+    (model.WorkflowActionStatus.KILLED, False, False, False, False),
+    (model.WorkflowActionStatus.OK, False, False, False, False),
+    (model.WorkflowActionStatus.PREP, False, False, False, False),
+    (model.WorkflowActionStatus.RUNNING, True, True, False, False),
+    (model.WorkflowActionStatus.START_MANUAL, False, False, False, False),
+    (model.WorkflowActionStatus.START_RETRY, False, False, False, False),
+    (model.WorkflowActionStatus.USER_RETRY, True, False, False, False),
 ])
 def test_workflow_action_status_predicates(status, active, running, suspendable, suspended):
     assert status.is_active() == active
@@ -549,7 +551,7 @@ def test_parse_coordinator(valid_coordinator):
     assert coord.endTime == datetime(2116, 5, 13, 23, 42, 0)
     assert coord.lastAction == datetime(2016, 6, 3, 1, 0, 0)
     assert coord.nextMaterializedTime == datetime(2016, 6, 3, 1, 0, 0)
-    assert coord.status == model.Coordinator.Status.RUNNING
+    assert coord.status == model.CoordinatorStatus.RUNNING
     assert coord._details == {'wat?': 'blarg'}
 
 
@@ -600,7 +602,7 @@ def test_parse_coordinator_action(valid_coordinator_action):
     assert coord.createdTime == datetime(2016, 6, 2, 12, 58, 26)
     assert coord.lastModifiedTime == datetime(2016, 6, 2, 21, 40, 38)
     assert coord.nominalTime == datetime(2016, 6, 2, 13, 0, 0)
-    assert coord.status == model.CoordinatorAction.Status.SUCCEEDED
+    assert coord.status == model.CoordinatorActionStatus.SUCCEEDED
     assert coord._details == {'wat?': 'blarg'}
 
 
@@ -667,7 +669,7 @@ def test_parse_workflow(valid_workflow):
     assert wf.startTime == datetime(2016, 6, 2, 13, 16, 46)
     assert wf.endTime == datetime(2016, 6, 2, 21, 40, 38)
     assert wf.lastModTime == datetime(2016, 6, 2, 21, 40, 38)
-    assert wf.status == model.Workflow.Status.SUCCEEDED
+    assert wf.status == model.WorkflowStatus.SUCCEEDED
     assert wf._details == {'wat?': 'blarg'}
 
 
@@ -715,7 +717,7 @@ def test_parse_workflow_action(valid_workflow_action):
     assert wf.name == 'my-sub-workflow'
     assert wf.startTime == datetime(2016, 6, 2, 13, 16, 48)
     assert wf.endTime == datetime(2016, 6, 2, 13, 23, 47)
-    assert wf.status == model.WorkflowAction.Status.OK
+    assert wf.status == model.WorkflowActionStatus.OK
     assert isinstance(wf.conf, string_types)  # Does NOT get parsed
     assert wf._details == {'wat?': 'blarg'}
 
@@ -760,61 +762,61 @@ def test_coordinator_parent(sample_coordinator):
 
 
 def test_coordinator_action(sample_coordinator, sample_coordinator_action):
-    mock_api = sample_coordinator._oozie_api
+    mock_client = sample_coordinator._client
 
     sample_coordinator.actions = {12: sample_coordinator_action}
     action = sample_coordinator.action(12)
     assert action == sample_coordinator_action
-    assert not mock_api.job_action_info.called
+    assert not mock_client.job_action_info.called
 
     action = sample_coordinator.action(3)
-    mock_api.job_coordinator_action.assert_called_with(action_number=3, coordinator=sample_coordinator)
+    mock_client.job_coordinator_action.assert_called_with(action_number=3, coordinator=sample_coordinator)
 
 
 def test_coordinator_action_coordinator(sample_coordinator_action, sample_coordinator):
-    mock_api = sample_coordinator_action._oozie_api
+    mock_client = sample_coordinator_action._client
 
     sample_coordinator_action._parent = sample_coordinator
     coord = sample_coordinator_action.coordinator()
     assert coord == sample_coordinator
-    assert not mock_api.job_info.called
+    assert not mock_client.job_info.called
 
     sample_coordinator_action._parent = None
     coord = sample_coordinator_action.coordinator()
-    mock_api.job_coordinator_info.assert_called_with(coordinator_id=SAMPLE_COORD_ID)
+    mock_client.job_coordinator_info.assert_called_with(coordinator_id=SAMPLE_COORD_ID)
 
 
 def test_coordinator_action_parent(sample_coordinator_action, sample_coordinator):
-    mock_api = sample_coordinator_action._oozie_api
+    mock_client = sample_coordinator_action._client
 
     sample_coordinator_action._parent = sample_coordinator
     coord = sample_coordinator_action.coordinator()
     assert coord == sample_coordinator
-    assert not mock_api.job_info.called
+    assert not mock_client.job_info.called
 
     sample_coordinator_action._parent = None
     coord = sample_coordinator_action.coordinator()
-    mock_api.job_coordinator_info.assert_called_with(coordinator_id=SAMPLE_COORD_ID)
+    mock_client.job_coordinator_info.assert_called_with(coordinator_id=SAMPLE_COORD_ID)
 
 
 def test_workflow_coordinator(sample_workflow):
-    mock_api = sample_workflow._oozie_api
+    mock_client = sample_workflow._client
     sample_workflow.coordinator()
-    mock_api.job_action_info.assert_called_with(SAMPLE_COORD_ACTION)
-    assert mock_api.job_action_info().coordinator.called
+    mock_client.job_action_info.assert_called_with(SAMPLE_COORD_ACTION)
+    assert mock_client.job_action_info().coordinator.called
 
 
 def test_workflow_parent(sample_workflow, sample_coordinator):
-    mock_api = sample_workflow._oozie_api
+    mock_client = sample_workflow._client
 
     sample_workflow._parent = sample_coordinator
     coord = sample_workflow.parent()
     assert coord == sample_coordinator
-    assert not mock_api.job_info.called
+    assert not mock_client.job_info.called
 
     sample_workflow._parent = None
     coord = sample_workflow.parent()
-    mock_api.job_action_info.assert_called_with(SAMPLE_COORD_ACTION)
+    mock_client.job_action_info.assert_called_with(SAMPLE_COORD_ACTION)
     assert sample_workflow._parent == coord
 
 
@@ -832,31 +834,31 @@ def test_workflow_action_coordinator(sample_workflow_action):
 
 
 def test_workflow_action_parent(sample_workflow_action, sample_workflow):
-    mock_api = sample_workflow_action._oozie_api
+    mock_client = sample_workflow_action._client
 
     sample_workflow_action._parent = sample_workflow
     wf = sample_workflow_action.parent()
     assert wf == sample_workflow
-    assert not mock_api.job_workflow_info.called
+    assert not mock_client.job_workflow_info.called
 
     sample_workflow_action._parent = None
     wf = sample_workflow_action.parent()
-    mock_api.job_workflow_info.assert_called_with(SAMPLE_WF_ID)
+    mock_client.job_workflow_info.assert_called_with(SAMPLE_WF_ID)
     assert sample_workflow_action._parent == wf
 
 
 def test_workflow_action_subworkflow(sample_workflow_action):
-    mock_api = sample_workflow_action._oozie_api
+    mock_client = sample_workflow_action._client
     swf = sample_workflow_action.subworkflow()
-    mock_api.job_workflow_info.assert_called_with(SAMPLE_WF_ID)
+    mock_client.job_workflow_info.assert_called_with(SAMPLE_WF_ID)
     assert swf._parent == sample_workflow_action
 
 
 def test_start_action_subworkflow(sample_start_action):
-    mock_api = sample_start_action._oozie_api
+    mock_client = sample_start_action._client
     swf = sample_start_action.subworkflow()
     assert swf is None
-    assert not mock_api.job_workflow_info.called
+    assert not mock_client.job_workflow_info.called
 
 
 def test_job_is_coordinator(sample_coordinator, sample_coordinator_action, sample_workflow, sample_workflow_action):
