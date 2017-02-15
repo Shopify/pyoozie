@@ -13,7 +13,7 @@ __version__ = '0.0.0'
 
 __all__ = (
     # coordinator
-    'Coordinator', 'ExecutionOrder',
+    'ExecutionOrder',
 
     # tags
     'Configuration', 'Parameters', 'Credentials', 'Shell', 'SubWorkflow', 'GlobalConfiguration', 'Email',
