@@ -1,5 +1,6 @@
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
+from __future__ import unicode_literals
 
 from pyoozie.api._model import parse_coordinator_id, parse_workflow_id, ArtifactType, \
     CoordinatorStatus, CoordinatorActionStatus, WorkflowStatus, WorkflowActionStatus
