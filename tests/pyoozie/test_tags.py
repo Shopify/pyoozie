@@ -85,9 +85,9 @@ def test_validate():
 
 
 def test_xml_serializable():
-    # pylint: disable=abstract-method
     class MyTag(XMLSerializable):
-        pass
+        def _xml(self, doc, tag, text):
+            super(MyTag, self)._xml(doc, tag, text)
 
     my_tag = MyTag('tag')
     with pytest.raises(NotImplementedError):
