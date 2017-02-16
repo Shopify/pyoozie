@@ -99,7 +99,7 @@ class OozieClient(object):
         try:
             versions = response.json()
         except ValueError as err:
-            message = "Unexpected response from Oozie server at {} ".format(self._url)
+            message = "Invalid response from Oozie server at {} ".format(self._url)
             raise OozieException.communication_error(message, err)
         if 2 not in versions:
             message = "Oozie server at {} does not support API version 2 (supported: {})".format(self._url, versions)
@@ -140,7 +140,8 @@ class OozieClient(object):
         try:
             return response.json() if len(response.content) else None
         except ValueError as err:
-            raise OozieException.communication_error(caused_by=err)
+            message = "Invalid response from Oozie server at {} ".format(self._url)
+            raise OozieException.communication_error(message, caused_by=err)
 
     def _get(self, endpoint, content_type=None):
         return self._request('GET', endpoint, content_type)
