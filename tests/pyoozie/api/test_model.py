@@ -7,7 +7,8 @@ from six import string_types
 import mock
 import pytest
 
-from pyoozie import model, _exceptions
+from pyoozie import _exceptions
+from pyoozie.api import _model
 
 
 SAMPLE_COORD_ID = '0123456-123456789012345-oozie-oozi-C'
@@ -96,7 +97,7 @@ def valid_coordinator():
 
 @pytest.fixture
 def sample_coordinator(valid_coordinator):
-    return model.Coordinator(mock.Mock(), valid_coordinator, None)
+    return _model.Coordinator(mock.Mock(), valid_coordinator, None)
 
 
 @pytest.fixture
@@ -153,7 +154,7 @@ def valid_coordinator_action():
 
 @pytest.fixture
 def sample_coordinator_action(valid_coordinator_action):
-    return model.CoordinatorAction(mock.Mock(), valid_coordinator_action, None)
+    return _model.CoordinatorAction(mock.Mock(), valid_coordinator_action, None)
 
 
 @pytest.fixture
@@ -218,7 +219,7 @@ def valid_workflow():
 
 @pytest.fixture
 def sample_workflow(valid_workflow):
-    return model.Workflow(mock.Mock(), valid_workflow, None)
+    return _model.Workflow(mock.Mock(), valid_workflow, None)
 
 
 @pytest.fixture
@@ -290,7 +291,7 @@ def valid_workflow_action():
 
 @pytest.fixture
 def sample_workflow_action(valid_workflow_action):
-    return model.WorkflowAction(mock.Mock(), valid_workflow_action, None)
+    return _model.WorkflowAction(mock.Mock(), valid_workflow_action, None)
 
 
 @pytest.fixture
@@ -324,29 +325,29 @@ def valid_start_action():
 
 @pytest.fixture
 def sample_start_action(valid_start_action):
-    return model.WorkflowAction(mock.Mock(), valid_start_action, None)
+    return _model.WorkflowAction(mock.Mock(), valid_start_action, None)
 
 
 def test_status():
-    value = model._status(1, is_active=False, is_running=False)
+    value = _model._status(1, is_active=False, is_running=False)
     assert not value.is_active
     assert not value.is_running
 
-    value = model._status(2, is_active=True, is_running=False)
+    value = _model._status(2, is_active=True, is_running=False)
     assert value.is_active
     assert not value.is_running
 
-    value = model._status(3, is_active=True, is_running=True)
+    value = _model._status(3, is_active=True, is_running=True)
     assert value.is_active
     assert value.is_running
 
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        value = model._status(4, is_active=False, is_running=True)
+        value = _model._status(4, is_active=False, is_running=True)
     assert 'A running status implies active' in str(err)
 
 
 def test_parse_time():
-    result = model._parse_time(None, 'Fri, 01 Jan 2016 01:02:03 GMT')
+    result = _model._parse_time(None, 'Fri, 01 Jan 2016 01:02:03 GMT')
     assert result == datetime(2016, 1, 1, 1, 2, 3)
 
 
@@ -363,99 +364,99 @@ def test_parse_configuration():
     </property>
 </configuration>
 """
-    result = model._parse_configuration(None, conf_string)
+    result = _model._parse_configuration(None, conf_string)
     assert result == {'key1': 'value1', 'key2': 'value2'}
 
 
 @pytest.mark.parametrize("string, expected", [
-    ('DONEWITHERROR', model.CoordinatorStatus.DONEWITHERROR),
-    ('FAILED', model.CoordinatorStatus.FAILED),
-    ('IGNORED', model.CoordinatorStatus.IGNORED),
-    ('KILLED', model.CoordinatorStatus.KILLED),
-    ('PAUSED', model.CoordinatorStatus.PAUSED),
-    ('PAUSEDWITHERROR', model.CoordinatorStatus.PAUSEDWITHERROR),
-    ('PREMATER', model.CoordinatorStatus.PREMATER),
-    ('PREP', model.CoordinatorStatus.PREP),
-    ('PREPPAUSED', model.CoordinatorStatus.PREPPAUSED),
-    ('PREPSUSPENDED', model.CoordinatorStatus.PREPSUSPENDED),
-    ('RUNNING', model.CoordinatorStatus.RUNNING),
-    ('RUNNINGWITHERROR', model.CoordinatorStatus.RUNNINGWITHERROR),
-    ('SUCCEEDED', model.CoordinatorStatus.SUCCEEDED),
-    ('SUSPENDED', model.CoordinatorStatus.SUSPENDED),
-    ('SUSPENDEDWITHERROR', model.CoordinatorStatus.SUSPENDEDWITHERROR),
-    ('wat?', model.CoordinatorStatus.UNKNOWN),
+    ('DONEWITHERROR', _model.CoordinatorStatus.DONEWITHERROR),
+    ('FAILED', _model.CoordinatorStatus.FAILED),
+    ('IGNORED', _model.CoordinatorStatus.IGNORED),
+    ('KILLED', _model.CoordinatorStatus.KILLED),
+    ('PAUSED', _model.CoordinatorStatus.PAUSED),
+    ('PAUSEDWITHERROR', _model.CoordinatorStatus.PAUSEDWITHERROR),
+    ('PREMATER', _model.CoordinatorStatus.PREMATER),
+    ('PREP', _model.CoordinatorStatus.PREP),
+    ('PREPPAUSED', _model.CoordinatorStatus.PREPPAUSED),
+    ('PREPSUSPENDED', _model.CoordinatorStatus.PREPSUSPENDED),
+    ('RUNNING', _model.CoordinatorStatus.RUNNING),
+    ('RUNNINGWITHERROR', _model.CoordinatorStatus.RUNNINGWITHERROR),
+    ('SUCCEEDED', _model.CoordinatorStatus.SUCCEEDED),
+    ('SUSPENDED', _model.CoordinatorStatus.SUSPENDED),
+    ('SUSPENDEDWITHERROR', _model.CoordinatorStatus.SUSPENDEDWITHERROR),
+    ('wat?', _model.CoordinatorStatus.UNKNOWN),
 ])
 def test_parse_coordinator_status(string, expected):
-    assert model._parse_coordinator_status(None, string) == expected
+    assert _model._parse_coordinator_status(None, string) == expected
 
 
 @pytest.mark.parametrize("string, expected", [
-    ('FAILED', model.CoordinatorActionStatus.FAILED),
-    ('IGNORED', model.CoordinatorActionStatus.IGNORED),
-    ('KILLED', model.CoordinatorActionStatus.KILLED),
-    ('READY', model.CoordinatorActionStatus.READY),
-    ('RUNNING', model.CoordinatorActionStatus.RUNNING),
-    ('SKIPPED', model.CoordinatorActionStatus.SKIPPED),
-    ('SUBMITTED', model.CoordinatorActionStatus.SUBMITTED),
-    ('SUCCEEDED', model.CoordinatorActionStatus.SUCCEEDED),
-    ('SUSPENDED', model.CoordinatorActionStatus.SUSPENDED),
-    ('TIMEDOUT', model.CoordinatorActionStatus.TIMEDOUT),
-    ('WAITING', model.CoordinatorActionStatus.WAITING),
-    ('wat?', model.CoordinatorActionStatus.UNKNOWN),
+    ('FAILED', _model.CoordinatorActionStatus.FAILED),
+    ('IGNORED', _model.CoordinatorActionStatus.IGNORED),
+    ('KILLED', _model.CoordinatorActionStatus.KILLED),
+    ('READY', _model.CoordinatorActionStatus.READY),
+    ('RUNNING', _model.CoordinatorActionStatus.RUNNING),
+    ('SKIPPED', _model.CoordinatorActionStatus.SKIPPED),
+    ('SUBMITTED', _model.CoordinatorActionStatus.SUBMITTED),
+    ('SUCCEEDED', _model.CoordinatorActionStatus.SUCCEEDED),
+    ('SUSPENDED', _model.CoordinatorActionStatus.SUSPENDED),
+    ('TIMEDOUT', _model.CoordinatorActionStatus.TIMEDOUT),
+    ('WAITING', _model.CoordinatorActionStatus.WAITING),
+    ('wat?', _model.CoordinatorActionStatus.UNKNOWN),
 ])
 def test_parse_coordinator_action_status(string, expected):
-    assert model._parse_coordinator_action_status(None, string) == expected
+    assert _model._parse_coordinator_action_status(None, string) == expected
 
 
 @pytest.mark.parametrize("string, expected", [
-    ('FAILED', model.WorkflowStatus.FAILED),
-    ('KILLED', model.WorkflowStatus.KILLED),
-    ('PREP', model.WorkflowStatus.PREP),
-    ('RUNNING', model.WorkflowStatus.RUNNING),
-    ('SUCCEEDED', model.WorkflowStatus.SUCCEEDED),
-    ('SUSPENDED', model.WorkflowStatus.SUSPENDED),
-    ('wat?', model.WorkflowStatus.UNKNOWN),
+    ('FAILED', _model.WorkflowStatus.FAILED),
+    ('KILLED', _model.WorkflowStatus.KILLED),
+    ('PREP', _model.WorkflowStatus.PREP),
+    ('RUNNING', _model.WorkflowStatus.RUNNING),
+    ('SUCCEEDED', _model.WorkflowStatus.SUCCEEDED),
+    ('SUSPENDED', _model.WorkflowStatus.SUSPENDED),
+    ('wat?', _model.WorkflowStatus.UNKNOWN),
 ])
 def test_parse_workflow_status(string, expected):
-    assert model._parse_workflow_status(None, string) == expected
+    assert _model._parse_workflow_status(None, string) == expected
 
 
 @pytest.mark.parametrize("string, expected", [
-    ('DONE', model.WorkflowActionStatus.DONE),
-    ('END_MANUAL', model.WorkflowActionStatus.END_MANUAL),
-    ('END_RETRY', model.WorkflowActionStatus.END_RETRY),
-    ('ERROR', model.WorkflowActionStatus.ERROR),
-    ('FAILED', model.WorkflowActionStatus.FAILED),
-    ('KILLED', model.WorkflowActionStatus.KILLED),
-    ('OK', model.WorkflowActionStatus.OK),
-    ('PREP', model.WorkflowActionStatus.PREP),
-    ('RUNNING', model.WorkflowActionStatus.RUNNING),
-    ('START_MANUAL', model.WorkflowActionStatus.START_MANUAL),
-    ('START_RETRY', model.WorkflowActionStatus.START_RETRY),
-    ('USER_RETRY', model.WorkflowActionStatus.USER_RETRY),
-    ('wat?', model.WorkflowActionStatus.UNKNOWN),
+    ('DONE', _model.WorkflowActionStatus.DONE),
+    ('END_MANUAL', _model.WorkflowActionStatus.END_MANUAL),
+    ('END_RETRY', _model.WorkflowActionStatus.END_RETRY),
+    ('ERROR', _model.WorkflowActionStatus.ERROR),
+    ('FAILED', _model.WorkflowActionStatus.FAILED),
+    ('KILLED', _model.WorkflowActionStatus.KILLED),
+    ('OK', _model.WorkflowActionStatus.OK),
+    ('PREP', _model.WorkflowActionStatus.PREP),
+    ('RUNNING', _model.WorkflowActionStatus.RUNNING),
+    ('START_MANUAL', _model.WorkflowActionStatus.START_MANUAL),
+    ('START_RETRY', _model.WorkflowActionStatus.START_RETRY),
+    ('USER_RETRY', _model.WorkflowActionStatus.USER_RETRY),
+    ('wat?', _model.WorkflowActionStatus.UNKNOWN),
 ])
 def test_parse_workflow_action_status(string, expected):
-    assert model._parse_workflow_action_status(None, string) == expected
+    assert _model._parse_workflow_action_status(None, string) == expected
 
 
 @pytest.mark.parametrize("status, active, running, suspendable, suspended", [
-    (model.CoordinatorStatus.UNKNOWN, False, False, False, False),
-    (model.CoordinatorStatus.DONEWITHERROR, False, False, False, False),
-    (model.CoordinatorStatus.FAILED, False, False, False, False),
-    (model.CoordinatorStatus.IGNORED, False, False, False, False),
-    (model.CoordinatorStatus.KILLED, False, False, False, False),
-    (model.CoordinatorStatus.PAUSED, True, False, False, False),
-    (model.CoordinatorStatus.PAUSEDWITHERROR, True, False, False, False),
-    (model.CoordinatorStatus.PREMATER, True, False, False, False),
-    (model.CoordinatorStatus.PREP, True, False, True, False),
-    (model.CoordinatorStatus.PREPPAUSED, True, False, False, False),
-    (model.CoordinatorStatus.PREPSUSPENDED, True, False, False, True),
-    (model.CoordinatorStatus.RUNNING, True, True, True, False),
-    (model.CoordinatorStatus.RUNNINGWITHERROR, True, True, True, False),
-    (model.CoordinatorStatus.SUCCEEDED, False, False, False, False),
-    (model.CoordinatorStatus.SUSPENDED, True, True, False, True),
-    (model.CoordinatorStatus.SUSPENDEDWITHERROR, True, True, False, True),
+    (_model.CoordinatorStatus.UNKNOWN, False, False, False, False),
+    (_model.CoordinatorStatus.DONEWITHERROR, False, False, False, False),
+    (_model.CoordinatorStatus.FAILED, False, False, False, False),
+    (_model.CoordinatorStatus.IGNORED, False, False, False, False),
+    (_model.CoordinatorStatus.KILLED, False, False, False, False),
+    (_model.CoordinatorStatus.PAUSED, True, False, False, False),
+    (_model.CoordinatorStatus.PAUSEDWITHERROR, True, False, False, False),
+    (_model.CoordinatorStatus.PREMATER, True, False, False, False),
+    (_model.CoordinatorStatus.PREP, True, False, True, False),
+    (_model.CoordinatorStatus.PREPPAUSED, True, False, False, False),
+    (_model.CoordinatorStatus.PREPSUSPENDED, True, False, False, True),
+    (_model.CoordinatorStatus.RUNNING, True, True, True, False),
+    (_model.CoordinatorStatus.RUNNINGWITHERROR, True, True, True, False),
+    (_model.CoordinatorStatus.SUCCEEDED, False, False, False, False),
+    (_model.CoordinatorStatus.SUSPENDED, True, True, False, True),
+    (_model.CoordinatorStatus.SUSPENDEDWITHERROR, True, True, False, True),
 ])
 def test_coordinator_status_predicates(status, active, running, suspendable, suspended):
     assert status.is_active() == active
@@ -465,18 +466,18 @@ def test_coordinator_status_predicates(status, active, running, suspendable, sus
 
 
 @pytest.mark.parametrize("status, active, running, suspendable, suspended", [
-    (model.CoordinatorActionStatus.UNKNOWN, False, False, False, False),
-    (model.CoordinatorActionStatus.FAILED, False, False, False, False),
-    (model.CoordinatorActionStatus.IGNORED, False, False, False, False),
-    (model.CoordinatorActionStatus.KILLED, False, False, False, False),
-    (model.CoordinatorActionStatus.READY, False, False, False, False),
-    (model.CoordinatorActionStatus.RUNNING, True, True, True, False),
-    (model.CoordinatorActionStatus.SKIPPED, False, False, False, False),
-    (model.CoordinatorActionStatus.SUBMITTED, True, False, False, False),
-    (model.CoordinatorActionStatus.SUCCEEDED, False, False, False, False),
-    (model.CoordinatorActionStatus.SUSPENDED, True, True, False, True),
-    (model.CoordinatorActionStatus.TIMEDOUT, False, False, False, False),
-    (model.CoordinatorActionStatus.WAITING, False, False, False, False),
+    (_model.CoordinatorActionStatus.UNKNOWN, False, False, False, False),
+    (_model.CoordinatorActionStatus.FAILED, False, False, False, False),
+    (_model.CoordinatorActionStatus.IGNORED, False, False, False, False),
+    (_model.CoordinatorActionStatus.KILLED, False, False, False, False),
+    (_model.CoordinatorActionStatus.READY, False, False, False, False),
+    (_model.CoordinatorActionStatus.RUNNING, True, True, True, False),
+    (_model.CoordinatorActionStatus.SKIPPED, False, False, False, False),
+    (_model.CoordinatorActionStatus.SUBMITTED, True, False, False, False),
+    (_model.CoordinatorActionStatus.SUCCEEDED, False, False, False, False),
+    (_model.CoordinatorActionStatus.SUSPENDED, True, True, False, True),
+    (_model.CoordinatorActionStatus.TIMEDOUT, False, False, False, False),
+    (_model.CoordinatorActionStatus.WAITING, False, False, False, False),
 ])
 def test_coordinator_action_status_predicates(status, active, running, suspendable, suspended):
     assert status.is_active() == active
@@ -486,13 +487,13 @@ def test_coordinator_action_status_predicates(status, active, running, suspendab
 
 
 @pytest.mark.parametrize("status, active, running, suspendable, suspended", [
-    (model.WorkflowStatus.SUSPENDED, True, True, False, True),
-    (model.WorkflowStatus.SUCCEEDED, False, False, False, False),
-    (model.WorkflowStatus.RUNNING, True, True, True, False),
-    (model.WorkflowStatus.PREP, True, False, False, False),
-    (model.WorkflowStatus.KILLED, False, False, False, False),
-    (model.WorkflowStatus.FAILED, False, False, False, False),
-    (model.WorkflowStatus.UNKNOWN, False, False, False, False),
+    (_model.WorkflowStatus.SUSPENDED, True, True, False, True),
+    (_model.WorkflowStatus.SUCCEEDED, False, False, False, False),
+    (_model.WorkflowStatus.RUNNING, True, True, True, False),
+    (_model.WorkflowStatus.PREP, True, False, False, False),
+    (_model.WorkflowStatus.KILLED, False, False, False, False),
+    (_model.WorkflowStatus.FAILED, False, False, False, False),
+    (_model.WorkflowStatus.UNKNOWN, False, False, False, False),
 ])
 def test_workflow_status_predicates(status, active, running, suspendable, suspended):
     assert status.is_active() == active
@@ -502,19 +503,19 @@ def test_workflow_status_predicates(status, active, running, suspendable, suspen
 
 
 @pytest.mark.parametrize("status, active, running, suspendable, suspended", [
-    (model.WorkflowActionStatus.UNKNOWN, False, False, False, False),
-    (model.WorkflowActionStatus.DONE, False, False, False, False),
-    (model.WorkflowActionStatus.END_MANUAL, False, False, False, False),
-    (model.WorkflowActionStatus.END_RETRY, False, False, False, False),
-    (model.WorkflowActionStatus.ERROR, False, False, False, False),
-    (model.WorkflowActionStatus.FAILED, False, False, False, False),
-    (model.WorkflowActionStatus.KILLED, False, False, False, False),
-    (model.WorkflowActionStatus.OK, False, False, False, False),
-    (model.WorkflowActionStatus.PREP, False, False, False, False),
-    (model.WorkflowActionStatus.RUNNING, True, True, False, False),
-    (model.WorkflowActionStatus.START_MANUAL, False, False, False, False),
-    (model.WorkflowActionStatus.START_RETRY, False, False, False, False),
-    (model.WorkflowActionStatus.USER_RETRY, True, False, False, False),
+    (_model.WorkflowActionStatus.UNKNOWN, False, False, False, False),
+    (_model.WorkflowActionStatus.DONE, False, False, False, False),
+    (_model.WorkflowActionStatus.END_MANUAL, False, False, False, False),
+    (_model.WorkflowActionStatus.END_RETRY, False, False, False, False),
+    (_model.WorkflowActionStatus.ERROR, False, False, False, False),
+    (_model.WorkflowActionStatus.FAILED, False, False, False, False),
+    (_model.WorkflowActionStatus.KILLED, False, False, False, False),
+    (_model.WorkflowActionStatus.OK, False, False, False, False),
+    (_model.WorkflowActionStatus.PREP, False, False, False, False),
+    (_model.WorkflowActionStatus.RUNNING, True, True, False, False),
+    (_model.WorkflowActionStatus.START_MANUAL, False, False, False, False),
+    (_model.WorkflowActionStatus.START_RETRY, False, False, False, False),
+    (_model.WorkflowActionStatus.USER_RETRY, True, False, False, False),
 ])
 def test_workflow_action_status_predicates(status, active, running, suspendable, suspended):
     assert status.is_active() == active
@@ -525,22 +526,22 @@ def test_workflow_action_status_predicates(status, active, running, suspendable,
 
 def test_parse_empty_coordinator(empty_coordinator):
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        coord = model.Coordinator(None, empty_coordinator, None)
+        coord = _model.Coordinator(None, empty_coordinator, None)
     assert "Required key 'coordJobId' missing or invalid in Coordinator" in str(err)
 
     empty_coordinator['coordJobId'] = 'bad-coord-id'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        coord = model.Coordinator(None, empty_coordinator, None)
+        coord = _model.Coordinator(None, empty_coordinator, None)
     assert "Required key 'coordJobId' missing or invalid in Coordinator" in str(err)
 
     empty_coordinator['coordJobId'] = SAMPLE_COORD_ID
-    coord = model.Coordinator(None, empty_coordinator, None)
+    coord = _model.Coordinator(None, empty_coordinator, None)
     assert coord.coordJobId == SAMPLE_COORD_ID
     assert coord._details == {'wat?': 'blarg'}
 
 
 def test_parse_coordinator(valid_coordinator):
-    coord = model.Coordinator(None, valid_coordinator, None)
+    coord = _model.Coordinator(None, valid_coordinator, None)
     assert coord.conf == {
         'key1': 'value1',
         'key two': 'value two',
@@ -551,7 +552,7 @@ def test_parse_coordinator(valid_coordinator):
     assert coord.endTime == datetime(2116, 5, 13, 23, 42, 0)
     assert coord.lastAction == datetime(2016, 6, 3, 1, 0, 0)
     assert coord.nextMaterializedTime == datetime(2016, 6, 3, 1, 0, 0)
-    assert coord.status == model.CoordinatorStatus.RUNNING
+    assert coord.status == _model.CoordinatorStatus.RUNNING
     assert coord._details == {'wat?': 'blarg'}
 
 
@@ -560,41 +561,41 @@ def test_coordinator_validate_degenerate_fields(empty_coordinator):
     empty_coordinator['status'] = 'RUNNING'
     empty_coordinator['toString'] = 'Coordinator application id[blarg] status [RUNNING]'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.Coordinator(None, empty_coordinator, None)
+        _model.Coordinator(None, empty_coordinator, None)
     assert 'toString does not contain coordinator ID' in str(err)
 
     empty_coordinator['status'] = 'KILLED'
     empty_coordinator['toString'] = 'Coordinator application id[' + SAMPLE_COORD_ID + '] status [RUNNING]'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.Coordinator(None, empty_coordinator, None)
+        _model.Coordinator(None, empty_coordinator, None)
     assert 'toString does not contain status' in str(err)
 
 
 def test_coordinator_extrapolate_degenerate_fields(empty_coordinator):
     empty_coordinator['coordJobId'] = SAMPLE_COORD_ID
     empty_coordinator['status'] = 'RUNNING'
-    coord = model.Coordinator(None, empty_coordinator, None)
+    coord = _model.Coordinator(None, empty_coordinator, None)
     assert coord.toString == 'Coordinator application id[' + SAMPLE_COORD_ID + '] status[RUNNING]'
 
 
 def test_parse_empty_coordinator_action(empty_coordinator_action):
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        coord = model.CoordinatorAction(None, empty_coordinator_action, None)
+        coord = _model.CoordinatorAction(None, empty_coordinator_action, None)
     assert "Required key 'id' missing or invalid in CoordinatorAction" in str(err)
 
     empty_coordinator_action['id'] = 'bad-coord-C@should-be-int'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        coord = model.CoordinatorAction(None, empty_coordinator_action, None)
+        coord = _model.CoordinatorAction(None, empty_coordinator_action, None)
     assert "Required key 'id' missing or invalid in CoordinatorAction" in str(err)
 
     empty_coordinator_action['id'] = SAMPLE_COORD_ACTION
-    coord = model.CoordinatorAction(None, empty_coordinator_action, None)
+    coord = _model.CoordinatorAction(None, empty_coordinator_action, None)
     assert coord.id == SAMPLE_COORD_ACTION
     assert coord._details == {'wat?': 'blarg'}
 
 
 def test_parse_coordinator_action(valid_coordinator_action):
-    coord = model.CoordinatorAction(None, valid_coordinator_action, None)
+    coord = _model.CoordinatorAction(None, valid_coordinator_action, None)
     assert coord.actionNumber == 12
     assert coord.id == SAMPLE_COORD_ACTION
     assert coord.coordJobId == SAMPLE_COORD_ID
@@ -602,7 +603,7 @@ def test_parse_coordinator_action(valid_coordinator_action):
     assert coord.createdTime == datetime(2016, 6, 2, 12, 58, 26)
     assert coord.lastModifiedTime == datetime(2016, 6, 2, 21, 40, 38)
     assert coord.nominalTime == datetime(2016, 6, 2, 13, 0, 0)
-    assert coord.status == model.CoordinatorActionStatus.SUCCEEDED
+    assert coord.status == _model.CoordinatorActionStatus.SUCCEEDED
     assert coord._details == {'wat?': 'blarg'}
 
 
@@ -611,12 +612,12 @@ def test_coordinator_action_validate_degenerate_fields(empty_coordinator_action)
     empty_coordinator_action['coordJobId'] = 'bad-coord-C'
     empty_coordinator_action['actionNumber'] = 666
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.CoordinatorAction(None, empty_coordinator_action, None)
+        _model.CoordinatorAction(None, empty_coordinator_action, None)
     assert 'coordJobId does not match coordinator action ID' in str(err)
 
     empty_coordinator_action['coordJobId'] = SAMPLE_COORD_ID
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.CoordinatorAction(None, empty_coordinator_action, None)
+        _model.CoordinatorAction(None, empty_coordinator_action, None)
     assert 'actionNumber does not match coordinator action ID' in str(err)
     empty_coordinator_action['actionNumber'] = 12
 
@@ -624,52 +625,52 @@ def test_coordinator_action_validate_degenerate_fields(empty_coordinator_action)
     empty_coordinator_action['status'] = 'RUNNING'
     empty_coordinator_action['toString'] = 'CoordinatorAction name[blarg] status [RUNNING]'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.CoordinatorAction(None, empty_coordinator_action, None)
+        _model.CoordinatorAction(None, empty_coordinator_action, None)
     assert 'toString does not contain coordinator action ID' in str(err)
 
     empty_coordinator_action['status'] = 'KILLED'
     empty_coordinator_action['toString'] = 'CoordinatorAction name[' + SAMPLE_COORD_ACTION + '] status [RUNNING]'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.CoordinatorAction(None, empty_coordinator_action, None)
+        _model.CoordinatorAction(None, empty_coordinator_action, None)
     assert 'toString does not contain status' in str(err)
 
 
 def test_coordinator_action_extrapolate_degenerate_fields(empty_coordinator_action):
     empty_coordinator_action['id'] = SAMPLE_COORD_ACTION
-    coord = model.CoordinatorAction(None, empty_coordinator_action, None)
+    coord = _model.CoordinatorAction(None, empty_coordinator_action, None)
     assert coord.coordJobId == SAMPLE_COORD_ID
     assert coord.actionNumber == 12
 
     empty_coordinator_action['status'] = 'RUNNING'
-    coord = model.CoordinatorAction(None, empty_coordinator_action, None)
+    coord = _model.CoordinatorAction(None, empty_coordinator_action, None)
     assert coord.toString == 'CoordinatorAction name[' + SAMPLE_COORD_ACTION + '] status[RUNNING]'
 
 
 def test_parse_empty_workflow(empty_workflow):
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        wf = model.Workflow(None, empty_workflow, None)
+        wf = _model.Workflow(None, empty_workflow, None)
     assert "Required key 'id' missing or invalid in Workflow" in str(err)
 
     empty_workflow['id'] = 'bad-wf-id'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        wf = model.Workflow(None, empty_workflow, None)
+        wf = _model.Workflow(None, empty_workflow, None)
     assert "Required key 'id' missing or invalid in Workflow" in str(err)
 
     empty_workflow['id'] = SAMPLE_WF_ID
-    wf = model.Workflow(None, empty_workflow, None)
+    wf = _model.Workflow(None, empty_workflow, None)
     assert wf.id == SAMPLE_WF_ID
     assert wf._details == {'wat?': 'blarg'}
 
 
 def test_parse_workflow(valid_workflow):
-    wf = model.Workflow(None, valid_workflow, None)
+    wf = _model.Workflow(None, valid_workflow, None)
     assert wf.id == SAMPLE_WF_ID
     assert wf.appName == 'my-test-workflow'
     assert wf.createdTime == datetime(2016, 6, 2, 13, 16, 46)
     assert wf.startTime == datetime(2016, 6, 2, 13, 16, 46)
     assert wf.endTime == datetime(2016, 6, 2, 21, 40, 38)
     assert wf.lastModTime == datetime(2016, 6, 2, 21, 40, 38)
-    assert wf.status == model.WorkflowStatus.SUCCEEDED
+    assert wf.status == _model.WorkflowStatus.SUCCEEDED
     assert wf._details == {'wat?': 'blarg'}
 
 
@@ -678,46 +679,46 @@ def test_workflow_validate_degenerate_fields(empty_workflow):
     empty_workflow['status'] = 'RUNNING'
     empty_workflow['toString'] = 'Workflow id[blarg] status [RUNNING]'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.Workflow(None, empty_workflow, None)
+        _model.Workflow(None, empty_workflow, None)
     assert 'toString does not contain workflow ID' in str(err)
 
     empty_workflow['status'] = 'KILLED'
     empty_workflow['toString'] = 'Workflow id[' + SAMPLE_WF_ID + '] status[RUNNING]'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.Workflow(None, empty_workflow, None)
+        _model.Workflow(None, empty_workflow, None)
     assert 'toString does not contain status' in str(err)
 
 
 def test_workflow_extrapolate_degenerate_fields(empty_workflow):
     empty_workflow['id'] = SAMPLE_WF_ID
     empty_workflow['status'] = 'RUNNING'
-    wf = model.Workflow(None, empty_workflow, None)
+    wf = _model.Workflow(None, empty_workflow, None)
     assert wf.toString == 'Workflow id[' + SAMPLE_WF_ID + '] status[RUNNING]'
 
 
 def test_parse_empty_workflow_action(empty_workflow_action):
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        wf = model.WorkflowAction(None, empty_workflow_action, None)
+        wf = _model.WorkflowAction(None, empty_workflow_action, None)
     assert "Required key 'id' missing or invalid in WorkflowAction" in str(err)
 
     empty_workflow_action['id'] = 'bad-wf-action@foo'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        wf = model.WorkflowAction(None, empty_workflow_action, None)
+        wf = _model.WorkflowAction(None, empty_workflow_action, None)
     assert "Required key 'id' missing or invalid in WorkflowAction" in str(err)
 
     empty_workflow_action['id'] = SAMPLE_WF_ACTION
-    wf = model.WorkflowAction(None, empty_workflow_action, None)
+    wf = _model.WorkflowAction(None, empty_workflow_action, None)
     assert wf.id == SAMPLE_WF_ACTION
     assert wf._details == {'wat?': 'blarg'}
 
 
 def test_parse_workflow_action(valid_workflow_action):
-    wf = model.WorkflowAction(None, valid_workflow_action, None)
+    wf = _model.WorkflowAction(None, valid_workflow_action, None)
     assert wf.id == SAMPLE_SUBWF_ACTION
     assert wf.name == 'my-sub-workflow'
     assert wf.startTime == datetime(2016, 6, 2, 13, 16, 48)
     assert wf.endTime == datetime(2016, 6, 2, 13, 23, 47)
-    assert wf.status == model.WorkflowActionStatus.OK
+    assert wf.status == _model.WorkflowActionStatus.OK
     assert isinstance(wf.conf, string_types)  # Does NOT get parsed
     assert wf._details == {'wat?': 'blarg'}
 
@@ -726,30 +727,30 @@ def test_workflow_action_validate_degenerate_fields(empty_workflow_action):
     empty_workflow_action['id'] = SAMPLE_WF_ACTION
     empty_workflow_action['name'] = 'bad-action'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.WorkflowAction(None, empty_workflow_action, None)
+        _model.WorkflowAction(None, empty_workflow_action, None)
     assert 'name does not match workflow action ID' in str(err)
 
     empty_workflow_action['name'] = 'action'
     empty_workflow_action['status'] = 'OK'
     empty_workflow_action['toString'] = 'Action name[blarg] status[OK]'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.WorkflowAction(None, empty_workflow_action, None)
+        _model.WorkflowAction(None, empty_workflow_action, None)
     assert 'toString does not contain workflow action name' in str(err)
 
     empty_workflow_action['status'] = 'ERROR'
     empty_workflow_action['toString'] = 'Action name[' + SAMPLE_WF_ACTION + '] status[OK]'
     with pytest.raises(_exceptions.OozieParsingException) as err:
-        model.WorkflowAction(None, empty_workflow_action, None)
+        _model.WorkflowAction(None, empty_workflow_action, None)
     assert 'toString does not contain status' in str(err)
 
 
 def test_workflow_action_extrapolate_degenerate_fields(empty_workflow_action):
     empty_workflow_action['id'] = SAMPLE_WF_ACTION
-    action = model.WorkflowAction(None, empty_workflow_action, None)
+    action = _model.WorkflowAction(None, empty_workflow_action, None)
     assert action.name == 'action'
 
     empty_workflow_action['status'] = 'OK'
-    action = model.WorkflowAction(None, empty_workflow_action, None)
+    action = _model.WorkflowAction(None, empty_workflow_action, None)
     assert action.toString == 'Action name[action] status[OK]'
 
 

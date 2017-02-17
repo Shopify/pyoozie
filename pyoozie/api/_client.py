@@ -6,7 +6,7 @@ import logging
 import requests
 
 from pyoozie._exceptions import OozieException
-from pyoozie.model import ArtifactType, Coordinator, CoordinatorAction, \
+from pyoozie.api._model import ArtifactType, Coordinator, CoordinatorAction, \
     Workflow, WorkflowAction, parse_coordinator_id, parse_workflow_id, \
     CoordinatorStatus, CoordinatorActionStatus, WorkflowStatus, WorkflowActionStatus
 from pyoozie.builder import _coordinator_submission_xml, _workflow_submission_xml

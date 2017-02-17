@@ -7,9 +7,9 @@ import mock
 import pytest
 import requests_mock
 
-from pyoozie import model
 from pyoozie._exceptions import OozieException
-from pyoozie.oozie_client import OozieClient
+from pyoozie.api import _model
+from pyoozie.api._client import OozieClient
 
 
 # TODO: share these with test_model.py?
@@ -33,7 +33,7 @@ def oozie_config():
 
 @pytest.fixture
 def api(oozie_config):
-    with mock.patch('pyoozie.oozie_client.OozieClient._test_connection'):
+    with mock.patch('pyoozie.api._client.OozieClient._test_connection'):
         api = OozieClient(**oozie_config)
     return api
 
@@ -44,7 +44,7 @@ def sample_coordinator_running(api):
         'coordJobId': SAMPLE_COORD_ID,
         'status': 'RUNNING'
     }
-    return model.Coordinator(api, info, None)
+    return _model.Coordinator(api, info, None)
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def sample_coordinator_suspended(api):
         'coordJobId': SAMPLE_COORD_ID,
         'status': 'SUSPENDED'
     }
-    return model.Coordinator(api, info, None)
+    return _model.Coordinator(api, info, None)
 
 
 @pytest.fixture
@@ -62,7 +62,7 @@ def sample_coordinator_killed(api):
         'coordJobId': SAMPLE_COORD_ID,
         'status': 'KILLED'
     }
-    return model.Coordinator(api, info, None)
+    return _model.Coordinator(api, info, None)
 
 
 @pytest.fixture
@@ -71,7 +71,7 @@ def sample_coordinator_action_running(api, sample_coordinator_running):
         'id': SAMPLE_COORD_ACTION,
         'status': 'RUNNING'
     }
-    action = model.CoordinatorAction(api, info, sample_coordinator_running)
+    action = _model.CoordinatorAction(api, info, sample_coordinator_running)
     action.parent().actions = {12: action}
     return action
 
@@ -82,7 +82,7 @@ def sample_coordinator_action_suspended(api, sample_coordinator_running):
         'id': SAMPLE_COORD_ACTION,
         'status': 'SUSPENDED'
     }
-    action = model.CoordinatorAction(api, info, sample_coordinator_running)
+    action = _model.CoordinatorAction(api, info, sample_coordinator_running)
     action.parent().actions = {12: action}
     return action
 
@@ -93,7 +93,7 @@ def sample_coordinator_action_killed(api, sample_coordinator_running):
         'id': SAMPLE_COORD_ACTION,
         'status': 'KILLED'
     }
-    action = model.CoordinatorAction(api, info, sample_coordinator_running)
+    action = _model.CoordinatorAction(api, info, sample_coordinator_running)
     action.parent().actions = {12: action}
     return action
 
@@ -104,7 +104,7 @@ def sample_workflow_running(api):
         'id': SAMPLE_WF_ID,
         'status': 'RUNNING'
     }
-    return model.Workflow(api, info, None)
+    return _model.Workflow(api, info, None)
 
 
 @pytest.fixture
@@ -113,7 +113,7 @@ def sample_workflow_suspended(api):
         'id': SAMPLE_WF_ID,
         'status': 'SUSPENDED'
     }
-    return model.Workflow(api, info, None)
+    return _model.Workflow(api, info, None)
 
 
 @pytest.fixture
@@ -122,7 +122,7 @@ def sample_workflow_killed(api):
         'id': SAMPLE_WF_ID,
         'status': 'KILLED'
     }
-    return model.Workflow(api, info, None)
+    return _model.Workflow(api, info, None)
 
 
 @pytest.fixture
@@ -131,12 +131,12 @@ def sample_workflow_prep(api):
         'id': SAMPLE_WF_ID,
         'status': 'PREP'
     }
-    return model.Workflow(api, info, None)
+    return _model.Workflow(api, info, None)
 
 
 class TestOozieClientCore(object):
 
-    @mock.patch('pyoozie.oozie_client.OozieClient._test_connection')
+    @mock.patch('pyoozie.api._client.OozieClient._test_connection')
     def test_construction(self, mock_test_conn, oozie_config):
         api = OozieClient(**oozie_config)
         assert mock_test_conn.called
@@ -274,26 +274,26 @@ class TestOozieClientJobsQuery(object):
         with mock.patch.object(api, '_get') as mock_get:
             mock_get.return_value = mock_result
 
-            api._jobs_query(model.ArtifactType.Workflow)
+            api._jobs_query(_model.ArtifactType.Workflow)
             mock_get.assert_called_with('jobs?jobtype=wf&offset=1&len=500')
 
-            api._jobs_query(model.ArtifactType.Workflow, user='john_doe')
+            api._jobs_query(_model.ArtifactType.Workflow, user='john_doe')
             mock_get.assert_called_with('jobs?jobtype=wf&filter=user=john_doe&offset=1&len=500')
 
-            api._jobs_query(model.ArtifactType.Workflow, name='my_workflow')
+            api._jobs_query(_model.ArtifactType.Workflow, name='my_workflow')
             mock_get.assert_called_with('jobs?jobtype=wf&filter=name=my_workflow&offset=1&len=500')
 
-            api._jobs_query(model.ArtifactType.Workflow, status=model.WorkflowStatus.RUNNING)
+            api._jobs_query(_model.ArtifactType.Workflow, status=_model.WorkflowStatus.RUNNING)
             mock_get.assert_called_with('jobs?jobtype=wf&filter=status=RUNNING&offset=1&len=500')
 
-            api._jobs_query(model.ArtifactType.Workflow, status=model.WorkflowStatus.running())
+            api._jobs_query(_model.ArtifactType.Workflow, status=_model.WorkflowStatus.running())
             mock_get.assert_called_with('jobs?jobtype=wf&filter=status=RUNNING;status=SUSPENDED&offset=1&len=500')
 
             api._jobs_query(
-                model.ArtifactType.Workflow,
+                _model.ArtifactType.Workflow,
                 user='john_doe',
                 name='my_workflow',
-                status=model.WorkflowStatus.running())
+                status=_model.WorkflowStatus.running())
             mock_get.assert_called_with('jobs?jobtype=wf&filter=user=john_doe;name=my_workflow;status=RUNNING;'
                                         'status=SUSPENDED&offset=1&len=500')
 
@@ -305,41 +305,41 @@ class TestOozieClientJobsQuery(object):
         with mock.patch.object(api, '_get') as mock_get:
             mock_get.return_value = mock_result
 
-            api._jobs_query(model.ArtifactType.Coordinator)
+            api._jobs_query(_model.ArtifactType.Coordinator)
             mock_get.assert_called_with('jobs?jobtype=coordinator&offset=1&len=500')
 
-            api._jobs_query(model.ArtifactType.Coordinator, user='john_doe')
+            api._jobs_query(_model.ArtifactType.Coordinator, user='john_doe')
             mock_get.assert_called_with('jobs?jobtype=coordinator&filter=user=john_doe&offset=1&len=500')
 
-            api._jobs_query(model.ArtifactType.Coordinator, name='my_coordinator')
+            api._jobs_query(_model.ArtifactType.Coordinator, name='my_coordinator')
             mock_get.assert_called_with('jobs?jobtype=coordinator&filter=name=my_coordinator&offset=1&len=500')
 
-            api._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.RUNNING)
+            api._jobs_query(_model.ArtifactType.Coordinator, status=_model.CoordinatorStatus.RUNNING)
             mock_get.assert_called_with('jobs?jobtype=coordinator&filter=status=RUNNING&offset=1&len=500')
 
-            api._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.running())
+            api._jobs_query(_model.ArtifactType.Coordinator, status=_model.CoordinatorStatus.running())
             mock_get.assert_called_with('jobs?jobtype=coordinator&filter=status=RUNNING;status=RUNNINGWITHERROR;'
                                         'status=SUSPENDED;status=SUSPENDEDWITHERROR&offset=1&len=500')
 
             api._jobs_query(
-                model.ArtifactType.Coordinator,
+                _model.ArtifactType.Coordinator,
                 user='john_doe',
                 name='my_coordinator',
-                status=model.CoordinatorStatus.running())
+                status=_model.CoordinatorStatus.running())
             mock_get.assert_called_with('jobs?jobtype=coordinator&filter=user=john_doe;name=my_coordinator;'
                                         'status=RUNNING;status=RUNNINGWITHERROR;status=SUSPENDED;'
                                         'status=SUSPENDEDWITHERROR&offset=1&len=500')
 
     def test_jobs_query_bad_parameters(self, api):
         with pytest.raises(KeyError) as err:
-            api._jobs_query(model.ArtifactType.CoordinatorAction)
+            api._jobs_query(_model.ArtifactType.CoordinatorAction)
         assert 'ArtifactType.CoordinatorAction' in str(err)
 
         with pytest.raises(KeyError) as err:
-            api._jobs_query(model.ArtifactType.WorkflowAction)
+            api._jobs_query(_model.ArtifactType.WorkflowAction)
         assert 'ArtifactType.WorkflowAction' in str(err)
 
-    @mock.patch.object(model.Workflow, 'fill_in_details', side_effect=lambda c: c, autospec=True)
+    @mock.patch.object(_model.Workflow, 'fill_in_details', side_effect=lambda c: c, autospec=True)
     def test_jobs_query_workflow_pagination(self, _, api):
         mock_results = iter(
             [
@@ -355,14 +355,14 @@ class TestOozieClientJobsQuery(object):
         )
         with mock.patch.object(api, '_get') as mock_get:
             mock_get.side_effect = lambda url: next(mock_results)
-            result = api._jobs_query(model.ArtifactType.Workflow)
+            result = api._jobs_query(_model.ArtifactType.Workflow)
             assert len(result) == 3
             mock_get.assert_any_call('jobs?jobtype=wf&offset=1&len=500')
             mock_get.assert_any_call('jobs?jobtype=wf&offset=501&len=500')
             with pytest.raises(StopIteration):
                 next(mock_results)
 
-    @mock.patch.object(model.Coordinator, 'fill_in_details', side_effect=lambda c: c, autospec=True)
+    @mock.patch.object(_model.Coordinator, 'fill_in_details', side_effect=lambda c: c, autospec=True)
     def test_jobs_query_coordinator_pagination(self, _, api):
         mock_results = iter(
             [
@@ -379,14 +379,14 @@ class TestOozieClientJobsQuery(object):
 
         with mock.patch.object(api, '_get') as mock_get:
             mock_get.side_effect = lambda url: next(mock_results)
-            result = api._jobs_query(model.ArtifactType.Coordinator)
+            result = api._jobs_query(_model.ArtifactType.Coordinator)
             assert len(result) == 3
             mock_get.assert_any_call('jobs?jobtype=coordinator&offset=1&len=500')
             mock_get.assert_any_call('jobs?jobtype=coordinator&offset=501&len=500')
             with pytest.raises(StopIteration):
                 next(mock_results)
 
-    @mock.patch.object(model.Workflow, 'fill_in_details', side_effect=lambda c: c, autospec=True)
+    @mock.patch.object(_model.Workflow, 'fill_in_details', side_effect=lambda c: c, autospec=True)
     def test_jobs_query_workflow_details(self, fill_in_details, api):
         mock_result = {
             'total': 1,
@@ -395,15 +395,15 @@ class TestOozieClientJobsQuery(object):
         with mock.patch.object(api, '_get') as mock_get:
             mock_get.return_value = mock_result
 
-            api._jobs_query(model.ArtifactType.Workflow, details=False)
+            api._jobs_query(_model.ArtifactType.Workflow, details=False)
             mock_get.assert_called_with('jobs?jobtype=wf&offset=1&len=500')
             assert not fill_in_details.called
 
-            api._jobs_query(model.ArtifactType.Workflow, details=True)
+            api._jobs_query(_model.ArtifactType.Workflow, details=True)
             mock_get.assert_called_with('jobs?jobtype=wf&offset=1&len=500')
             assert fill_in_details.called
 
-    @mock.patch.object(model.Coordinator, 'fill_in_details', side_effect=lambda c: c, autospec=True)
+    @mock.patch.object(_model.Coordinator, 'fill_in_details', side_effect=lambda c: c, autospec=True)
     def test_jobs_query_coordinator_details(self, fill_in_details, api):
         mock_result = {
             'total': 1,
@@ -412,11 +412,11 @@ class TestOozieClientJobsQuery(object):
         with mock.patch.object(api, '_get') as mock_get:
             mock_get.return_value = mock_result
 
-            api._jobs_query(model.ArtifactType.Coordinator, details=False)
+            api._jobs_query(_model.ArtifactType.Coordinator, details=False)
             mock_get.assert_called_with('jobs?jobtype=coordinator&offset=1&len=500')
             assert not fill_in_details.called
 
-            api._jobs_query(model.ArtifactType.Coordinator, details=True)
+            api._jobs_query(_model.ArtifactType.Coordinator, details=True)
             mock_get.assert_called_with('jobs?jobtype=coordinator&offset=1&len=500')
             assert fill_in_details.called
 
@@ -425,57 +425,57 @@ class TestOozieClientJobsQuery(object):
             mock_query.return_value = [sample_workflow_running]
 
             api.jobs_all_workflows()
-            mock_query.assert_called_with(model.ArtifactType.Workflow, name=None, user=None, limit=0)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, name=None, user=None, limit=0)
 
             api.jobs_all_workflows(name='my_workflow')
-            mock_query.assert_called_with(model.ArtifactType.Workflow, name='my_workflow', user=None, limit=0)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, name='my_workflow', user=None, limit=0)
 
             api.jobs_all_workflows(user='john_doe')
-            mock_query.assert_called_with(model.ArtifactType.Workflow, name=None, user='john_doe', limit=0)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, name=None, user='john_doe', limit=0)
 
             api.jobs_all_workflows(name='my_workflow', user='john_doe')
-            mock_query.assert_called_with(model.ArtifactType.Workflow, name='my_workflow', user='john_doe', limit=0)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, name='my_workflow', user='john_doe', limit=0)
 
             api.jobs_all_workflows(name='my_workflow', limit=10)
-            mock_query.assert_called_with(model.ArtifactType.Workflow, name='my_workflow', user=None, limit=10)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, name='my_workflow', user=None, limit=10)
 
     def test_jobs_all_active_workflows(self, api, sample_workflow_running):
-        expected_statuses = model.WorkflowStatus.active()
+        expected_statuses = _model.WorkflowStatus.active()
         with mock.patch.object(api, '_jobs_query') as mock_query:
             mock_query.return_value = [sample_workflow_running]
 
             api.jobs_all_active_workflows()
-            mock_query.assert_called_with(model.ArtifactType.Workflow, user=None, status=expected_statuses)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, user=None, status=expected_statuses)
 
             api.jobs_all_active_workflows(user='john_doe')
-            mock_query.assert_called_with(model.ArtifactType.Workflow, user='john_doe', status=expected_statuses)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, user='john_doe', status=expected_statuses)
 
     def test_jobs_all_running_workflows(self, api, sample_workflow_running):
-        expected_statuses = model.WorkflowStatus.running()
+        expected_statuses = _model.WorkflowStatus.running()
         with mock.patch.object(api, '_jobs_query') as mock_query:
             mock_query.return_value = [sample_workflow_running]
 
             api.jobs_all_running_workflows()
-            mock_query.assert_called_with(model.ArtifactType.Workflow, user=None, status=expected_statuses)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, user=None, status=expected_statuses)
 
             api.jobs_all_running_workflows(user='john_doe')
-            mock_query.assert_called_with(model.ArtifactType.Workflow, user='john_doe', status=expected_statuses)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, user='john_doe', status=expected_statuses)
 
     def test_jobs_running_workflows(self, api, sample_workflow_running):
-        expected_statuses = model.WorkflowStatus.running()
+        expected_statuses = _model.WorkflowStatus.running()
         with mock.patch.object(api, '_jobs_query') as mock_query:
             mock_query.return_value = [sample_workflow_running]
 
             api.jobs_running_workflows('my_workflow')
             mock_query.assert_called_with(
-                model.ArtifactType.Workflow,
+                _model.ArtifactType.Workflow,
                 name='my_workflow',
                 user=None,
                 status=expected_statuses)
 
             api.jobs_running_workflows('my_workflow', user='john_doe')
             mock_query.assert_called_with(
-                model.ArtifactType.Workflow,
+                _model.ArtifactType.Workflow,
                 name='my_workflow',
                 user='john_doe',
                 status=expected_statuses)
@@ -485,85 +485,85 @@ class TestOozieClientJobsQuery(object):
             mock_query.return_value = [sample_workflow_running]
 
             api.jobs_last_workflow('my_workflow')
-            mock_query.assert_called_with(model.ArtifactType.Workflow, name='my_workflow', user=None, limit=1)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, name='my_workflow', user=None, limit=1)
 
             api.jobs_last_workflow('my_workflow', user='john_doe')
-            mock_query.assert_called_with(model.ArtifactType.Workflow, name='my_workflow', user='john_doe', limit=1)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, name='my_workflow', user='john_doe', limit=1)
 
     def test_jobs_workflow_names_parameters(self, api):
         with mock.patch.object(api, '_jobs_query') as mock_query:
             mock_query.return_value = []
 
             api.jobs_workflow_names()
-            mock_query.assert_called_with(model.ArtifactType.Workflow, user=None, details=False)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, user=None, details=False)
 
             api.jobs_workflow_names(user='john_doe')
-            mock_query.assert_called_with(model.ArtifactType.Workflow, user='john_doe', details=False)
+            mock_query.assert_called_with(_model.ArtifactType.Workflow, user='john_doe', details=False)
 
     def test_jobs_all_coordinators(self, api, sample_coordinator_running):
         with mock.patch.object(api, '_jobs_query') as mock_query:
             mock_query.return_value = [sample_coordinator_running]
 
             api.jobs_all_coordinators()
-            mock_query.assert_called_with(model.ArtifactType.Coordinator, name=None, user=None, limit=0)
+            mock_query.assert_called_with(_model.ArtifactType.Coordinator, name=None, user=None, limit=0)
 
             api.jobs_all_coordinators(name='my_coordinator')
-            mock_query.assert_called_with(model.ArtifactType.Coordinator, name='my_coordinator', user=None, limit=0)
+            mock_query.assert_called_with(_model.ArtifactType.Coordinator, name='my_coordinator', user=None, limit=0)
 
             api.jobs_all_coordinators(user='john_doe')
-            mock_query.assert_called_with(model.ArtifactType.Coordinator, name=None, user='john_doe', limit=0)
+            mock_query.assert_called_with(_model.ArtifactType.Coordinator, name=None, user='john_doe', limit=0)
 
             api.jobs_all_coordinators(name='my_coordinator', user='john_doe')
             mock_query.assert_called_with(
-                model.ArtifactType.Coordinator,
+                _model.ArtifactType.Coordinator,
                 name='my_coordinator',
                 user='john_doe',
                 limit=0)
 
             api.jobs_all_coordinators(name='my_coordinator', limit=1)
             mock_query.assert_called_with(
-                model.ArtifactType.Coordinator,
+                _model.ArtifactType.Coordinator,
                 name='my_coordinator',
                 user=None,
                 limit=1)
 
     def test_jobs_all_active_coordinators(self, api, sample_coordinator_running):
-        expected_statuses = model.CoordinatorStatus.active()
+        expected_statuses = _model.CoordinatorStatus.active()
         with mock.patch.object(api, '_jobs_query') as mock_query:
             mock_query.return_value = [sample_coordinator_running]
 
             api.jobs_all_active_coordinators()
-            mock_query.assert_called_with(model.ArtifactType.Coordinator, user=None, status=expected_statuses)
+            mock_query.assert_called_with(_model.ArtifactType.Coordinator, user=None, status=expected_statuses)
 
             api.jobs_all_active_coordinators(user='john_doe')
-            mock_query.assert_called_with(model.ArtifactType.Coordinator, user='john_doe', status=expected_statuses)
+            mock_query.assert_called_with(_model.ArtifactType.Coordinator, user='john_doe', status=expected_statuses)
 
     def test_jobs_all_running_coordinators(self, api, sample_coordinator_running):
-        expected_statuses = model.CoordinatorStatus.running()
+        expected_statuses = _model.CoordinatorStatus.running()
         with mock.patch.object(api, '_jobs_query') as mock_query:
             mock_query.return_value = [sample_coordinator_running]
 
             api.jobs_all_running_coordinators()
-            mock_query.assert_called_with(model.ArtifactType.Coordinator, user=None, status=expected_statuses)
+            mock_query.assert_called_with(_model.ArtifactType.Coordinator, user=None, status=expected_statuses)
 
             api.jobs_all_running_coordinators(user='john_doe')
-            mock_query.assert_called_with(model.ArtifactType.Coordinator, user='john_doe', status=expected_statuses)
+            mock_query.assert_called_with(_model.ArtifactType.Coordinator, user='john_doe', status=expected_statuses)
 
     def test_jobs_running_coordinators(self, api, sample_coordinator_running):
-        expected_statuses = model.CoordinatorStatus.running()
+        expected_statuses = _model.CoordinatorStatus.running()
         with mock.patch.object(api, '_jobs_query') as mock_query:
             mock_query.return_value = [sample_coordinator_running]
 
             api.jobs_running_coordinators('my_coordinator')
             mock_query.assert_called_with(
-                model.ArtifactType.Coordinator,
+                _model.ArtifactType.Coordinator,
                 name='my_coordinator',
                 user=None,
                 status=expected_statuses)
 
             api.jobs_running_coordinators('my_coordinator', user='john_doe')
             mock_query.assert_called_with(
-                model.ArtifactType.Coordinator,
+                _model.ArtifactType.Coordinator,
                 name='my_coordinator',
                 user='john_doe',
                 status=expected_statuses)
@@ -573,11 +573,11 @@ class TestOozieClientJobsQuery(object):
             mock_query.return_value = [sample_coordinator_running]
 
             api.jobs_last_coordinator('my_coordinator')
-            mock_query.assert_called_with(model.ArtifactType.Coordinator, name='my_coordinator', user=None, limit=1)
+            mock_query.assert_called_with(_model.ArtifactType.Coordinator, name='my_coordinator', user=None, limit=1)
 
             api.jobs_last_coordinator('my_coordinator', user='john_doe')
             mock_query.assert_called_with(
-                model.ArtifactType.Coordinator,
+                _model.ArtifactType.Coordinator,
                 name='my_coordinator',
                 user='john_doe',
                 limit=1)
@@ -587,10 +587,10 @@ class TestOozieClientJobsQuery(object):
             mock_query.return_value = []
 
             api.jobs_coordinator_names()
-            mock_query.assert_called_with(model.ArtifactType.Coordinator, user=None, details=False)
+            mock_query.assert_called_with(_model.ArtifactType.Coordinator, user=None, details=False)
 
             api.jobs_coordinator_names(user='john_doe')
-            mock_query.assert_called_with(model.ArtifactType.Coordinator, user='john_doe', details=False)
+            mock_query.assert_called_with(_model.ArtifactType.Coordinator, user='john_doe', details=False)
 
 
 class TestOozieClientJobCoordinatorQuery(object):
@@ -632,17 +632,17 @@ class TestOozieClientJobCoordinatorQuery(object):
             mock_get.assert_any_call('job/' + SAMPLE_COORD_ACTION)
             mock_get.reset_mock()
 
-            api._coordinator_query(SAMPLE_COORD_ID, status=model.CoordinatorActionStatus.RUNNING)
+            api._coordinator_query(SAMPLE_COORD_ID, status=_model.CoordinatorActionStatus.RUNNING)
             mock_get.assert_any_call('job/' + SAMPLE_COORD_ID + '?offset=1&len=1&filter=status=RUNNING')
             mock_get.reset_mock()
 
-            api._coordinator_query(SAMPLE_COORD_ID, status=model.CoordinatorActionStatus.running())
+            api._coordinator_query(SAMPLE_COORD_ID, status=_model.CoordinatorActionStatus.running())
             mock_get.assert_any_call('job/' + SAMPLE_COORD_ID +
                                      '?offset=1&len=1&filter=status=RUNNING;status=SUSPENDED')
             mock_get.reset_mock()
 
             with pytest.raises(ValueError) as err:
-                api._coordinator_query(SAMPLE_COORD_ACTION, status=model.CoordinatorActionStatus.RUNNING)
+                api._coordinator_query(SAMPLE_COORD_ACTION, status=_model.CoordinatorActionStatus.RUNNING)
             assert 'Cannot supply both coordinator action ID and status' in str(err)
             assert not mock_get.called
 
@@ -680,7 +680,7 @@ class TestOozieClientJobCoordinatorQuery(object):
             api._coordinator_query(SAMPLE_COORD_ID, start=99, limit=10)
             mock_get.assert_any_call('job/' + SAMPLE_COORD_ID + '?offset=99&len=10')
 
-            api._coordinator_query(SAMPLE_COORD_ID, status=model.CoordinatorActionStatus.RUNNING, start=10, limit=10)
+            api._coordinator_query(SAMPLE_COORD_ID, status=_model.CoordinatorActionStatus.RUNNING, start=10, limit=10)
             mock_get.assert_any_call('job/' + SAMPLE_COORD_ID + '?offset=10&len=10&filter=status=RUNNING')
 
     def test_coordinator_query_exception(self, api):
@@ -836,21 +836,21 @@ class TestOozieClientJobCoordinatorQuery(object):
 
                 api.job_coordinator_all_active_actions(coordinator_id=SAMPLE_COORD_ID)
                 mock_decode.assert_called_with(SAMPLE_COORD_ID, None, None, None)
-                mock_query.assert_called_with(SAMPLE_COORD_ID, status=model.CoordinatorActionStatus.active())
+                mock_query.assert_called_with(SAMPLE_COORD_ID, status=_model.CoordinatorActionStatus.active())
 
                 api.job_coordinator_all_active_actions(name='my_coordinator')
                 mock_decode.assert_called_with(None, 'my_coordinator', None, None)
-                mock_query.assert_called_with(SAMPLE_COORD_ID, status=model.CoordinatorActionStatus.active())
+                mock_query.assert_called_with(SAMPLE_COORD_ID, status=_model.CoordinatorActionStatus.active())
 
                 api.job_coordinator_all_active_actions(name='my_coordinator', user='john_doe')
                 mock_decode.assert_called_with(None, 'my_coordinator', 'john_doe', None)
-                mock_query.assert_called_with(SAMPLE_COORD_ID, status=model.CoordinatorActionStatus.active())
+                mock_query.assert_called_with(SAMPLE_COORD_ID, status=_model.CoordinatorActionStatus.active())
 
                 sample_coordinator = copy.copy(sample_coordinator_running)
                 sample_coordinator.actions = None
                 api.job_coordinator_all_active_actions(coordinator=sample_coordinator)
                 mock_decode.assert_called_with(None, None, None, sample_coordinator)
-                mock_query.assert_called_with(SAMPLE_COORD_ID, status=model.CoordinatorActionStatus.active())
+                mock_query.assert_called_with(SAMPLE_COORD_ID, status=_model.CoordinatorActionStatus.active())
                 assert sample_coordinator.actions
                 assert sample_coordinator.actions[12] == sample_coordinator_action_running
 

@@ -4,9 +4,9 @@
 from pyoozie.coordinator import Coordinator, ExecutionOrder
 from pyoozie.tags import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, Email
 from pyoozie.builder import WorkflowBuilder, CoordinatorBuilder
-from pyoozie.model import parse_coordinator_id, parse_workflow_id, ArtifactType, \
+from pyoozie.api._model import parse_coordinator_id, parse_workflow_id, ArtifactType, \
     CoordinatorStatus, CoordinatorActionStatus, WorkflowStatus, WorkflowActionStatus
-from pyoozie.oozie_client import OozieClient
+from pyoozie.api._client import OozieClient
 from pyoozie._exceptions import OozieException
 
 __version__ = '0.0.0'
