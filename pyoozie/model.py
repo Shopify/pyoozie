@@ -9,7 +9,7 @@ import re
 from enum import Enum
 import untangle
 
-from pyoozie.exceptions import OozieException
+from pyoozie._exceptions import OozieException
 
 
 _COORD_ID_RE = re.compile('^(?P<id>.*-C)(?:@(?P<action>[1-9][0-9]*))?$')

@@ -8,7 +8,7 @@ import pytest
 import requests_mock
 
 from pyoozie import model
-from pyoozie.exceptions import OozieException
+from pyoozie._exceptions import OozieException
 from pyoozie.oozie_client import OozieClient
 
 

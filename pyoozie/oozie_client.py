@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import logging
 import requests
 
-from pyoozie.exceptions import OozieException
+from pyoozie._exceptions import OozieException
 from pyoozie.model import ArtifactType, Coordinator, CoordinatorAction, \
     Workflow, WorkflowAction, parse_coordinator_id, parse_workflow_id, \
     CoordinatorStatus, CoordinatorActionStatus, WorkflowStatus, WorkflowActionStatus

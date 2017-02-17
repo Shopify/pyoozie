@@ -7,7 +7,7 @@ from six import string_types
 import mock
 import pytest
 
-from pyoozie import model, exceptions
+from pyoozie import model, _exceptions
 
 
 SAMPLE_COORD_ID = '0123456-123456789012345-oozie-oozi-C'
@@ -340,7 +340,7 @@ def test_status():
     assert value.is_active
     assert value.is_running
 
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         value = model._status(4, is_active=False, is_running=True)
     assert 'A running status implies active' in str(err)
 
@@ -524,12 +524,12 @@ def test_workflow_action_status_predicates(status, active, running, suspendable,
 
 
 def test_parse_empty_coordinator(empty_coordinator):
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         coord = model.Coordinator(None, empty_coordinator, None)
     assert "Required key 'coordJobId' missing or invalid in Coordinator" in str(err)
 
     empty_coordinator['coordJobId'] = 'bad-coord-id'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         coord = model.Coordinator(None, empty_coordinator, None)
     assert "Required key 'coordJobId' missing or invalid in Coordinator" in str(err)
 
@@ -559,13 +559,13 @@ def test_coordinator_validate_degenerate_fields(empty_coordinator):
     empty_coordinator['coordJobId'] = SAMPLE_COORD_ID
     empty_coordinator['status'] = 'RUNNING'
     empty_coordinator['toString'] = 'Coordinator application id[blarg] status [RUNNING]'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.Coordinator(None, empty_coordinator, None)
     assert 'toString does not contain coordinator ID' in str(err)
 
     empty_coordinator['status'] = 'KILLED'
     empty_coordinator['toString'] = 'Coordinator application id[' + SAMPLE_COORD_ID + '] status [RUNNING]'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.Coordinator(None, empty_coordinator, None)
     assert 'toString does not contain status' in str(err)
 
@@ -578,12 +578,12 @@ def test_coordinator_extrapolate_degenerate_fields(empty_coordinator):
 
 
 def test_parse_empty_coordinator_action(empty_coordinator_action):
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         coord = model.CoordinatorAction(None, empty_coordinator_action, None)
     assert "Required key 'id' missing or invalid in CoordinatorAction" in str(err)
 
     empty_coordinator_action['id'] = 'bad-coord-C@should-be-int'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         coord = model.CoordinatorAction(None, empty_coordinator_action, None)
     assert "Required key 'id' missing or invalid in CoordinatorAction" in str(err)
 
@@ -610,12 +610,12 @@ def test_coordinator_action_validate_degenerate_fields(empty_coordinator_action)
     empty_coordinator_action['id'] = SAMPLE_COORD_ACTION
     empty_coordinator_action['coordJobId'] = 'bad-coord-C'
     empty_coordinator_action['actionNumber'] = 666
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.CoordinatorAction(None, empty_coordinator_action, None)
     assert 'coordJobId does not match coordinator action ID' in str(err)
 
     empty_coordinator_action['coordJobId'] = SAMPLE_COORD_ID
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.CoordinatorAction(None, empty_coordinator_action, None)
     assert 'actionNumber does not match coordinator action ID' in str(err)
     empty_coordinator_action['actionNumber'] = 12
@@ -623,13 +623,13 @@ def test_coordinator_action_validate_degenerate_fields(empty_coordinator_action)
     empty_coordinator_action['id'] = SAMPLE_COORD_ACTION
     empty_coordinator_action['status'] = 'RUNNING'
     empty_coordinator_action['toString'] = 'CoordinatorAction name[blarg] status [RUNNING]'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.CoordinatorAction(None, empty_coordinator_action, None)
     assert 'toString does not contain coordinator action ID' in str(err)
 
     empty_coordinator_action['status'] = 'KILLED'
     empty_coordinator_action['toString'] = 'CoordinatorAction name[' + SAMPLE_COORD_ACTION + '] status [RUNNING]'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.CoordinatorAction(None, empty_coordinator_action, None)
     assert 'toString does not contain status' in str(err)
 
@@ -646,12 +646,12 @@ def test_coordinator_action_extrapolate_degenerate_fields(empty_coordinator_acti
 
 
 def test_parse_empty_workflow(empty_workflow):
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         wf = model.Workflow(None, empty_workflow, None)
     assert "Required key 'id' missing or invalid in Workflow" in str(err)
 
     empty_workflow['id'] = 'bad-wf-id'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         wf = model.Workflow(None, empty_workflow, None)
     assert "Required key 'id' missing or invalid in Workflow" in str(err)
 
@@ -677,13 +677,13 @@ def test_workflow_validate_degenerate_fields(empty_workflow):
     empty_workflow['id'] = SAMPLE_WF_ID
     empty_workflow['status'] = 'RUNNING'
     empty_workflow['toString'] = 'Workflow id[blarg] status [RUNNING]'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.Workflow(None, empty_workflow, None)
     assert 'toString does not contain workflow ID' in str(err)
 
     empty_workflow['status'] = 'KILLED'
     empty_workflow['toString'] = 'Workflow id[' + SAMPLE_WF_ID + '] status[RUNNING]'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.Workflow(None, empty_workflow, None)
     assert 'toString does not contain status' in str(err)
 
@@ -696,12 +696,12 @@ def test_workflow_extrapolate_degenerate_fields(empty_workflow):
 
 
 def test_parse_empty_workflow_action(empty_workflow_action):
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         wf = model.WorkflowAction(None, empty_workflow_action, None)
     assert "Required key 'id' missing or invalid in WorkflowAction" in str(err)
 
     empty_workflow_action['id'] = 'bad-wf-action@foo'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         wf = model.WorkflowAction(None, empty_workflow_action, None)
     assert "Required key 'id' missing or invalid in WorkflowAction" in str(err)
 
@@ -725,20 +725,20 @@ def test_parse_workflow_action(valid_workflow_action):
 def test_workflow_action_validate_degenerate_fields(empty_workflow_action):
     empty_workflow_action['id'] = SAMPLE_WF_ACTION
     empty_workflow_action['name'] = 'bad-action'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.WorkflowAction(None, empty_workflow_action, None)
     assert 'name does not match workflow action ID' in str(err)
 
     empty_workflow_action['name'] = 'action'
     empty_workflow_action['status'] = 'OK'
     empty_workflow_action['toString'] = 'Action name[blarg] status[OK]'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.WorkflowAction(None, empty_workflow_action, None)
     assert 'toString does not contain workflow action name' in str(err)
 
     empty_workflow_action['status'] = 'ERROR'
     empty_workflow_action['toString'] = 'Action name[' + SAMPLE_WF_ACTION + '] status[OK]'
-    with pytest.raises(exceptions.OozieParsingException) as err:
+    with pytest.raises(_exceptions.OozieParsingException) as err:
         model.WorkflowAction(None, empty_workflow_action, None)
     assert 'toString does not contain status' in str(err)
 
