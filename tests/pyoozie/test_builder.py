@@ -119,7 +119,7 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
     </configuration>''') == xml_to_dict_unordered(actual)
 
 
-def test_workflow_builder(tmpdir, request):
+def test_workflow_builder(tmpdir):
     with open('tests/data/workflow.xml', 'r') as fh:
         expected_xml = fh.read()
 
@@ -148,10 +148,10 @@ def test_workflow_builder(tmpdir, request):
             shell=True
         )
     except subprocess.CalledProcessError as e:
-        if request.config.getoption('verbose') > 0:
-            print(actual_xml)
-            print(e.output)
-        raise AssertionError('Invalid XML')
+        raise AssertionError('An XML validation error\n\n{error}\n\noccurred while parsing:\n\n{xml}'.format(
+            error=e.output.decode('utf8').strip(),
+            xml=actual_xml,
+        ))
 
     # Does it throw an exception on a bad name?
     with pytest.raises(AssertionError) as assertion_info:
