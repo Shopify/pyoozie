@@ -31,8 +31,11 @@ setup(
     packages=['pyoozie'],
     install_requires=[
         'enum34>=0.9.23',
-        'yattag>=1.7.2',
+        'requests>=2.12.3',
         'setuptools>=0.9',
+        'six>=1.10.0',
+        'untangle>=1.1.0',
+        'yattag>=1.7.2',
     ],
     license="MIT",
     keywords=['oozie'],
