@@ -12,3 +12,7 @@ script:
   - make lint
 notifications:
   email: false
+addons:
+  apt:
+    packages:
+      openjdk-7-jdk
