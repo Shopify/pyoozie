@@ -1,14 +1,16 @@
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
-from __future__ import unicode_literals
+from __future__ import unicode_literals, print_function
+
+import subprocess
 
 from datetime import datetime
 
 import pytest
 
-from tests.utils import xml_to_dict_unordered
 from pyoozie import WorkflowBuilder, CoordinatorBuilder, Shell, Email, ExecutionOrder
 from pyoozie.builder import _workflow_submission_xml, _coordinator_submission_xml
+from tests.utils import xml_to_dict_unordered
 
 
 @pytest.fixture
@@ -117,9 +119,9 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
     </configuration>''') == xml_to_dict_unordered(actual)
 
 
-def test_workflow_builder():
+def test_workflow_builder(tmpdir):
     with open('tests/data/workflow.xml', 'r') as fh:
-        expected = fh.read()
+        expected_xml = fh.read()
 
     # Can it XML?
     builder = WorkflowBuilder(
@@ -131,8 +133,25 @@ def test_workflow_builder():
         kill_on_error='Failure message',
     )
 
+    # Is this XML expected
     actual_xml = builder.build()
-    assert xml_to_dict_unordered(expected) == xml_to_dict_unordered(actual_xml)
+    assert xml_to_dict_unordered(expected_xml) == xml_to_dict_unordered(actual_xml)
+
+    # Does it validate against the workflow XML schema?
+    try:
+        filename = tmpdir.join("workflow.xml")
+        filename.write_text(actual_xml, encoding='utf8')
+        subprocess.check_output(
+            'java -cp lib/oozie-client-4.1.0.jar:lib/commons-cli-1.2.jar '
+            'org.apache.oozie.cli.OozieCLI validate {path}'.format(path=str(filename)),
+            stderr=subprocess.STDOUT,
+            shell=True
+        )
+    except subprocess.CalledProcessError as e:
+        raise AssertionError('An XML validation error\n\n{error}\n\noccurred while parsing:\n\n{xml}'.format(
+            error=e.output.decode('utf8').strip(),
+            xml=actual_xml,
+        ))
 
     # Does it throw an exception on a bad name?
     with pytest.raises(AssertionError) as assertion_info:
