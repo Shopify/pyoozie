@@ -142,7 +142,7 @@ def test_workflow_builder(tmpdir, request):
         filename = tmpdir.join("workflow.xml")
         filename.write_text(actual_xml, encoding='utf8')
         subprocess.check_output(
-            'java -cp oozie/oozie-4.1.0/lib/oozie-client-4.1.0.jar:oozie/oozie-4.1.0/lib/commons-cli-1.2.jar '
+            'java -cp lib/oozie-client-4.1.0.jar:lib/commons-cli-1.2.jar '
             'org.apache.oozie.cli.OozieCLI validate {path}'.format(path=str(filename)),
             stderr=subprocess.STDOUT,
             shell=True

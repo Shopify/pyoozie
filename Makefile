@@ -10,10 +10,11 @@ clean:
 install:
 		pip install -e .
 		pip install -r dev_requirements.txt
-		test ! -d oozie/oozie-4.1.0/lib && \
-			mkdir -p oozie/oozie-4.1.0/lib && \
-			curl http://central.maven.org/maven2/org/apache/oozie/oozie-client/4.1.0/oozie-client-4.1.0.jar -o oozie/oozie-4.1.0/lib/oozie-client-4.1.0.jar && \
-			curl http://central.maven.org/maven2/commons-cli/commons-cli/1.2/commons-cli-1.2.jar -o oozie/oozie-4.1.0/lib/commons-cli-1.2.jar
+		test -d lib || mkdir lib
+		test -f lib/oozie-client-4.1.0.jar || \
+			curl http://central.maven.org/maven2/org/apache/oozie/oozie-client/4.1.0/oozie-client-4.1.0.jar -o lib/oozie-client-4.1.0.jar
+		test -f lib/commons-cli-1.2.jar || \
+			curl http://central.maven.org/maven2/commons-cli/commons-cli/1.2/commons-cli-1.2.jar -o lib/commons-cli-1.2.jar
 
 test: clean
 		py.test -vv --durations=10 --cov=pyoozie
