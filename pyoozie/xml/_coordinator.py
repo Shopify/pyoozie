@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from datetime import timedelta
 from enum import Enum
 
-from pyoozie.tags import _validate, XMLSerializable, Parameters, Configuration
+from pyoozie.xml._tags import _validate, XMLSerializable, Parameters, Configuration
 
 
 ONE_HUNDRED_YEARS = 100 * 365.24

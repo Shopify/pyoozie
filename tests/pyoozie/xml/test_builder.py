@@ -8,8 +8,10 @@ from datetime import datetime
 
 import pytest
 
-from pyoozie import WorkflowBuilder, CoordinatorBuilder, Shell, Email, ExecutionOrder
-from pyoozie.builder import _workflow_submission_xml, _coordinator_submission_xml
+from pyoozie.xml._builder import WorkflowBuilder, CoordinatorBuilder, _workflow_submission_xml, \
+    _coordinator_submission_xml
+from pyoozie.xml._coordinator import ExecutionOrder
+from pyoozie.xml._tags import Shell, Email
 from tests.utils import xml_to_dict_unordered
 
 

@@ -2,8 +2,8 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
-from pyoozie.coordinator import Coordinator
-from pyoozie.tags import Configuration, _validate
+from pyoozie.xml._coordinator import Coordinator
+from pyoozie.xml._tags import Configuration, _validate
 
 
 def _workflow_submission_xml(username, workflow_xml_path, configuration=None, indent=False):
