@@ -1,13 +1,14 @@
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
+from __future__ import unicode_literals
 
-from pyoozie.coordinator import Coordinator, ExecutionOrder
-from pyoozie.tags import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, Email
 from pyoozie.builder import WorkflowBuilder, CoordinatorBuilder
-from pyoozie.api._model import parse_coordinator_id, parse_workflow_id, ArtifactType, \
+from pyoozie.client import OozieClient
+from pyoozie.coordinator import Coordinator, ExecutionOrder
+from pyoozie.exceptions import OozieException
+from pyoozie.model import parse_coordinator_id, parse_workflow_id, ArtifactType, \
     CoordinatorStatus, CoordinatorActionStatus, WorkflowStatus, WorkflowActionStatus
-from pyoozie.api._client import OozieClient
-from pyoozie._exceptions import OozieException
+from pyoozie.tags import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, Email
 
 __version__ = '0.0.0'
 
