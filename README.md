@@ -2,6 +2,11 @@
 
 This is a library for querying and scheduling with [Apache Oozie](https://oozie.apache.org/).
 
+## Supported versions
+
+- Oozie 4.1.0
+- Python 2.7 and 3.3+
+
 ## Contributing
 
 Let's build a codebase that we can be proud of, that enables us to deliver better results, faster and more confidently.
