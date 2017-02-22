@@ -2,11 +2,11 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
+from pyoozie._exceptions import OozieException
 from pyoozie.api._model import parse_coordinator_id, parse_workflow_id, ArtifactType, \
     CoordinatorStatus, CoordinatorActionStatus, WorkflowStatus, WorkflowActionStatus
 from pyoozie.api._client import OozieClient
-from pyoozie._exceptions import OozieException
-from pyoozie.xml._coordinator import ExecutionOrder
+from pyoozie.xml._coordinator import Coordinator, ExecutionOrder
 from pyoozie.xml._tags import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, Email
 from pyoozie.xml._builder import WorkflowBuilder, CoordinatorBuilder
 
@@ -14,7 +14,7 @@ __version__ = '0.0.0'
 
 __all__ = (
     # coordinator
-    'ExecutionOrder',
+    'Coordinator', 'ExecutionOrder',
 
     # tags
     'Configuration', 'Parameters', 'Credentials', 'Shell', 'SubWorkflow', 'GlobalConfiguration', 'Email',
