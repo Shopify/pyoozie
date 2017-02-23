@@ -105,10 +105,10 @@ ignore-mixin-members=yes
 
 # List of classes names for which member attributes should not be checked
 # (useful for classes with attributes dynamically set).
-ignored-classes=pyoozie.api._model._OozieArtifact,
- pyoozie.api._model._StatusValue, pyoozie.api._model._StatusEnum,
- pyoozie.api._model.Coordinator, pyoozie.api._model.CoordinatorAction,
- pyoozie.api._model.Workflow, pyoozie.api._model.WorkflowAction,
+ignored-classes=pyoozie.model._OozieArtifact,
+ pyoozie.model._StatusValue, pyoozie.model._StatusEnum,
+ pyoozie.model.Coordinator, pyoozie.model.CoordinatorAction,
+ pyoozie.model.Workflow, pyoozie.model.WorkflowAction,
 
 # When zope mode is activated, add a predefined set of Zope acquired attributes
 # to generated-members.
