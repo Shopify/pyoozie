@@ -10,6 +10,7 @@ import pytest
 
 from pyoozie import WorkflowBuilder, CoordinatorBuilder, Shell, Email, ExecutionOrder
 from pyoozie.builder import _workflow_submission_xml, _coordinator_submission_xml
+from pyoozie.tags import MAX_NAME_LENGTH, MAX_IDENTIFIER_LENGTH
 from tests.utils import xml_to_dict_unordered
 
 
@@ -153,18 +154,42 @@ def test_workflow_builder(tmpdir):
             xml=actual_xml,
         ))
 
-    # Does it throw an exception on a bad name?
+    # Does it throw an exception on a bad workflow name?
     with pytest.raises(AssertionError) as assertion_info:
         WorkflowBuilder(
-            name='descriptive-name'
+            name='l' * (MAX_NAME_LENGTH + 1)
         ).add_action(
-            name='Name with invalid characters',
+            name='payload',
             action=Shell(exec_command='echo "test"'),
             action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
             kill_on_error='Failure message',
         )
-    assert str(assertion_info.value) == \
-        "Identifier must match ^[a-zA-Z_][\\-_a-zA-Z0-9]{0,38}$, 'Name with invalid characters' does not"
+    assert "Name must be less than " in str(assertion_info.value)
+
+    # Does it throw an exception on a bad action name?
+    with pytest.raises(AssertionError) as assertion_info:
+        WorkflowBuilder(
+            name='descriptive-name'
+        ).add_action(
+            name='Action name with invalid characters',
+            action=Shell(exec_command='echo "test"'),
+            action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
+            kill_on_error='Failure message',
+        )
+    assert "Identifier must match " in str(assertion_info.value) and \
+        "Action name with invalid characters" in str(assertion_info.value)
+
+    # Does it throw an exception on an action name that's too long?
+    with pytest.raises(AssertionError) as assertion_info:
+        WorkflowBuilder(
+            name='descriptive-name'
+        ).add_action(
+            name='l' * (MAX_IDENTIFIER_LENGTH + 1),
+            action=Shell(exec_command='echo "test"'),
+            action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
+            kill_on_error='Failure message',
+        )
+    assert "Identifier must be less than " in str(assertion_info.value)
 
     # Does it raise an exception when you try to add multiple actions?
     with pytest.raises(NotImplementedError) as assertion_info:

@@ -5,13 +5,22 @@ from abc import ABCMeta, abstractmethod
 import re
 import yattag
 
-
-MAX_IDENTIFIER_LENGTH = 39
-REGEX_IDENTIFIER = r'^[a-zA-Z_][\-_a-zA-Z0-9]{0,38}$'
+MAX_NAME_LENGTH = 255
+MAX_IDENTIFIER_LENGTH = 50
+REGEX_IDENTIFIER = r'^[a-zA-Z_][\-_a-zA-Z0-9]{0,254}$'
 COMPILED_REGEX_IDENTIFIER = re.compile(REGEX_IDENTIFIER)
 
 
-def _validate(identifier):
+def _validate_name(name):
+    assert len(name) <= MAX_NAME_LENGTH, \
+        "Name must be less than {max_length} chars long, '{name}' is {length}".format(
+            max_length=MAX_NAME_LENGTH,
+            name=name,
+            length=len(name))
+    return name
+
+
+def _validate_id(identifier):
 
     assert len(identifier) <= MAX_IDENTIFIER_LENGTH, \
         "Identifier must be less than {max_length} chars long, '{identifier}' is {length}".format(
@@ -132,7 +141,7 @@ class Credentials(_PropertyList):
                                    'type': credential_type,
                                },
                                values=values)
-        self.name = _validate(credential_name)
+        self.name = _validate_id(credential_name)
 
 
 class Shell(XMLSerializable):

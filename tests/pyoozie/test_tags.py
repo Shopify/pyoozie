@@ -7,7 +7,8 @@ import decimal
 import pytest
 
 from pyoozie import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, Email
-from pyoozie.tags import _validate, XMLSerializable
+from pyoozie.tags import _validate_id, _validate_name, XMLSerializable, MAX_NAME_LENGTH, MAX_IDENTIFIER_LENGTH, \
+    REGEX_IDENTIFIER
 from tests.utils import xml_to_dict_unordered
 
 
@@ -62,30 +63,55 @@ def expected_property_values_xml():
         </property>'''
 
 
-def test_validate():
-    _validate('ok-id')
+def test_validate_id():
+    _validate_id('ok-id')
 
-    _validate('very-long-flow-name-that-spans-39-chars')
+    _validate_id('l' * MAX_IDENTIFIER_LENGTH)
+
+    very_long_name = 'l' * (MAX_IDENTIFIER_LENGTH + 1)
+    with pytest.raises(AssertionError) as assertion_info:
+        _validate_id(very_long_name)
+    assert str(assertion_info.value) == (
+        "Identifier must be less than {max_length} chars long, '{identifier}' is {length}"
+    ).format(
+        max_length=MAX_IDENTIFIER_LENGTH,
+        identifier=very_long_name,
+        length=len(very_long_name)
+    )
 
     with pytest.raises(AssertionError) as assertion_info:
-        _validate('too-long-flow-name-that-spans-more-than-39-chars')
-    assert str(assertion_info.value) == "Identifier must be less than 39 " \
-        "chars long, 'too-long-flow-name-that-spans-more-than-39-chars' is 48"
+        _validate_id('0-id-starting-with-a-non-alpha-char')
+    assert str(assertion_info.value) == (
+        "Identifier must match {regex}, '0-id-starting-with-a-non-alpha-char' does not"
+    ).format(regex=REGEX_IDENTIFIER)
 
     with pytest.raises(AssertionError) as assertion_info:
-        _validate('0-id-starting-with-a-non-alpha-char')
-    assert str(assertion_info.value) == "Identifier must match ^[a-zA-Z_]" \
-        "[\\-_a-zA-Z0-9]{0,38}$, '0-id-starting-with-a-non-alpha-char' " \
-        "does not"
+        _validate_id('id.with.illlegal.chars')
+    assert str(assertion_info.value) == (
+        "Identifier must match {regex}, 'id.with.illlegal.chars' does not"
+    ).format(regex=REGEX_IDENTIFIER)
 
+
+def test_validate_name():
+    _validate_name('OK name')
+
+    _validate_name('l' * MAX_NAME_LENGTH)
+
+    very_long_name = 'l' * (MAX_NAME_LENGTH + 1)
     with pytest.raises(AssertionError) as assertion_info:
-        _validate('id.with.illlegal.chars')
-    assert str(assertion_info.value) == "Identifier must match ^[a-zA-Z_]" \
-        "[\\-_a-zA-Z0-9]{0,38}$, 'id.with.illlegal.chars' does not"
+        _validate_name(very_long_name)
+    assert str(assertion_info.value) == (
+        "Name must be less than {max_length} chars long, '{name}' is {length}"
+    ).format(
+        max_length=MAX_NAME_LENGTH,
+        name=very_long_name,
+        length=len(very_long_name)
+    )
 
 
 def test_xml_serializable():
     class MyTag(XMLSerializable):
+
         def _xml(self, doc, tag, text):
             super(MyTag, self)._xml(doc, tag, text)
 

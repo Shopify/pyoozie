@@ -3,7 +3,7 @@
 from __future__ import unicode_literals
 
 from pyoozie.coordinator import Coordinator
-from pyoozie.tags import Configuration, _validate
+from pyoozie.tags import Configuration, _validate_id, _validate_name
 
 
 def _workflow_submission_xml(username, workflow_xml_path, configuration=None, indent=False):
@@ -30,7 +30,7 @@ class WorkflowBuilder(object):
 
     def __init__(self, name):
         # Initially, let's just use a static template and only one action payload and one action on error
-        self._name = name
+        self._name = _validate_name(name)
         self._action_name = None
         self._action_payload = None
         self._action_error = None
@@ -42,7 +42,7 @@ class WorkflowBuilder(object):
         if any((self._action_name, self._action_payload, self._action_error, self._kill_message)):
             raise NotImplementedError("Can only add one action in this version")
         else:
-            self._action_name = _validate(name)
+            self._action_name = _validate_id('action-' + name)
             self._action_payload = action
             self._action_error = action_on_error
             self._kill_message = kill_on_error
@@ -57,8 +57,8 @@ class WorkflowBuilder(object):
 <?xml version="1.0" encoding="UTF-8"?>
 <workflow-app xmlns="uri:oozie:workflow:0.5"
               name="{name}">
-    <start to="action-{action_name}" />
-    <action name="action-{action_name}">
+    <start to="{action_name}" />
+    <action name="{action_name}">
 {action_payload_xml}
         <ok to="end" />
         <error to="action-error" />

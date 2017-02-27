@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from datetime import timedelta
 from enum import Enum
 
-from pyoozie.tags import _validate, XMLSerializable, Parameters, Configuration
+from pyoozie.tags import _validate_name, XMLSerializable, Parameters, Configuration
 
 
 ONE_HUNDRED_YEARS = 100 * 365.24
@@ -42,7 +42,7 @@ class Coordinator(XMLSerializable):
             frequency=frequency)
 
         # Coordinator
-        self.name = _validate(name)
+        self.name = _validate_name(name)
         self.frequency = frequency
         self.start = start
         self.end = end
