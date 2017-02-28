@@ -64,10 +64,13 @@ def expected_property_values_xml():
 
 
 def test_validate_id():
+    # Simple id
     _validate_id('ok-id')
 
+    # Max-sized id
     _validate_id('l' * MAX_IDENTIFIER_LENGTH)
 
+    # Id that is too long
     very_long_name = 'l' * (MAX_IDENTIFIER_LENGTH + 1)
     with pytest.raises(AssertionError) as assertion_info:
         _validate_id(very_long_name)
@@ -79,12 +82,14 @@ def test_validate_id():
         length=len(very_long_name)
     )
 
+    # Id that doesn't satisfy regex because of bad start char
     with pytest.raises(AssertionError) as assertion_info:
         _validate_id('0-id-starting-with-a-non-alpha-char')
     assert str(assertion_info.value) == (
         "Identifier must match {regex}, '0-id-starting-with-a-non-alpha-char' does not"
     ).format(regex=REGEX_IDENTIFIER)
 
+    # Id that doesn't satisfy regex because of illegal char
     with pytest.raises(AssertionError) as assertion_info:
         _validate_id('id.with.illlegal.chars')
     assert str(assertion_info.value) == (
@@ -93,10 +98,13 @@ def test_validate_id():
 
 
 def test_validate_name():
-    _validate_name('OK name')
+    # Simple name
+    _validate_name('OK name (with punctuation)')
 
+    # Max-sized name
     _validate_name('l' * MAX_NAME_LENGTH)
 
+    # Name that is too long
     very_long_name = 'l' * (MAX_NAME_LENGTH + 1)
     with pytest.raises(AssertionError) as assertion_info:
         _validate_name(very_long_name)
@@ -107,6 +115,14 @@ def test_validate_name():
         name=very_long_name,
         length=len(very_long_name)
     )
+
+    # Name with a latin-1 character
+    name_with_non_ascii = 'être'
+    with pytest.raises(AssertionError) as assertion_info:
+        _validate_name(name_with_non_ascii)
+    assert str(assertion_info.value) == (
+        "Name must be comprised of printable ASCII characters, '{name}' is not"
+    ).format(name=name_with_non_ascii)
 
 
 def test_xml_serializable():
