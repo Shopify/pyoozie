@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import pytest
 
 from pyoozie.coordinator import Coordinator, ExecutionOrder, Configuration, Parameters
+from pyoozie.tags import MAX_NAME_LENGTH
 from tests.utils import xml_to_dict_unordered
 
 
@@ -60,9 +61,8 @@ def test_coordinator_with_controls_and_more(coordinator_xml_with_controls, expec
 def test_really_long_coordinator_name(expected_coordinator_options):
     with pytest.raises(AssertionError) as assertion_info:
         del expected_coordinator_options['name']
-        Coordinator(name='long' * 10, **expected_coordinator_options)
-    assert str(assertion_info.value) == \
-        "Identifier must be less than 39 chars long, 'longlonglonglonglonglonglonglonglonglong' is 40"
+        Coordinator(name='l' * (MAX_NAME_LENGTH + 1), **expected_coordinator_options)
+    assert "Name must be less than" in str(assertion_info.value)
 
 
 def test_coordinator_bad_frequency(expected_coordinator_options):
