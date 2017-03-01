@@ -70,6 +70,8 @@ def test_validate_id():
     # Max-sized id
     _validate_id('l' * MAX_IDENTIFIER_LENGTH)
 
+
+def test_validate_id_thats_too_long():
     # Id that is too long
     very_long_name = 'l' * (MAX_IDENTIFIER_LENGTH + 1)
     with pytest.raises(AssertionError) as assertion_info:
@@ -82,6 +84,8 @@ def test_validate_id():
         length=len(very_long_name)
     )
 
+
+def test_validate_id_with_illegal_start_char():
     # Id that doesn't satisfy regex because of bad start char
     with pytest.raises(AssertionError) as assertion_info:
         _validate_id('0-id-starting-with-a-non-alpha-char')
@@ -89,6 +93,8 @@ def test_validate_id():
         "Identifier must match {regex}, '0-id-starting-with-a-non-alpha-char' does not"
     ).format(regex=REGEX_IDENTIFIER)
 
+
+def test_validate_id_with_illegal_char():
     # Id that doesn't satisfy regex because of illegal char
     with pytest.raises(AssertionError) as assertion_info:
         _validate_id('id.with.illlegal.chars')
@@ -104,6 +110,8 @@ def test_validate_name():
     # Max-sized name
     _validate_name('l' * MAX_NAME_LENGTH)
 
+
+def test_validate_name_thats_too_long():
     # Name that is too long
     very_long_name = 'l' * (MAX_NAME_LENGTH + 1)
     with pytest.raises(AssertionError) as assertion_info:
@@ -116,6 +124,8 @@ def test_validate_name():
         length=len(very_long_name)
     )
 
+
+def test_validate_name_with_latin1_char():
     # Name with a latin-1 character
     name_with_non_ascii = 'être'
     with pytest.raises(AssertionError) as assertion_info:

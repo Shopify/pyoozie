@@ -29,6 +29,18 @@ def username():
     return 'test'
 
 
+@pytest.fixture
+def workflow_builder():
+    return WorkflowBuilder(
+        name='descriptive-name'
+    ).add_action(
+        name='payload',
+        action=Shell(exec_command='echo "test"'),
+        action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
+        kill_on_error='Failure message',
+    )
+
+
 def test_workflow_submission_xml(username, workflow_app_path):
     actual = _workflow_submission_xml(
         username=username,
@@ -120,22 +132,12 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
     </configuration>''') == xml_to_dict_unordered(actual)
 
 
-def test_workflow_builder(tmpdir):
+def test_workflow_builder(tmpdir, workflow_builder):
     with open('tests/data/workflow.xml', 'r') as fh:
         expected_xml = fh.read()
 
-    # Can it XML?
-    builder = WorkflowBuilder(
-        name='descriptive-name'
-    ).add_action(
-        name='payload',
-        action=Shell(exec_command='echo "test"'),
-        action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
-        kill_on_error='Failure message',
-    )
-
     # Is this XML expected
-    actual_xml = builder.build()
+    actual_xml = workflow_builder.build()
     assert xml_to_dict_unordered(expected_xml) == xml_to_dict_unordered(actual_xml)
 
     # Does it validate against the workflow XML schema?
@@ -154,6 +156,8 @@ def test_workflow_builder(tmpdir):
             xml=actual_xml,
         ))
 
+
+def test_builder_raises_on_bad_workflow_name():
     # Does it throw an exception on a bad workflow name?
     with pytest.raises(AssertionError) as assertion_info:
         WorkflowBuilder(
@@ -166,6 +170,8 @@ def test_workflow_builder(tmpdir):
         )
     assert "Name must be less than " in str(assertion_info.value)
 
+
+def test_builder_raises_on_bad_action_name():
     # Does it throw an exception on a bad action name?
     with pytest.raises(AssertionError) as assertion_info:
         WorkflowBuilder(
@@ -191,9 +197,11 @@ def test_workflow_builder(tmpdir):
         )
     assert "Identifier must be less than " in str(assertion_info.value)
 
+
+def test_builder_raises_on_multiple_actions(workflow_builder):
     # Does it raise an exception when you try to add multiple actions?
     with pytest.raises(NotImplementedError) as assertion_info:
-        builder.add_action(
+        workflow_builder.add_action(
             name='payload',
             action=Shell(exec_command='echo "test"'),
             action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
