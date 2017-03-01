@@ -9,6 +9,7 @@ import pytest
 from pyoozie import Parameters, Configuration, Credentials, Shell, SubWorkflow, GlobalConfiguration, Email
 from pyoozie.tags import _validate_id, _validate_name, XMLSerializable, MAX_NAME_LENGTH, MAX_IDENTIFIER_LENGTH, \
     REGEX_IDENTIFIER
+from six import text_type
 from tests.utils import xml_to_dict_unordered
 
 
@@ -130,7 +131,7 @@ def test_validate_name_with_latin1_char():
     name_with_non_ascii = 'être'
     with pytest.raises(AssertionError) as assertion_info:
         _validate_name(name_with_non_ascii)
-    assert str(assertion_info.value) == (
+    assert text_type(assertion_info.value) == (
         "Name must be comprised of printable ASCII characters, '{name}' is not"
     ).format(name=name_with_non_ascii)
 
