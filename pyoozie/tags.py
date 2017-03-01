@@ -8,10 +8,9 @@ import yattag
 
 MAX_NAME_LENGTH = 255
 MAX_IDENTIFIER_LENGTH = 50
-REGEX_NAME = r'[%(chars)s]{1,%(max_length)i}' % {'chars': re.escape(string.printable), 'max_length': MAX_NAME_LENGTH}
 REGEX_IDENTIFIER = r'^[a-zA-Z_][\-_a-zA-Z0-9]{0,%i}$' % (MAX_IDENTIFIER_LENGTH - 1)
-COMPILED_REGEX_NAME = re.compile(REGEX_NAME)
 COMPILED_REGEX_IDENTIFIER = re.compile(REGEX_IDENTIFIER)
+ALLOWABLE_NAME_CHARS = set(string.ascii_letters + string.punctuation + string.digits + ' ')
 
 
 def _validate_name(name):
@@ -21,7 +20,7 @@ def _validate_name(name):
             name=name,
             length=len(name))
 
-    assert COMPILED_REGEX_NAME.match(name), \
+    assert all(c in ALLOWABLE_NAME_CHARS for c in name), \
         "Name must be comprised of printable ASCII characters, '{name}' is not".format(name=name)
 
     return name
