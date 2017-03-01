@@ -1,9 +1,0 @@
-autopep8
-flake8
-mock
-pylint
-pytest-cov
-pytest-randomly
-pytest>=2.7
-requests-mock
-xmltodict

@@ -32,11 +32,26 @@ setup(
     install_requires=[
         'enum34>=0.9.23',
         'requests>=2.12.3',
-        'setuptools>=0.9',
         'six>=1.10.0',
         'untangle>=1.1.0',
         'yattag>=1.7.2',
     ],
+    extras_require={
+        'deploy': [
+            'setuptools>=0.9'
+        ],
+        'test': [
+            'autopep8',
+            'flake8',
+            'mock',
+            'pylint',
+            'pytest-cov',
+            'pytest-randomly',
+            'pytest>=2.7',
+            'requests-mock',
+            'xmltodict',
+        ],
+    },
     license="MIT",
     keywords=['oozie'],
     classifiers=[
