@@ -2,14 +2,13 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
-from collections import namedtuple
-from datetime import datetime
+import collections
+import datetime
+import enum
 import re
-
-from enum import Enum
 import untangle
 
-from pyoozie.exceptions import OozieException
+from pyoozie import exceptions
 
 
 _COORD_ID_RE = re.compile('^(?P<id>.*-C)(?:@(?P<action>[1-9][0-9]*))?$')
@@ -36,7 +35,7 @@ def _parse_coordinator_id(_, job_id):
         coord_id, action = parse_coordinator_id(job_id)
         if coord_id and not action:
             return job_id
-        raise OozieException.parse_error("Invalid coordinator id: {}".format(job_id))
+        raise exceptions.OozieException.parse_error("Invalid coordinator id: {}".format(job_id))
     return None
 
 
@@ -45,7 +44,7 @@ def _parse_coordinator_action_id(_, job_id):
         coord_id, action = parse_coordinator_id(job_id)
         if coord_id and action:
             return job_id
-        raise OozieException.parse_error("Invalid coordinator action id: {}".format(job_id))
+        raise exceptions.OozieException.parse_error("Invalid coordinator action id: {}".format(job_id))
     return None
 
 
@@ -54,7 +53,7 @@ def _parse_workflow_id(_, job_id):
         wf_id, action = parse_workflow_id(job_id)
         if wf_id and not action:
             return job_id
-        raise OozieException.parse_error("Invalid workflow id: {}".format(job_id))
+        raise exceptions.OozieException.parse_error("Invalid workflow id: {}".format(job_id))
     return None
 
 
@@ -63,7 +62,7 @@ def _parse_workflow_action_id(_, job_id):
         wf_id, action = parse_workflow_id(job_id)
         if wf_id and action:
             return job_id
-        raise OozieException.parse_error("Invalid workflow action id: {}".format(job_id))
+        raise exceptions.OozieException.parse_error("Invalid workflow action id: {}".format(job_id))
     return None
 
 
@@ -75,16 +74,16 @@ def _parse_workflow_parent_id(_, job_id):
         wf_id, action = parse_workflow_id(job_id)
         if wf_id and not action:
             return job_id
-        raise OozieException.parse_error("Invalid workflow parent id: {}".format(job_id))
+        raise exceptions.OozieException.parse_error("Invalid workflow parent id: {}".format(job_id))
     return None
 
 
 def _parse_time(_, time_string):
     if time_string:
         try:
-            return datetime.strptime(time_string, '%a, %d %b %Y %H:%M:%S %Z')
+            return datetime.datetime.strptime(time_string, '%a, %d %b %Y %H:%M:%S %Z')
         except ValueError as err:
-            raise OozieException.parse_error("Error parsing time '{}'".format(time_string), err)
+            raise exceptions.OozieException.parse_error("Error parsing time '{}'".format(time_string), err)
     return None
 
 
@@ -123,23 +122,24 @@ def _parse_workflow_action_status(_, status_string):
     return WorkflowActionStatus.parse(status_string)
 
 
-class ArtifactType(Enum):
+class ArtifactType(enum.Enum):
     Coordinator = 1
     CoordinatorAction = 2
     Workflow = 3
     WorkflowAction = 4
 
 
-_StatusValue = namedtuple('_StatusValue', ['status_id', 'is_active', 'is_running', 'is_suspendable', 'is_suspended'])
+_StatusValue = collections.namedtuple('_StatusValue',
+                                      ['status_id', 'is_active', 'is_running', 'is_suspendable', 'is_suspended'])
 
 
 def _status(status_id, is_active=False, is_running=False, is_suspendable=False, is_suspended=False):
     if is_running and not is_active:
-        raise OozieException.parse_error("A running status implies active")
+        raise exceptions.OozieException.parse_error("A running status implies active")
     return _StatusValue(status_id, is_active, is_running, is_suspendable, is_suspended)
 
 
-class _StatusEnum(Enum):
+class _StatusEnum(enum.Enum):
 
     def __str__(self):
         return self.name
@@ -255,10 +255,10 @@ class _OozieArtifact(object):
             value = details.pop(key, None)
             try:
                 parsed_value = func(self, value) if func else value
-            except OozieException as err:
-                raise OozieException.required_key_missing(key, self, err)
+            except exceptions.OozieException as err:
+                raise exceptions.OozieException.required_key_missing(key, self, err)
             if parsed_value is None:
-                raise OozieException.required_key_missing(key, self)
+                raise exceptions.OozieException.required_key_missing(key, self)
             else:
                 setattr(self, key, parsed_value)
         for key, func in self.SUPPORTED_KEYS.items():
@@ -343,9 +343,9 @@ class Coordinator(_OozieArtifact):
             self.coordJobId,
             self.status)
         if self.coordJobId not in self.toString:
-            raise OozieException.parse_error("toString does not contain coordinator ID")
+            raise exceptions.OozieException.parse_error("toString does not contain coordinator ID")
         if not self.status.is_unknown() and str(self.status) not in self.toString:
-            raise OozieException.parse_error("toString does not contain status")
+            raise exceptions.OozieException.parse_error("toString does not contain status")
 
     def is_coordinator(self):
         return True
@@ -402,15 +402,15 @@ class CoordinatorAction(_OozieArtifact):
         coord_id, action = parse_coordinator_id(self.id)
         self.coordJobId = self.coordJobId or coord_id
         if self.coordJobId != coord_id:
-            raise OozieException.parse_error("coordJobId does not match coordinator action ID")
+            raise exceptions.OozieException.parse_error("coordJobId does not match coordinator action ID")
         self.actionNumber = self.actionNumber or action
         if self.actionNumber != action:
-            raise OozieException.parse_error("actionNumber does not match coordinator action ID")
+            raise exceptions.OozieException.parse_error("actionNumber does not match coordinator action ID")
         self.toString = self.toString or 'CoordinatorAction name[{}] status[{}]'.format(self.id, self.status)
         if self.id not in self.toString:
-            raise OozieException.parse_error("toString does not contain coordinator action ID")
+            raise exceptions.OozieException.parse_error("toString does not contain coordinator action ID")
         if not self.status.is_unknown() and str(self.status) not in self.toString:
-            raise OozieException.parse_error("toString does not contain status")
+            raise exceptions.OozieException.parse_error("toString does not contain status")
 
     def is_coordinator(self):
         return True
@@ -483,9 +483,9 @@ class Workflow(_OozieArtifact):
         # If values are missing, extrapolate them
         self.toString = self.toString or 'Workflow id[{}] status[{}]'.format(self.id, self.status)
         if self.id not in self.toString:
-            raise OozieException.parse_error("toString does not contain workflow ID")
+            raise exceptions.OozieException.parse_error("toString does not contain workflow ID")
         if not self.status.is_unknown() and str(self.status) not in self.toString:
-            raise OozieException.parse_error("toString does not contain status")
+            raise exceptions.OozieException.parse_error("toString does not contain status")
 
     def is_workflow(self):
         return True
@@ -550,12 +550,12 @@ class WorkflowAction(_OozieArtifact):
         _, action = parse_workflow_id(self.id)
         self.name = self.name or action
         if self.name != action:
-            raise OozieException.parse_error("name does not match workflow action ID")
+            raise exceptions.OozieException.parse_error("name does not match workflow action ID")
         self.toString = self.toString or 'Action name[{}] status[{}]'.format(self.name, self.status)
         if self.name not in self.toString:
-            raise OozieException.parse_error("toString does not contain workflow action name")
+            raise exceptions.OozieException.parse_error("toString does not contain workflow action name")
         if not self.status.is_unknown() and str(self.status) not in self.toString:
-            raise OozieException.parse_error("toString does not contain status")
+            raise exceptions.OozieException.parse_error("toString does not contain status")
 
     def is_workflow(self):
         return True

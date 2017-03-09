@@ -2,16 +2,15 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals, print_function
 
+import datetime
 import subprocess
 
-from datetime import datetime
-
 import pytest
+import tests.utils
 
-from pyoozie import WorkflowBuilder, CoordinatorBuilder, Shell, Email, ExecutionOrder
-from pyoozie.builder import _workflow_submission_xml, _coordinator_submission_xml
-from pyoozie.tags import MAX_NAME_LENGTH, MAX_IDENTIFIER_LENGTH
-from tests.utils import xml_to_dict_unordered
+from pyoozie import builder
+from pyoozie import coordinator
+from pyoozie import tags
 
 
 @pytest.fixture
@@ -31,23 +30,23 @@ def username():
 
 @pytest.fixture
 def workflow_builder():
-    return WorkflowBuilder(
+    return builder.WorkflowBuilder(
         name='descriptive-name'
     ).add_action(
         name='payload',
-        action=Shell(exec_command='echo "test"'),
-        action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
+        action=tags.Shell(exec_command='echo "test"'),
+        action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
         kill_on_error='Failure message',
     )
 
 
 def test_workflow_submission_xml(username, workflow_app_path):
-    actual = _workflow_submission_xml(
+    actual = builder._workflow_submission_xml(
         username=username,
         workflow_xml_path=workflow_app_path,
         indent=True,
     )
-    assert xml_to_dict_unordered('''
+    assert tests.utils.xml_to_dict_unordered('''
     <configuration>
         <property>
             <name>oozie.wf.application.path</name>
@@ -57,11 +56,11 @@ def test_workflow_submission_xml(username, workflow_app_path):
             <name>user.name</name>
             <value>test</value>
         </property>
-    </configuration>''') == xml_to_dict_unordered(actual)
+    </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
 
 
 def test_workflow_submission_xml_with_configuration(username, workflow_app_path):
-    actual = _workflow_submission_xml(
+    actual = builder._workflow_submission_xml(
         username=username,
         workflow_xml_path=workflow_app_path,
         configuration={
@@ -70,7 +69,7 @@ def test_workflow_submission_xml_with_configuration(username, workflow_app_path)
         indent=True
     )
 
-    assert xml_to_dict_unordered('''
+    assert tests.utils.xml_to_dict_unordered('''
     <configuration>
         <property>
             <name>other.key</name>
@@ -84,16 +83,16 @@ def test_workflow_submission_xml_with_configuration(username, workflow_app_path)
             <name>user.name</name>
             <value>test</value>
         </property>
-    </configuration>''') == xml_to_dict_unordered(actual)
+    </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
 
 
 def test_coordinator_submission_xml(username, coord_app_path):
-    actual = _coordinator_submission_xml(
+    actual = builder._coordinator_submission_xml(
         username=username,
         coord_xml_path=coord_app_path,
         indent=True
     )
-    assert xml_to_dict_unordered('''
+    assert tests.utils.xml_to_dict_unordered('''
     <configuration>
         <property>
             <name>oozie.coord.application.path</name>
@@ -103,11 +102,11 @@ def test_coordinator_submission_xml(username, coord_app_path):
             <name>user.name</name>
             <value>test</value>
         </property>
-    </configuration>''') == xml_to_dict_unordered(actual)
+    </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
 
 
 def test_coordinator_submission_xml_with_configuration(username, coord_app_path):
-    actual = _coordinator_submission_xml(
+    actual = builder._coordinator_submission_xml(
         username=username,
         coord_xml_path=coord_app_path,
         configuration={
@@ -115,7 +114,7 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
         },
         indent=True
     )
-    assert xml_to_dict_unordered('''
+    assert tests.utils.xml_to_dict_unordered('''
     <configuration>
         <property>
             <name>oozie.coord.application.path</name>
@@ -129,7 +128,7 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
             <name>user.name</name>
             <value>test</value>
         </property>
-    </configuration>''') == xml_to_dict_unordered(actual)
+    </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
 
 
 def test_workflow_builder(tmpdir, workflow_builder):
@@ -138,7 +137,7 @@ def test_workflow_builder(tmpdir, workflow_builder):
 
     # Is this XML expected
     actual_xml = workflow_builder.build()
-    assert xml_to_dict_unordered(expected_xml) == xml_to_dict_unordered(actual_xml)
+    assert tests.utils.xml_to_dict_unordered(expected_xml) == tests.utils.xml_to_dict_unordered(actual_xml)
 
     # Does it validate against the workflow XML schema?
     try:
@@ -160,12 +159,12 @@ def test_workflow_builder(tmpdir, workflow_builder):
 def test_builder_raises_on_bad_workflow_name():
     # Does it throw an exception on a bad workflow name?
     with pytest.raises(AssertionError) as assertion_info:
-        WorkflowBuilder(
-            name='l' * (MAX_NAME_LENGTH + 1)
+        builder.WorkflowBuilder(
+            name='l' * (tags.MAX_NAME_LENGTH + 1)
         ).add_action(
             name='payload',
-            action=Shell(exec_command='echo "test"'),
-            action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
+            action=tags.Shell(exec_command='echo "test"'),
+            action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
             kill_on_error='Failure message',
         )
     assert "Name must be less than " in str(assertion_info.value)
@@ -174,12 +173,12 @@ def test_builder_raises_on_bad_workflow_name():
 def test_builder_raises_on_bad_action_name():
     # Does it throw an exception on a bad action name?
     with pytest.raises(AssertionError) as assertion_info:
-        WorkflowBuilder(
+        builder.WorkflowBuilder(
             name='descriptive-name'
         ).add_action(
             name='Action name with invalid characters',
-            action=Shell(exec_command='echo "test"'),
-            action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
+            action=tags.Shell(exec_command='echo "test"'),
+            action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
             kill_on_error='Failure message',
         )
     assert "Identifier must match " in str(assertion_info.value) and \
@@ -187,12 +186,12 @@ def test_builder_raises_on_bad_action_name():
 
     # Does it throw an exception on an action name that's too long?
     with pytest.raises(AssertionError) as assertion_info:
-        WorkflowBuilder(
+        builder.WorkflowBuilder(
             name='descriptive-name'
         ).add_action(
-            name='l' * (MAX_IDENTIFIER_LENGTH + 1),
-            action=Shell(exec_command='echo "test"'),
-            action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
+            name='l' * (tags.MAX_IDENTIFIER_LENGTH + 1),
+            action=tags.Shell(exec_command='echo "test"'),
+            action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
             kill_on_error='Failure message',
         )
     assert "Identifier must be less than " in str(assertion_info.value)
@@ -203,8 +202,8 @@ def test_builder_raises_on_multiple_actions(workflow_builder):
     with pytest.raises(NotImplementedError) as assertion_info:
         workflow_builder.add_action(
             name='payload',
-            action=Shell(exec_command='echo "test"'),
-            action_on_error=Email(to='person@example.com', subject='Error', body='A bad thing happened'),
+            action=tags.Shell(exec_command='echo "test"'),
+            action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
             kill_on_error='Failure message',
         )
     assert str(assertion_info.value) == 'Can only add one action in this version'
@@ -212,16 +211,16 @@ def test_builder_raises_on_multiple_actions(workflow_builder):
 
 def test_coordinator_builder(coordinator_xml_with_controls, workflow_app_path):
 
-    builder = CoordinatorBuilder(
+    coord_builder = builder.CoordinatorBuilder(
         name='coordinator-name',
         workflow_xml_path=workflow_app_path,
         frequency_in_minutes=24 * 60,  # In minutes
-        start=datetime(2015, 1, 1, 10, 56),
-        end=datetime(2115, 1, 1, 10, 56),
+        start=datetime.datetime(2015, 1, 1, 10, 56),
+        end=datetime.datetime(2115, 1, 1, 10, 56),
         concurrency=1,
         throttle='${throttle}',
         timeout_in_minutes=10,
-        execution_order=ExecutionOrder.LAST_ONLY,
+        execution_order=coordinator.ExecutionOrder.LAST_ONLY,
         parameters={
             'throttle': 1,
         },
@@ -230,5 +229,6 @@ def test_coordinator_builder(coordinator_xml_with_controls, workflow_app_path):
         })
 
     # Can it XML?
-    expected_xml = builder.build()
-    assert xml_to_dict_unordered(coordinator_xml_with_controls) == xml_to_dict_unordered(expected_xml)
+    expected_xml = coord_builder.build()
+    assert tests.utils.xml_to_dict_unordered(coordinator_xml_with_controls) == \
+        tests.utils.xml_to_dict_unordered(expected_xml)

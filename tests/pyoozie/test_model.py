@@ -2,10 +2,10 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
-from datetime import datetime
-from six import string_types
+import datetime
 import mock
 import pytest
+import six
 
 from pyoozie import exceptions
 from pyoozie import model
@@ -348,7 +348,7 @@ def test_status():
 
 def test_parse_time():
     result = model._parse_time(None, 'Fri, 01 Jan 2016 01:02:03 GMT')
-    assert result == datetime(2016, 1, 1, 1, 2, 3)
+    assert result == datetime.datetime(2016, 1, 1, 1, 2, 3)
 
 
 def test_parse_configuration():
@@ -548,10 +548,10 @@ def test_parse_coordinator(valid_coordinator):
     }
     assert coord.coordJobId == SAMPLE_COORD_ID
     assert coord.coordJobName == 'my-test-coordinator'
-    assert coord.startTime == datetime(2016, 5, 14, 1, 0, 0)
-    assert coord.endTime == datetime(2116, 5, 13, 23, 42, 0)
-    assert coord.lastAction == datetime(2016, 6, 3, 1, 0, 0)
-    assert coord.nextMaterializedTime == datetime(2016, 6, 3, 1, 0, 0)
+    assert coord.startTime == datetime.datetime(2016, 5, 14, 1, 0, 0)
+    assert coord.endTime == datetime.datetime(2116, 5, 13, 23, 42, 0)
+    assert coord.lastAction == datetime.datetime(2016, 6, 3, 1, 0, 0)
+    assert coord.nextMaterializedTime == datetime.datetime(2016, 6, 3, 1, 0, 0)
     assert coord.status == model.CoordinatorStatus.RUNNING
     assert coord._details == {'wat?': 'blarg'}
 
@@ -600,9 +600,9 @@ def test_parse_coordinator_action(valid_coordinator_action):
     assert coord.id == SAMPLE_COORD_ACTION
     assert coord.coordJobId == SAMPLE_COORD_ID
     assert coord.externalId == SAMPLE_WF_ID
-    assert coord.createdTime == datetime(2016, 6, 2, 12, 58, 26)
-    assert coord.lastModifiedTime == datetime(2016, 6, 2, 21, 40, 38)
-    assert coord.nominalTime == datetime(2016, 6, 2, 13, 0, 0)
+    assert coord.createdTime == datetime.datetime(2016, 6, 2, 12, 58, 26)
+    assert coord.lastModifiedTime == datetime.datetime(2016, 6, 2, 21, 40, 38)
+    assert coord.nominalTime == datetime.datetime(2016, 6, 2, 13, 0, 0)
     assert coord.status == model.CoordinatorActionStatus.SUCCEEDED
     assert coord._details == {'wat?': 'blarg'}
 
@@ -666,10 +666,10 @@ def test_parse_workflow(valid_workflow):
     wf = model.Workflow(None, valid_workflow, None)
     assert wf.id == SAMPLE_WF_ID
     assert wf.appName == 'my-test-workflow'
-    assert wf.createdTime == datetime(2016, 6, 2, 13, 16, 46)
-    assert wf.startTime == datetime(2016, 6, 2, 13, 16, 46)
-    assert wf.endTime == datetime(2016, 6, 2, 21, 40, 38)
-    assert wf.lastModTime == datetime(2016, 6, 2, 21, 40, 38)
+    assert wf.createdTime == datetime.datetime(2016, 6, 2, 13, 16, 46)
+    assert wf.startTime == datetime.datetime(2016, 6, 2, 13, 16, 46)
+    assert wf.endTime == datetime.datetime(2016, 6, 2, 21, 40, 38)
+    assert wf.lastModTime == datetime.datetime(2016, 6, 2, 21, 40, 38)
     assert wf.status == model.WorkflowStatus.SUCCEEDED
     assert wf._details == {'wat?': 'blarg'}
 
@@ -716,10 +716,10 @@ def test_parse_workflow_action(valid_workflow_action):
     wf = model.WorkflowAction(None, valid_workflow_action, None)
     assert wf.id == SAMPLE_SUBWF_ACTION
     assert wf.name == 'my-sub-workflow'
-    assert wf.startTime == datetime(2016, 6, 2, 13, 16, 48)
-    assert wf.endTime == datetime(2016, 6, 2, 13, 23, 47)
+    assert wf.startTime == datetime.datetime(2016, 6, 2, 13, 16, 48)
+    assert wf.endTime == datetime.datetime(2016, 6, 2, 13, 23, 47)
     assert wf.status == model.WorkflowActionStatus.OK
-    assert isinstance(wf.conf, string_types)  # Does NOT get parsed
+    assert isinstance(wf.conf, six.string_types)  # Does NOT get parsed
     assert wf._details == {'wat?': 'blarg'}
 
 

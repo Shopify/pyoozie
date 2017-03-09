@@ -2,6 +2,7 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
+# pylint: disable=import-modules-only
 from pyoozie.builder import WorkflowBuilder, CoordinatorBuilder
 from pyoozie.client import OozieClient
 from pyoozie.coordinator import Coordinator, ExecutionOrder

@@ -2,13 +2,13 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
-from pyoozie.coordinator import Coordinator
-from pyoozie.tags import Configuration, _validate_id, _validate_name
+from pyoozie import coordinator
+from pyoozie import tags
 
 
 def _workflow_submission_xml(username, workflow_xml_path, configuration=None, indent=False):
     """Generate a Workflow XML submission message to POST to Oozie."""
-    submission = Configuration(configuration)
+    submission = tags.Configuration(configuration)
     submission.update({
         'user.name': username,
         'oozie.wf.application.path': workflow_xml_path,
@@ -18,7 +18,7 @@ def _workflow_submission_xml(username, workflow_xml_path, configuration=None, in
 
 def _coordinator_submission_xml(username, coord_xml_path, configuration=None, indent=False):
     """Generate a Coordinator XML submission message to POST to Oozie."""
-    submission = Configuration(configuration)
+    submission = tags.Configuration(configuration)
     submission.update({
         'user.name': username,
         'oozie.coord.application.path': coord_xml_path,
@@ -30,7 +30,7 @@ class WorkflowBuilder(object):
 
     def __init__(self, name):
         # Initially, let's just use a static template and only one action payload and one action on error
-        self._name = _validate_name(name)
+        self._name = tags._validate_name(name)
         self._action_name = None
         self._action_payload = None
         self._action_error = None
@@ -42,7 +42,7 @@ class WorkflowBuilder(object):
         if any((self._action_name, self._action_payload, self._action_error, self._kill_message)):
             raise NotImplementedError("Can only add one action in this version")
         else:
-            self._action_name = _validate_id('action-' + name)
+            self._action_name = tags._validate_id('action-' + name)
             self._action_payload = action
             self._action_error = action_on_error
             self._kill_message = kill_on_error
@@ -85,7 +85,7 @@ class CoordinatorBuilder(object):
     def __init__(self, name, workflow_xml_path, frequency_in_minutes, start, end=None, timezone=None,
                  workflow_configuration=None, timeout_in_minutes=None, concurrency=None, execution_order=None,
                  throttle=None, parameters=None):
-        self._coordinator = Coordinator(
+        self._coordinator = coordinator.Coordinator(
             name=name,
             workflow_app_path=workflow_xml_path,
             frequency=frequency_in_minutes,

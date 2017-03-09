@@ -7,9 +7,9 @@ import mock
 import pytest
 import requests_mock
 
-from pyoozie.exceptions import OozieException
+from pyoozie import exceptions
 from pyoozie import model
-from pyoozie.client import OozieClient
+from pyoozie import client
 
 
 # TODO: share these with test_model.py?
@@ -34,7 +34,7 @@ def oozie_config():
 @pytest.fixture
 def api(oozie_config):
     with mock.patch('pyoozie.client.OozieClient._test_connection'):
-        api = OozieClient(**oozie_config)
+        api = client.OozieClient(**oozie_config)
     return api
 
 
@@ -138,31 +138,31 @@ class TestOozieClientCore(object):
 
     @mock.patch('pyoozie.client.OozieClient._test_connection')
     def test_construction(self, mock_test_conn, oozie_config):
-        api = OozieClient(**oozie_config)
+        api = client.OozieClient(**oozie_config)
         assert mock_test_conn.called
         assert api._url == 'http://localhost:11000/oozie'
 
     def test_test_connection(self, oozie_config):
         with requests_mock.mock() as m:
             m.get('http://localhost:11000/oozie/versions', text='[0, 1, 2]')
-            OozieClient(**oozie_config)
+            client.OozieClient(**oozie_config)
 
-        with pytest.raises(OozieException) as err:
+        with pytest.raises(exceptions.OozieException) as err:
             with requests_mock.mock() as m:
                 m.get('http://localhost:11000/oozie/versions', text='[0, 1]')
-                OozieClient(**oozie_config)
+                client.OozieClient(**oozie_config)
         assert 'does not support API version 2' in str(err)
 
-        with pytest.raises(OozieException) as err:
+        with pytest.raises(exceptions.OozieException) as err:
             with requests_mock.mock() as m:
                 m.get('http://localhost:11000/oozie/versions', status_code=404)
-                OozieClient(**oozie_config)
+                client.OozieClient(**oozie_config)
         assert 'Unable to contact Oozie server' in str(err)
 
-        with pytest.raises(OozieException) as err:
+        with pytest.raises(exceptions.OozieException) as err:
             with requests_mock.mock() as m:
                 m.get('http://localhost:11000/oozie/versions', text='>>> fail <<<')
-                OozieClient(**oozie_config)
+                client.OozieClient(**oozie_config)
         assert 'Invalid response from Oozie server' in str(err)
 
     def test_request(self, api):
@@ -178,7 +178,7 @@ class TestOozieClientCore(object):
 
         with requests_mock.mock() as m:
             m.get('http://localhost:11000/oozie/v2/endpoint', text='>>> fail <<<')
-            with pytest.raises(OozieException) as err:
+            with pytest.raises(exceptions.OozieException) as err:
                 api._request('GET', 'endpoint', None, None)
             assert 'Invalid response from Oozie server' in str(err)
 
@@ -685,9 +685,9 @@ class TestOozieClientJobCoordinatorQuery(object):
 
     def test_coordinator_query_exception(self, api):
         with mock.patch.object(api, '_get') as mock_get:
-            mock_get.side_effect = OozieException.communication_error('A bad thing')
+            mock_get.side_effect = exceptions.OozieException.communication_error('A bad thing')
 
-            with pytest.raises(OozieException) as err:
+            with pytest.raises(exceptions.OozieException) as err:
                 api._coordinator_query(SAMPLE_COORD_ID)
             assert "Coordinator '" + SAMPLE_COORD_ID + "' not found" in str(err)
             assert 'A bad thing' in str(err.value.caused_by)
@@ -706,9 +706,9 @@ class TestOozieClientJobCoordinatorQuery(object):
 
     def test_coordinator_action_query_exception(self, api):
         with mock.patch.object(api, '_get') as mock_get:
-            mock_get.side_effect = OozieException.communication_error('A bad thing')
+            mock_get.side_effect = exceptions.OozieException.communication_error('A bad thing')
 
-            with pytest.raises(OozieException) as err:
+            with pytest.raises(exceptions.OozieException) as err:
                 api._coordinator_action_query(SAMPLE_COORD_ID, 12)
             assert "Coordinator action '" + SAMPLE_COORD_ID + "@12' not found" in str(err)
             assert 'A bad thing' in str(err.value.caused_by)
@@ -741,7 +741,7 @@ class TestOozieClientJobCoordinatorQuery(object):
             mock_last.assert_called_with(name='my_coordinator', user='john_doe')
 
             mock_last.return_value = None
-            with pytest.raises(OozieException) as err:
+            with pytest.raises(exceptions.OozieException) as err:
                 api._decode_coord_id(name='my_coordinator')
             assert "Coordinator 'my_coordinator' not found" in str(err)
 
@@ -878,9 +878,9 @@ class TestOozieClientJobWorkflowQuery(object):
 
     def test_workflow_query_exception(self, api):
         with mock.patch.object(api, '_get') as mock_get:
-            mock_get.side_effect = OozieException.communication_error('A bad thing')
+            mock_get.side_effect = exceptions.OozieException.communication_error('A bad thing')
 
-            with pytest.raises(OozieException) as err:
+            with pytest.raises(exceptions.OozieException) as err:
                 api._workflow_query(SAMPLE_WF_ID)
             assert "Workflow '" + SAMPLE_WF_ID + "' not found" in str(err)
             assert 'A bad thing' in str(err.value.caused_by)
@@ -913,7 +913,7 @@ class TestOozieClientJobWorkflowQuery(object):
             mock_last.assert_called_with(name='my_workflow', user='john_doe')
 
             mock_last.return_value = None
-            with pytest.raises(OozieException) as err:
+            with pytest.raises(exceptions.OozieException) as err:
                 api._decode_wf_id(name='my_workflow')
             assert "Workflow 'my_workflow' not found" in str(err)
 
@@ -960,7 +960,7 @@ class TestOozieClientJobQuery(object):
                 assert not mock_coord_info.called
                 mock_workflow_info.reset_mock()
 
-                with pytest.raises(OozieException) as err:
+                with pytest.raises(exceptions.OozieException) as err:
                     api.job_info("wat?")
                 assert "'wat?' does not match any known job" in str(err)
                 assert not mock_coord_info.called
@@ -993,7 +993,7 @@ class TestOozieClientJobQuery(object):
                 assert not mock_coord_info.called
                 mock_workflow_info.reset_mock()
 
-                with pytest.raises(OozieException) as err:
+                with pytest.raises(exceptions.OozieException) as err:
                     api.job_action_info("wat?")
                 assert "'wat?' does not match any known job" in str(err)
                 assert not mock_coord_info.called
@@ -1192,7 +1192,7 @@ class TestOozieClientJobSubmit(object):
                 mock_info.return_value = sample_coordinator_running
 
                 mock_post.return_value = None
-                with pytest.raises(OozieException) as err:
+                with pytest.raises(exceptions.OozieException) as err:
                     api.jobs_submit_coordinator('/dummy/coord-path')
                 assert 'Operation failed: submit coordinator' in str(err)
                 mock_post.assert_called_with('jobs', mock.ANY)
@@ -1228,7 +1228,7 @@ class TestOozieClientJobSubmit(object):
                 mock_info.return_value = sample_workflow_running
 
                 mock_post.return_value = None
-                with pytest.raises(OozieException) as err:
+                with pytest.raises(exceptions.OozieException) as err:
                     api.jobs_submit_workflow('/dummy/wf-path')
                 assert 'Operation failed: submit workflow' in str(err)
                 mock_post.assert_called_with('jobs', mock.ANY)
