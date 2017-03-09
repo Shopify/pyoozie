@@ -4,8 +4,9 @@ from __future__ import unicode_literals
 
 import collections
 import datetime
-import enum
 import re
+
+import enum
 import untangle
 
 from pyoozie import exceptions
