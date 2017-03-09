@@ -230,5 +230,6 @@ def test_coordinator_builder(coordinator_xml_with_controls, workflow_app_path):
 
     # Can it XML?
     expected_xml = coord_builder.build()
-    assert tests.utils.xml_to_dict_unordered(coordinator_xml_with_controls) == \
-        tests.utils.xml_to_dict_unordered(expected_xml)
+    actual_dict = tests.utils.xml_to_dict_unordered(coordinator_xml_with_controls)
+    expected_dict = tests.utils.xml_to_dict_unordered(expected_xml)
+    assert actual_dict == expected_dict
