@@ -54,7 +54,7 @@ setup(
         ],
     },
     dependency_links=[
-        'https://github.com/Shopify/shopify_python/zipball/v0.1.2#egg=shopify_python-0.1.2',
+        'git+https://github.com/Shopify/shopify_python.git@v0.1.2#egg=shopify_python-0.1.2',
     ],
     license="MIT",
     keywords=['oozie'],
