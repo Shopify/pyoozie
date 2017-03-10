@@ -5,11 +5,10 @@ from __future__ import unicode_literals
 import logging
 import requests
 
-from pyoozie.builder import _coordinator_submission_xml, _workflow_submission_xml
-from pyoozie.exceptions import OozieException
-from pyoozie.model import ArtifactType, Coordinator, CoordinatorAction, \
-    Workflow, WorkflowAction, parse_coordinator_id, parse_workflow_id, \
-    CoordinatorStatus, CoordinatorActionStatus, WorkflowStatus, WorkflowActionStatus
+from pyoozie import builder
+from pyoozie import exceptions
+from pyoozie import model
+
 
 logger = logging.getLogger('pyoozie.OozieClient')
 logging.getLogger('requests').setLevel(logging.WARNING)
@@ -18,22 +17,22 @@ logging.getLogger('requests').setLevel(logging.WARNING)
 class OozieClient(object):
 
     JOB_TYPE_STRINGS = {
-        ArtifactType.Coordinator: ('coordinator', 'coordinatorjobs'),
-        ArtifactType.Workflow: ('wf', 'workflows'),
+        model.ArtifactType.Coordinator: ('coordinator', 'coordinatorjobs'),
+        model.ArtifactType.Workflow: ('wf', 'workflows'),
     }
 
     JOB_TYPES = {
-        ArtifactType.Coordinator: Coordinator,
-        ArtifactType.CoordinatorAction: CoordinatorAction,
-        ArtifactType.Workflow: Workflow,
-        ArtifactType.WorkflowAction: WorkflowAction,
+        model.ArtifactType.Coordinator: model.Coordinator,
+        model.ArtifactType.CoordinatorAction: model.CoordinatorAction,
+        model.ArtifactType.Workflow: model.Workflow,
+        model.ArtifactType.WorkflowAction: model.WorkflowAction,
     }
 
     STATUS_TYPES = {
-        ArtifactType.Coordinator: CoordinatorStatus,
-        ArtifactType.CoordinatorAction: CoordinatorActionStatus,
-        ArtifactType.Workflow: WorkflowStatus,
-        ArtifactType.WorkflowAction: WorkflowActionStatus,
+        model.ArtifactType.Coordinator: model.CoordinatorStatus,
+        model.ArtifactType.CoordinatorAction: model.CoordinatorActionStatus,
+        model.ArtifactType.Workflow: model.WorkflowStatus,
+        model.ArtifactType.WorkflowAction: model.WorkflowActionStatus,
     }
 
     class Stats(object):
@@ -95,15 +94,15 @@ class OozieClient(object):
             if self._verbose and response is not None:
                 logger.error(response.headers)
             message = "Unable to contact Oozie server at {}".format(self._url)
-            raise OozieException.communication_error(message, err)
+            raise exceptions.OozieException.communication_error(message, err)
         try:
             versions = response.json()
         except ValueError as err:
             message = "Invalid response from Oozie server at {} ".format(self._url)
-            raise OozieException.communication_error(message, err)
+            raise exceptions.OozieException.communication_error(message, err)
         if 2 not in versions:
             message = "Oozie server at {} does not support API version 2 (supported: {})".format(self._url, versions)
-            raise OozieException.communication_error(message)
+            raise exceptions.OozieException.communication_error(message)
 
     def _headers(self, content_type=None):
         headers = {}
@@ -136,12 +135,12 @@ class OozieClient(object):
                              response.status_code,
                              response.reason,
                              response.elapsed.microseconds / 1000.0)
-            raise OozieException.communication_error(caused_by=err)
+            raise exceptions.OozieException.communication_error(caused_by=err)
         try:
             return response.json() if len(response.content) else None
         except ValueError as err:
             message = "Invalid response from Oozie server at {} ".format(self._url)
-            raise OozieException.communication_error(message, caused_by=err)
+            raise exceptions.OozieException.communication_error(message, caused_by=err)
 
     def _get(self, endpoint, content_type=None):
         return self._request('GET', endpoint, content_type)
@@ -250,49 +249,51 @@ class OozieClient(object):
             return [self.JOB_TYPES[type_enum](self, job) for job in jobs]
 
     def jobs_all_workflows(self, name=None, user=None, limit=0):
-        return self._jobs_query(ArtifactType.Workflow, name=name, user=user, limit=limit)
+        return self._jobs_query(model.ArtifactType.Workflow, name=name, user=user, limit=limit)
 
     def jobs_all_active_workflows(self, user=None):
-        return self._jobs_query(ArtifactType.Workflow, status=WorkflowStatus.active(), user=user)
+        return self._jobs_query(model.ArtifactType.Workflow, status=model.WorkflowStatus.active(), user=user)
 
     def jobs_all_running_workflows(self, user=None):
-        return self._jobs_query(ArtifactType.Workflow, status=WorkflowStatus.running(), user=user)
+        return self._jobs_query(model.ArtifactType.Workflow, status=model.WorkflowStatus.running(), user=user)
 
     def jobs_running_workflows(self, name, user=None):
-        return self._jobs_query(ArtifactType.Workflow, name=name, status=WorkflowStatus.running(), user=user)
+        return self._jobs_query(
+            model.ArtifactType.Workflow, name=name, status=model.WorkflowStatus.running(), user=user)
 
     def jobs_last_workflow(self, name, user=None):
-        jobs = self._jobs_query(ArtifactType.Workflow, name=name, user=user, limit=1)
+        jobs = self._jobs_query(model.ArtifactType.Workflow, name=name, user=user, limit=1)
         if jobs:
             return jobs[-1]
         else:
-            raise OozieException.workflow_not_found(name)
+            raise exceptions.OozieException.workflow_not_found(name)
 
     def jobs_workflow_names(self, user=None):
-        jobs = self._jobs_query(ArtifactType.Workflow, user=user, details=False)
+        jobs = self._jobs_query(model.ArtifactType.Workflow, user=user, details=False)
         return set([job.appName for job in jobs])
 
     def jobs_all_coordinators(self, name=None, user=None, limit=0):
-        return self._jobs_query(ArtifactType.Coordinator, name=name, user=user, limit=limit)
+        return self._jobs_query(model.ArtifactType.Coordinator, name=name, user=user, limit=limit)
 
     def jobs_all_active_coordinators(self, user=None):
-        return self._jobs_query(ArtifactType.Coordinator, status=CoordinatorStatus.active(), user=user)
+        return self._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.active(), user=user)
 
     def jobs_all_running_coordinators(self, user=None):
-        return self._jobs_query(ArtifactType.Coordinator, status=CoordinatorStatus.running(), user=user)
+        return self._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.running(), user=user)
 
     def jobs_running_coordinators(self, name, user=None):
-        return self._jobs_query(ArtifactType.Coordinator, name=name, status=CoordinatorStatus.running(), user=user)
+        return self._jobs_query(
+            model.ArtifactType.Coordinator, name=name, status=model.CoordinatorStatus.running(), user=user)
 
     def jobs_last_coordinator(self, name, user=None):
-        jobs = self._jobs_query(ArtifactType.Coordinator, name=name, user=user, limit=1)
+        jobs = self._jobs_query(model.ArtifactType.Coordinator, name=name, user=user, limit=1)
         if jobs:
             return jobs[-1]
         else:
-            raise OozieException.coordinator_not_found(name)
+            raise exceptions.OozieException.coordinator_not_found(name)
 
     def jobs_coordinator_names(self, user=None):
-        coords = self._jobs_query(ArtifactType.Coordinator, user=user, details=False)
+        coords = self._jobs_query(model.ArtifactType.Coordinator, user=user, details=False)
         return set([coord.coordJobName for coord in coords])
 
     # ===========================================================================
@@ -300,7 +301,7 @@ class OozieClient(object):
     # ===========================================================================
 
     def _coordinator_query(self, job_id, status=None, start=0, limit=0):
-        coord_id, action = parse_coordinator_id(job_id)
+        coord_id, action = model.parse_coordinator_id(job_id)
         if not coord_id:
             raise ValueError("Unrecognized job ID: '{}'".format(job_id))
         else:
@@ -312,7 +313,7 @@ class OozieClient(object):
                 start = int(action)
                 limit = 1
 
-        filters = self._filter_string(ArtifactType.CoordinatorAction, status=status)
+        filters = self._filter_string(model.ArtifactType.CoordinatorAction, status=status)
         try:
             if start == 0 and limit:
                 # Fetch the most recent `limit` actions
@@ -333,10 +334,10 @@ class OozieClient(object):
                     length = total - offset + 1
                     if length != 1:  # Don't re-ask if we have the answer!
                         result = self._get('job/{}?offset={}&len={}{}'.format(coord_id, offset, length, filters))
-        except OozieException as err:
-            raise OozieException.coordinator_not_found(job_id, err)
+        except exceptions.OozieException as err:
+            raise exceptions.OozieException.coordinator_not_found(job_id, err)
 
-        coord = self.JOB_TYPES[ArtifactType.Coordinator](self, result)
+        coord = self.JOB_TYPES[model.ArtifactType.Coordinator](self, result)
         if action and coord:
             # There's no guarantee that the Nth job is action N
             # Ensure the one requested is loaded
@@ -346,9 +347,9 @@ class OozieClient(object):
     def _coordinator_action_query(self, coordinator_id, action, coordinator=None):
         try:
             result = self._get('job/{}@{}'.format(coordinator_id, action))
-        except OozieException as err:
-            raise OozieException.coordinator_action_not_found(coordinator_id, action, err)
-        coord_action = self.JOB_TYPES[ArtifactType.CoordinatorAction](self, result, parent=coordinator)
+        except exceptions.OozieException as err:
+            raise exceptions.OozieException.coordinator_action_not_found(coordinator_id, action, err)
+        coord_action = self.JOB_TYPES[model.ArtifactType.CoordinatorAction](self, result, parent=coordinator)
         if coordinator:
             coordinator.actions[action] = coord_action
         return coord_action
@@ -370,7 +371,7 @@ class OozieClient(object):
                 if coord:
                     result = coord.coordJobId
                 else:
-                    raise OozieException.coordinator_not_found(name)
+                    raise exceptions.OozieException.coordinator_not_found(name)
             elif user:
                 raise ValueError("User parameter not supported with coordinator_id")
         return result
@@ -386,7 +387,7 @@ class OozieClient(object):
     def job_coordinator_action(self, coordinator_id=None, name=None, user=None, action_number=0, coordinator=None):
         coord_id = self._decode_coord_id(coordinator_id, name, user, coordinator)
         if coordinator_id:
-            coord_id, action = parse_coordinator_id(coordinator_id)
+            coord_id, action = model.parse_coordinator_id(coordinator_id)
             if bool(action) == bool(action_number):
                 raise ValueError("Supply exactly one of coordinator_id or action_number")
             action_number = action or action_number
@@ -398,7 +399,7 @@ class OozieClient(object):
 
     def job_coordinator_all_active_actions(self, coordinator_id=None, name=None, user=None, coordinator=None):
         coord_id = self._decode_coord_id(coordinator_id, name, user, coordinator)
-        coord = self._coordinator_query(coord_id, status=CoordinatorActionStatus.active())
+        coord = self._coordinator_query(coord_id, status=model.CoordinatorActionStatus.active())
         if coordinator:
             # Copy over any actions to the existing object
             coordinator.actions = coordinator.actions or {}
@@ -413,15 +414,15 @@ class OozieClient(object):
     # ===========================================================================
 
     def _workflow_query(self, job_id):
-        wf_id, _ = parse_workflow_id(job_id)
+        wf_id, _ = model.parse_workflow_id(job_id)
         if not wf_id:
             raise ValueError("Unrecognized job ID: '{}'".format(job_id))
         try:
             result = self._get('job/' + wf_id)
-            workflow = self.JOB_TYPES[ArtifactType.Workflow](self, result)
+            workflow = self.JOB_TYPES[model.ArtifactType.Workflow](self, result)
             return workflow
-        except OozieException as err:
-            raise OozieException.workflow_not_found(job_id, err)
+        except exceptions.OozieException as err:
+            raise exceptions.OozieException.workflow_not_found(job_id, err)
 
     def _decode_wf_id(self, workflow_id=None, name=None, user=None):
         if bool(workflow_id) == bool(name):
@@ -433,7 +434,7 @@ class OozieClient(object):
             if workflow:
                 result = workflow.id
             else:
-                raise OozieException.workflow_not_found(name)
+                raise exceptions.OozieException.workflow_not_found(name)
         elif user:
             raise ValueError("User parameter not supported with workflow_id")
 
@@ -448,28 +449,28 @@ class OozieClient(object):
     # ===========================================================================
 
     def job_info(self, job_id):
-        coord_id, _ = parse_coordinator_id(job_id)
+        coord_id, _ = model.parse_coordinator_id(job_id)
         if coord_id:
             return self.job_coordinator_info(coordinator_id=job_id)
 
-        wf_id, _ = parse_workflow_id(job_id)
+        wf_id, _ = model.parse_workflow_id(job_id)
         if wf_id:
             return self.job_workflow_info(workflow_id=job_id)
 
-        raise OozieException.job_not_found(job_id)
+        raise exceptions.OozieException.job_not_found(job_id)
 
     def job_action_info(self, job_id):
-        coord_id, action = parse_coordinator_id(job_id)
+        coord_id, action = model.parse_coordinator_id(job_id)
         if coord_id:
             coord = self.job_coordinator_info(coordinator_id=job_id)
             return coord.action(action) if coord and action else coord
 
-        wf_id, action = parse_workflow_id(job_id)
+        wf_id, action = model.parse_workflow_id(job_id)
         if wf_id:
             workflow = self.job_workflow_info(workflow_id=job_id)
             return workflow.action(action) if workflow and action else workflow
 
-        raise OozieException.job_not_found(job_id)
+        raise exceptions.OozieException.job_not_found(job_id)
 
     # ===========================================================================
     # Job API - manage coordinator
@@ -527,7 +528,7 @@ class OozieClient(object):
 
     def job_workflow_start(self, workflow_id=None, name=None, user=None):
         workflow = self.job_workflow_info(workflow_id, name, user)
-        if workflow.status == WorkflowStatus.PREP:
+        if workflow.status == model.WorkflowStatus.PREP:
             self._put('job/{}?action=start'.format(workflow.id))
             return True
         return False
@@ -545,7 +546,7 @@ class OozieClient(object):
 
     def jobs_submit_coordinator(self, xml_path, configuration=None):
         user = self._user or 'oozie'
-        conf = _coordinator_submission_xml(user, xml_path, configuration=configuration)
+        conf = builder._coordinator_submission_xml(user, xml_path, configuration=configuration)
         if self._verbose:
             logger.info('Preparing to submit coordinator %s:\n%s', xml_path, conf)
         reply = self._post('jobs', conf)
@@ -554,11 +555,11 @@ class OozieClient(object):
                 logger.info('New coordinator: %s', reply['id'])
             coord = self.job_coordinator_info(coordinator_id=reply['id'])
             return coord
-        raise OozieException.operation_failed('submit coordinator')
+        raise exceptions.OozieException.operation_failed('submit coordinator')
 
     def jobs_submit_workflow(self, xml_path, configuration=None, start=False):
         user = self._user or 'oozie'
-        conf = _workflow_submission_xml(user, xml_path, configuration=configuration)
+        conf = builder._workflow_submission_xml(user, xml_path, configuration=configuration)
         if self._verbose:
             logger.info('Preparing to submit workflow %s:\n%s', xml_path, conf)
         endpoint = 'jobs?action=start' if start else 'jobs'
@@ -568,4 +569,4 @@ class OozieClient(object):
                 logger.info('New workflow: %s', reply['id'])
             workflow = self.job_workflow_info(workflow_id=reply['id'])
             return workflow
-        raise OozieException.operation_failed('submit workflow')
+        raise exceptions.OozieException.operation_failed('submit workflow')

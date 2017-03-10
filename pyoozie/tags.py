@@ -1,7 +1,7 @@
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
-from abc import ABCMeta, abstractmethod
+import abc
 import re
 import string  # pylint: disable=deprecated-module
 import yattag
@@ -44,7 +44,7 @@ def _validate_id(identifier):
 class XMLSerializable(object):
     """An abstract object that can be serialized to XML."""
 
-    __metaclass__ = ABCMeta
+    __metaclass__ = abc.ABCMeta
 
     def __init__(self, xml_tag):
         self.xml_tag = xml_tag
@@ -58,7 +58,7 @@ class XMLSerializable(object):
         else:
             return xml
 
-    @abstractmethod
+    @abc.abstractmethod
     def _xml(self, doc, tag, text):
         raise NotImplementedError()
 

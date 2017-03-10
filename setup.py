@@ -50,8 +50,12 @@ setup(
             'pytest>=2.7',
             'requests-mock',
             'xmltodict',
+            'shopify_python==0.1.2',
         ],
     },
+    dependency_links=[
+        'git+https://github.com/Shopify/shopify_python.git@v0.1.2#egg=shopify_python-0.1.2',
+    ],
     license="MIT",
     keywords=['oozie'],
     classifiers=[

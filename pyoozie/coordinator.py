@@ -2,16 +2,16 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
-from datetime import timedelta
-from enum import Enum
+import datetime
+import enum
 
-from pyoozie.tags import _validate_name, XMLSerializable, Parameters, Configuration
+from pyoozie import tags
 
 
 ONE_HUNDRED_YEARS = 100 * 365.24
 
 
-class ExecutionOrder(Enum):
+class ExecutionOrder(enum.Enum):
     """Execution order used for coordinator jobs."""
 
     FIFO = 'FIFO'
@@ -27,7 +27,7 @@ def format_datetime(value):
     return value.strftime('%Y-%m-%dT%H:%MZ')
 
 
-class Coordinator(XMLSerializable):
+class Coordinator(tags.XMLSerializable):
 
     def __init__(self, name, workflow_app_path, frequency, start, end=None, timezone=None,
                  workflow_configuration=None, timeout=None, concurrency=None, execution_order=None, throttle=None,
@@ -35,14 +35,14 @@ class Coordinator(XMLSerializable):
         super(Coordinator, self).__init__('coordinator-app')
         # Compose and validate dates/frequencies
         if end is None:
-            end = start + timedelta(days=ONE_HUNDRED_YEARS)
+            end = start + datetime.timedelta(days=ONE_HUNDRED_YEARS)
         assert end > start, "End time ({end}) must be greater than the start time ({start})".format(
             end=format_datetime(end), start=format_datetime(start))
         assert frequency >= 5, "Frequency ({frequency} min) must be greater than or equal to 5 min".format(
             frequency=frequency)
 
         # Coordinator
-        self.name = _validate_name(name)
+        self.name = tags._validate_name(name)
         self.frequency = frequency
         self.start = start
         self.end = end
@@ -50,7 +50,7 @@ class Coordinator(XMLSerializable):
 
         # Workflow action
         self.workflow_app_path = workflow_app_path
-        self.workflow_configuration = Configuration(workflow_configuration)
+        self.workflow_configuration = tags.Configuration(workflow_configuration)
 
         # Controls
         self.timeout = timeout
@@ -58,7 +58,7 @@ class Coordinator(XMLSerializable):
         self.execution_order = execution_order
         self.throttle = throttle
 
-        self.parameters = Parameters(parameters)
+        self.parameters = tags.Parameters(parameters)
 
     def _xml(self, doc, tag, text):
         with tag(self.xml_tag, xmlns="uri:oozie:coordinator:0.4", name=self.name, frequency=str(self.frequency),

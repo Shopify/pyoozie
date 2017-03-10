@@ -19,7 +19,7 @@ persistent=yes
 
 # List of plugins (as comma separated values of python modules names) to load,
 # usually to register additional checkers.
-load-plugins=
+load-plugins=shopify_python
 
 
 [MESSAGES CONTROL]
@@ -50,9 +50,10 @@ load-plugins=
 # D101 Missing docstring in public class
 # D102 Missing docstring in public method
 # D105 Missing docstring in magic method
+# global-variable; too many violations at present
 disable=C0111,D101,D102,D105,too-few-public-methods,too-many-instance-attributes,too-many-arguments,
  protected-access,invalid-name,redefined-outer-name,no-self-use,too-many-public-methods,too-many-lines,
- duplicate-code,fixme
+ duplicate-code,fixme,global-variable
 
 
 
