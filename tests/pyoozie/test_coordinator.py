@@ -55,8 +55,9 @@ def test_coordinator_with_controls_and_more(coordinator_xml_with_controls, expec
         }),
         **expected_coordinator_options
     ).xml()
-    assert tests.utils.xml_to_dict_unordered(coordinator_xml_with_controls) == \
-        tests.utils.xml_to_dict_unordered(actual)
+    expected_dict = tests.utils.xml_to_dict_unordered(coordinator_xml_with_controls)
+    actual_dict = tests.utils.xml_to_dict_unordered(actual)
+    assert expected_dict == actual_dict
 
 
 def test_really_long_coordinator_name(expected_coordinator_options):
