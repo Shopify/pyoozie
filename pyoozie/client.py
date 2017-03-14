@@ -109,22 +109,18 @@ class OozieClient(object):
 
     def _request(self, method, endpoint, content_type, content=None):
         response = None
+        url = '{}/v2/{}'.format(self._url, endpoint)
+
+        if self._verbose:
+            if content:
+                self.logger.info("Request: %s %s content bytes: %s", method, url, len(content))
+            else:
+                self.logger.info("Request: %s %s", method, url)
+
         try:
-            url = '{}/v2/{}'.format(self._url, endpoint)
-            if self._verbose:
-                if content:
-                    self.logger.info("Request: %s %s content bytes: %s", method, url, len(content))
-                else:
-                    self.logger.info("Request: %s %s", method, url)
             response = requests.request(method, url, data=content, timeout=self._timeout,
                                         headers=self._headers(content_type))
             response.raise_for_status()
-            self._stats.update(response)
-            if self._verbose:
-                self.logger.info("Reply: status=%s bytes=%s elapsed=%sms",
-                                 response.status_code,
-                                 len(response.text),
-                                 response.elapsed.microseconds / 1000.0)
         except requests.RequestException as err:
             self._stats.update(response)
             if self._verbose and response is not None:
@@ -133,6 +129,14 @@ class OozieClient(object):
                                   response.reason,
                                   response.elapsed.microseconds / 1000.0)
             raise exceptions.OozieException.communication_error(caused_by=err)
+
+        self._stats.update(response)
+        if self._verbose:
+            self.logger.info("Reply: status=%s bytes=%s elapsed=%sms",
+                             response.status_code,
+                             len(response.text),
+                             response.elapsed.microseconds / 1000.0)
+
         try:
             return response.json() if len(response.content) else None
         except ValueError as err:
@@ -310,29 +314,32 @@ class OozieClient(object):
                 start = int(action)
                 limit = 1
 
+        def wrapped_get(uri):
+            try:
+                return self._get(uri)
+            except exceptions.OozieException as err:
+                raise exceptions.OozieException.coordinator_not_found(job_id, err)
+
         filters = self._filter_string(model.ArtifactType.CoordinatorAction, status=status)
-        try:
-            if start == 0 and limit:
-                # Fetch the most recent `limit` actions
-                length = limit
-                result = self._get('job/{}?order=desc&offset=1&len={}{}'.format(coord_id, length, filters))
-            elif limit:
-                # Fetch the specified range of actions
-                offset = start
-                length = limit
-                result = self._get('job/{}?offset={}&len={}{}'.format(coord_id, offset, length, filters))
-            else:
-                # Fetch all actions from `start` onward
-                # Ask for 1 first to get the total
-                offset = start or 1
-                result = self._get('job/{}?offset={}&len=1{}'.format(coord_id, offset, filters))
-                total = result['total']
-                if total > 0:
-                    length = total - offset + 1
-                    if length != 1:  # Don't re-ask if we have the answer!
-                        result = self._get('job/{}?offset={}&len={}{}'.format(coord_id, offset, length, filters))
-        except exceptions.OozieException as err:
-            raise exceptions.OozieException.coordinator_not_found(job_id, err)
+        if start == 0 and limit:
+            # Fetch the most recent `limit` actions
+            length = limit
+            result = wrapped_get('job/{}?order=desc&offset=1&len={}{}'.format(coord_id, length, filters))
+        elif limit:
+            # Fetch the specified range of actions
+            offset = start
+            length = limit
+            result = wrapped_get('job/{}?offset={}&len={}{}'.format(coord_id, offset, length, filters))
+        else:
+            # Fetch all actions from `start` onward
+            # Ask for 1 first to get the total
+            offset = start or 1
+            result = wrapped_get('job/{}?offset={}&len=1{}'.format(coord_id, offset, filters))
+            total = result['total']
+            if total > 0:
+                length = total - offset + 1
+                if length != 1:  # Don't re-ask if we have the answer!
+                    result = wrapped_get('job/{}?offset={}&len={}{}'.format(coord_id, offset, length, filters))
 
         coord = self.JOB_TYPES[model.ArtifactType.Coordinator](self, result)
         if action and coord:

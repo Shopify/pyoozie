@@ -51,6 +51,10 @@ disable=missing-docstring,too-few-public-methods,too-many-instance-attributes,to
  protected-access,invalid-name,redefined-outer-name,no-self-use,too-many-public-methods,too-many-lines,
  duplicate-code,fixme
 
+# Increase max except nodes because we often have a pattern of
+# record stats, log, and then re-raise when handling HTTP exceptions
+max-except-nodes=40
+
 
 [REPORTS]
 
