@@ -35,6 +35,7 @@ load-plugins=shopify_python
 # it should appear only once).
 
 # CHANGED:
+# missing-docstring
 # too-few-public-methods
 # too-many-instance-attributes
 # too-many-arguments
@@ -46,15 +47,9 @@ load-plugins=shopify_python
 # too-many-lines; ditto
 # duplicate-code; flagging test fixtures vs. implementation
 # fixme; we're in-development, so we need some of these
-# C0111: Missing docstring
-# D101 Missing docstring in public class
-# D102 Missing docstring in public method
-# D105 Missing docstring in magic method
-# global-variable; too many violations at present
-disable=C0111,D101,D102,D105,too-few-public-methods,too-many-instance-attributes,too-many-arguments,
+disable=missing-docstring,too-few-public-methods,too-many-instance-attributes,too-many-arguments,
  protected-access,invalid-name,redefined-outer-name,no-self-use,too-many-public-methods,too-many-lines,
- duplicate-code,fixme,global-variable
-
+ duplicate-code,fixme
 
 
 [REPORTS]

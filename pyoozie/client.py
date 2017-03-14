@@ -10,10 +10,6 @@ from pyoozie import exceptions
 from pyoozie import model
 
 
-logger = logging.getLogger('pyoozie.OozieClient')
-logging.getLogger('requests').setLevel(logging.WARNING)
-
-
 class OozieClient(object):
 
     JOB_TYPE_STRINGS = {
@@ -73,6 +69,7 @@ class OozieClient(object):
             return self._elapsed
 
     def __init__(self, url=None, user=None, timeout=None, verbose=True, **_):
+        self.logger = logging.getLogger('pyoozie.OozieClient')
         oozie_url = (url or 'http://localhost').rstrip('/')
         if not oozie_url.endswith('/oozie'):
             oozie_url += '/oozie'
@@ -92,7 +89,7 @@ class OozieClient(object):
         except requests.RequestException as err:
             self._stats.update(response)
             if self._verbose and response is not None:
-                logger.error(response.headers)
+                self.logger.error(response.headers)
             message = "Unable to contact Oozie server at {}".format(self._url)
             raise exceptions.OozieException.communication_error(message, err)
         try:
@@ -116,25 +113,25 @@ class OozieClient(object):
             url = '{}/v2/{}'.format(self._url, endpoint)
             if self._verbose:
                 if content:
-                    logger.info("Request: %s %s content bytes: %s", method, url, len(content))
+                    self.logger.info("Request: %s %s content bytes: %s", method, url, len(content))
                 else:
-                    logger.info("Request: %s %s", method, url)
+                    self.logger.info("Request: %s %s", method, url)
             response = requests.request(method, url, data=content, timeout=self._timeout,
                                         headers=self._headers(content_type))
             response.raise_for_status()
             self._stats.update(response)
             if self._verbose:
-                logger.info("Reply: status=%s bytes=%s elapsed=%sms",
-                            response.status_code,
-                            len(response.text),
-                            response.elapsed.microseconds / 1000.0)
+                self.logger.info("Reply: status=%s bytes=%s elapsed=%sms",
+                                 response.status_code,
+                                 len(response.text),
+                                 response.elapsed.microseconds / 1000.0)
         except requests.RequestException as err:
             self._stats.update(response)
             if self._verbose and response is not None:
-                logger.error("Reply: status=%s reason=%s elapsed=%sms",
-                             response.status_code,
-                             response.reason,
-                             response.elapsed.microseconds / 1000.0)
+                self.logger.error("Reply: status=%s reason=%s elapsed=%sms",
+                                  response.status_code,
+                                  response.reason,
+                                  response.elapsed.microseconds / 1000.0)
             raise exceptions.OozieException.communication_error(caused_by=err)
         try:
             return response.json() if len(response.content) else None
@@ -153,7 +150,7 @@ class OozieClient(object):
 
     def report_stats(self, to_logger=None):
         if not to_logger:
-            to_logger = logger
+            to_logger = self.logger
         to_logger.info(
             "OozieClient Stats: requests=%s errors=%s bytes=%s elapsed=%sms",
             self._stats.requests,
@@ -548,11 +545,11 @@ class OozieClient(object):
         user = self._user or 'oozie'
         conf = builder._coordinator_submission_xml(user, xml_path, configuration=configuration)
         if self._verbose:
-            logger.info('Preparing to submit coordinator %s:\n%s', xml_path, conf)
+            self.logger.info('Preparing to submit coordinator %s:\n%s', xml_path, conf)
         reply = self._post('jobs', conf)
         if reply and 'id' in reply:
             if self._verbose:
-                logger.info('New coordinator: %s', reply['id'])
+                self.logger.info('New coordinator: %s', reply['id'])
             coord = self.job_coordinator_info(coordinator_id=reply['id'])
             return coord
         raise exceptions.OozieException.operation_failed('submit coordinator')
@@ -561,12 +558,12 @@ class OozieClient(object):
         user = self._user or 'oozie'
         conf = builder._workflow_submission_xml(user, xml_path, configuration=configuration)
         if self._verbose:
-            logger.info('Preparing to submit workflow %s:\n%s', xml_path, conf)
+            self.logger.info('Preparing to submit workflow %s:\n%s', xml_path, conf)
         endpoint = 'jobs?action=start' if start else 'jobs'
         reply = self._post(endpoint, conf)
         if reply and 'id' in reply:
             if self._verbose:
-                logger.info('New workflow: %s', reply['id'])
+                self.logger.info('New workflow: %s', reply['id'])
             workflow = self.job_workflow_info(workflow_id=reply['id'])
             return workflow
         raise exceptions.OozieException.operation_failed('submit workflow')
