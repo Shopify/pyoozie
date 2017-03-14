@@ -1,6 +1,6 @@
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
-from __future__ import unicode_literals, print_function
+from __future__ import unicode_literals
 
 import datetime
 import subprocess
@@ -140,9 +140,9 @@ def test_workflow_builder(tmpdir, workflow_builder):
     assert tests.utils.xml_to_dict_unordered(expected_xml) == tests.utils.xml_to_dict_unordered(actual_xml)
 
     # Does it validate against the workflow XML schema?
+    filename = tmpdir.join("workflow.xml")
+    filename.write_text(actual_xml, encoding='utf8')
     try:
-        filename = tmpdir.join("workflow.xml")
-        filename.write_text(actual_xml, encoding='utf8')
         subprocess.check_output(
             'java -cp lib/oozie-client-4.1.0.jar:lib/commons-cli-1.2.jar '
             'org.apache.oozie.cli.OozieCLI validate {path}'.format(path=str(filename)),
