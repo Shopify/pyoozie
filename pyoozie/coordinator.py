@@ -42,7 +42,7 @@ class Coordinator(tags.XMLSerializable):
             frequency=frequency)
 
         # Coordinator
-        self.name = tags._validate_name(name)
+        self.name = tags.validate_xml_name(name)
         self.frequency = frequency
         self.start = start
         self.end = end

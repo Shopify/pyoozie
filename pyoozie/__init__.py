@@ -11,6 +11,7 @@ from pyoozie.client import OozieClient
 
 from pyoozie.coordinator import Coordinator
 from pyoozie.coordinator import ExecutionOrder
+
 from pyoozie.exceptions import OozieException
 
 from pyoozie.model import parse_coordinator_id
@@ -28,6 +29,8 @@ from pyoozie.tags import Shell
 from pyoozie.tags import SubWorkflow
 from pyoozie.tags import GlobalConfiguration
 from pyoozie.tags import Email
+from pyoozie.tags import validate_xml_name
+from pyoozie.tags import validate_xml_id
 
 __version__ = '0.0.0'
 
@@ -37,6 +40,7 @@ __all__ = (
 
     # tags
     'Configuration', 'Parameters', 'Credentials', 'Shell', 'SubWorkflow', 'GlobalConfiguration', 'Email',
+    'validate_xml_name', 'validate_xml_id',
 
     # builder
     'WorkflowBuilder', 'CoordinatorBuilder',

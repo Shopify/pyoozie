@@ -63,19 +63,19 @@ def expected_property_values_xml():
         </property>'''
 
 
-def test_validate_id():
+def test_validate_xml_id():
     # Simple id
-    tags._validate_id('ok-id')
+    tags.validate_xml_id('ok-id')
 
     # Max-sized id
-    tags._validate_id('l' * tags.MAX_IDENTIFIER_LENGTH)
+    tags.validate_xml_id('l' * tags.MAX_IDENTIFIER_LENGTH)
 
 
-def test_validate_id_thats_too_long():
+def test_validate_xml_id_thats_too_long():
     # Id that is too long
     very_long_name = 'l' * (tags.MAX_IDENTIFIER_LENGTH + 1)
     with pytest.raises(AssertionError) as assertion_info:
-        tags._validate_id(very_long_name)
+        tags.validate_xml_id(very_long_name)
     assert str(assertion_info.value) == (
         "Identifier must be less than {max_length} chars long, '{identifier}' is {length}"
     ).format(
@@ -85,37 +85,37 @@ def test_validate_id_thats_too_long():
     )
 
 
-def test_validate_id_with_illegal_start_char():
+def test_validate_xml_id_with_illegal_start_char():
     # Id that doesn't satisfy regex because of bad start char
     with pytest.raises(AssertionError) as assertion_info:
-        tags._validate_id('0-id-starting-with-a-non-alpha-char')
+        tags.validate_xml_id('0-id-starting-with-a-non-alpha-char')
     assert str(assertion_info.value) == (
         "Identifier must match {regex}, '0-id-starting-with-a-non-alpha-char' does not"
     ).format(regex=tags.REGEX_IDENTIFIER)
 
 
-def test_validate_id_with_illegal_char():
+def test_validate_xml_id_with_illegal_char():
     # Id that doesn't satisfy regex because of illegal char
     with pytest.raises(AssertionError) as assertion_info:
-        tags._validate_id('id.with.illlegal.chars')
+        tags.validate_xml_id('id.with.illlegal.chars')
     assert str(assertion_info.value) == (
         "Identifier must match {regex}, 'id.with.illlegal.chars' does not"
     ).format(regex=tags.REGEX_IDENTIFIER)
 
 
-def test_validate_name():
+def test_validate_xml_name():
     # Simple name
-    tags._validate_name('OK name (with punctuation)')
+    tags.validate_xml_name('OK name (with punctuation)')
 
     # Max-sized name
-    tags._validate_name('l' * tags.MAX_NAME_LENGTH)
+    tags.validate_xml_name('l' * tags.MAX_NAME_LENGTH)
 
 
-def test_validate_name_thats_too_long():
+def test_validate_xml_name_thats_too_long():
     # Name that is too long
     very_long_name = 'l' * (tags.MAX_NAME_LENGTH + 1)
     with pytest.raises(AssertionError) as assertion_info:
-        tags._validate_name(very_long_name)
+        tags.validate_xml_name(very_long_name)
     assert str(assertion_info.value) == (
         "Name must be less than {max_length} chars long, '{name}' is {length}"
     ).format(
@@ -125,11 +125,11 @@ def test_validate_name_thats_too_long():
     )
 
 
-def test_validate_name_with_latin1_char():
+def test_validate_xml_name_with_latin1_char():
     # Name with a latin-1 character
     name_with_non_ascii = 'être'
     with pytest.raises(AssertionError) as assertion_info:
-        tags._validate_name(name_with_non_ascii)
+        tags.validate_xml_name(name_with_non_ascii)
     assert six.text_type(assertion_info.value) == (
         "Name must be comprised of printable ASCII characters, '{name}' is not"
     ).format(name=name_with_non_ascii)
