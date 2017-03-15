@@ -30,7 +30,7 @@ class WorkflowBuilder(object):
 
     def __init__(self, name):
         # Initially, let's just use a static template and only one action payload and one action on error
-        self._name = tags._validate_name(name)
+        self._name = tags.validate_xml_name(name)
         self._action_name = None
         self._action_payload = None
         self._action_error = None
@@ -42,7 +42,7 @@ class WorkflowBuilder(object):
         if any((self._action_name, self._action_payload, self._action_error, self._kill_message)):
             raise NotImplementedError("Can only add one action in this version")
         else:
-            self._action_name = tags._validate_id('action-' + name)
+            self._action_name = tags.validate_xml_id('action-' + name)
             self._action_payload = action
             self._action_error = action_on_error
             self._kill_message = kill_on_error

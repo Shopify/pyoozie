@@ -13,7 +13,7 @@ COMPILED_REGEX_IDENTIFIER = re.compile(REGEX_IDENTIFIER)
 ALLOWABLE_NAME_CHARS = set(string.ascii_letters + string.punctuation + string.digits + ' ')
 
 
-def _validate_name(name):
+def validate_xml_name(name):
     assert len(name) <= MAX_NAME_LENGTH, \
         "Name must be less than {max_length} chars long, '{name}' is {length}".format(
             max_length=MAX_NAME_LENGTH,
@@ -26,7 +26,7 @@ def _validate_name(name):
     return name
 
 
-def _validate_id(identifier):
+def validate_xml_id(identifier):
     assert len(identifier) <= MAX_IDENTIFIER_LENGTH, \
         "Identifier must be less than {max_length} chars long, '{identifier}' is {length}".format(
             max_length=MAX_IDENTIFIER_LENGTH,
@@ -146,7 +146,7 @@ class Credentials(_PropertyList):
                                    'type': credential_type,
                                },
                                values=values)
-        self.name = _validate_id(credential_name)
+        self.name = validate_xml_id(credential_name)
 
 
 class Shell(XMLSerializable):
