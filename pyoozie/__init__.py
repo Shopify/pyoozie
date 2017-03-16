@@ -24,7 +24,7 @@ from pyoozie.model import WorkflowActionStatus
 
 from pyoozie.tags import Parameters
 from pyoozie.tags import Configuration
-from pyoozie.tags import Credentials
+from pyoozie.tags import Credential
 from pyoozie.tags import Shell
 from pyoozie.tags import SubWorkflow
 from pyoozie.tags import GlobalConfiguration
@@ -39,7 +39,7 @@ __all__ = (
     'Coordinator', 'ExecutionOrder',
 
     # tags
-    'Configuration', 'Parameters', 'Credentials', 'Shell', 'SubWorkflow', 'GlobalConfiguration', 'Email',
+    'Configuration', 'Parameters', 'Credential', 'Shell', 'SubWorkflow', 'GlobalConfiguration', 'Email',
     'validate_xml_name', 'validate_xml_id',
 
     # builder

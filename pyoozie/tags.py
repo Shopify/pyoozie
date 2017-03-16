@@ -118,7 +118,7 @@ class Configuration(_PropertyList):
         _PropertyList.__init__(self, 'configuration', values=values)
 
 
-class Credentials(_PropertyList):
+class Credential(_PropertyList):
     """HCatalog, Hive Metastore, HBase, or Hive Server 2 action credentials.
 
     Generates XML of the form:
@@ -140,7 +140,7 @@ class Credentials(_PropertyList):
     """
 
     def __init__(self, values, credential_name, credential_type):
-        _PropertyList.__init__(self, 'credentials',
+        _PropertyList.__init__(self, 'credential',
                                attributes={
                                    'name': credential_name,
                                    'type': credential_type,
