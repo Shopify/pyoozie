@@ -9,7 +9,6 @@ import pytest
 import tests.utils
 
 from pyoozie import builder
-from pyoozie import coordinator
 from pyoozie import tags
 
 
@@ -220,7 +219,7 @@ def test_coordinator_builder(coordinator_xml_with_controls, workflow_app_path):
         concurrency=1,
         throttle='${throttle}',
         timeout_in_minutes=10,
-        execution_order=coordinator.ExecutionOrder.LAST_ONLY,
+        execution_order=tags.EXEC_LAST_ONLY,
         parameters={
             'throttle': 1,
         },

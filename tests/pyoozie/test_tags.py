@@ -3,6 +3,7 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
+import datetime
 import decimal
 
 import pytest
@@ -61,6 +62,23 @@ def expected_property_values_xml():
             <name>unicode</name>
             <value>ǝnlɐʌ</value>
         </property>'''
+
+
+@pytest.fixture
+def expected_coordinator_options():
+    return {
+        'name': 'coordinator-name',
+        'frequency': 1440,
+        'start': parse_datetime('2015-01-01T10:56Z'),
+        'end': parse_datetime('2115-01-01T10:56Z'),
+        'workflow_app_path': '/user/oozie/workflows/descriptive-name',
+    }
+
+
+@pytest.fixture
+def coordinator_xml():
+    with open('tests/data/coordinator.xml', 'r') as fh:
+        return fh.read()
 
 
 def test_validate_xml_id():
@@ -363,3 +381,60 @@ def test_email():
         <attachment>/another/path/on/hdfs.txt,/path/on/hdfs.txt</attachment>
     </email>
     ''') == tests.utils.xml_to_dict_unordered(actual)
+
+
+def parse_datetime(string):
+    return datetime.datetime.strptime(string, '%Y-%m-%dT%H:%MZ')
+
+
+def test_coordinator(coordinator_xml, expected_coordinator_options):
+    actual = tags.Coordinator(**expected_coordinator_options).xml()
+    assert tests.utils.xml_to_dict_unordered(coordinator_xml) == tests.utils.xml_to_dict_unordered(actual)
+
+
+def test_coordinator_end_default(coordinator_xml, expected_coordinator_options):
+    del expected_coordinator_options['end']
+    actual = tags.Coordinator(**expected_coordinator_options).xml()
+    assert tests.utils.xml_to_dict_unordered(coordinator_xml) == tests.utils.xml_to_dict_unordered(actual)
+
+
+def test_coordinator_with_controls_and_more(coordinator_xml_with_controls, expected_coordinator_options):
+    actual = tags.Coordinator(
+        timeout=10,
+        concurrency=1,
+        execution_order=tags.EXEC_LAST_ONLY,
+        throttle='${throttle}',
+        workflow_configuration=tags.Configuration({
+            'mapred.job.queue.name': 'production'
+        }),
+        parameters=tags.Parameters({
+            'throttle': 1
+        }),
+        **expected_coordinator_options
+    ).xml()
+    expected_dict = tests.utils.xml_to_dict_unordered(coordinator_xml_with_controls)
+    actual_dict = tests.utils.xml_to_dict_unordered(actual)
+    assert expected_dict == actual_dict
+
+
+def test_really_long_coordinator_name(expected_coordinator_options):
+    with pytest.raises(AssertionError) as assertion_info:
+        del expected_coordinator_options['name']
+        tags.Coordinator(name='l' * (tags.MAX_NAME_LENGTH + 1), **expected_coordinator_options)
+    assert "Name must be less than" in str(assertion_info.value)
+
+
+def test_coordinator_bad_frequency(expected_coordinator_options):
+    expected_coordinator_options['frequency'] = 0
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.Coordinator(**expected_coordinator_options)
+    assert str(assertion_info.value) == \
+        'Frequency (0 min) must be greater than or equal to 5 min'
+
+
+def test_coordinator_end_before_start(expected_coordinator_options):
+    expected_coordinator_options['end'] = expected_coordinator_options['start'] - datetime.timedelta(days=10)
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.Coordinator(**expected_coordinator_options)
+    assert str(assertion_info.value) == \
+        'End time (2014-12-22T10:56Z) must be greater than the start time (2015-01-01T10:56Z)'
