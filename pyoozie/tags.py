@@ -2,8 +2,11 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 import abc
+import datetime
 import re
 import string  # pylint: disable=deprecated-module
+
+import enum
 import yattag
 
 MAX_NAME_LENGTH = 255
@@ -11,6 +14,25 @@ MAX_IDENTIFIER_LENGTH = 50
 REGEX_IDENTIFIER = r'^[a-zA-Z_][\-_a-zA-Z0-9]{0,%i}$' % (MAX_IDENTIFIER_LENGTH - 1)
 COMPILED_REGEX_IDENTIFIER = re.compile(REGEX_IDENTIFIER)
 ALLOWABLE_NAME_CHARS = set(string.ascii_letters + string.punctuation + string.digits + ' ')
+ONE_HUNDRED_YEARS = 100 * 365.24
+
+
+class ExecutionOrder(enum.Enum):
+    """Execution order used for coordinator jobs."""
+
+    FIFO = 'FIFO'
+    LAST_ONLY = 'LAST_ONLY'
+    LIFO = 'LIFO'
+    NONE = 'NONE'
+
+    def __str__(self):
+        return self.value
+
+
+EXEC_FIFO = ExecutionOrder.FIFO
+EXEC_LAST_ONLY = ExecutionOrder.LAST_ONLY
+EXEC_LIFO = ExecutionOrder.LIFO
+EXEC_NONE = ExecutionOrder.NONE
 
 
 def validate_xml_name(name):
@@ -313,5 +335,75 @@ class Email(XMLSerializable):
             if self.attachments:
                 with tag('attachment'):
                     doc.text(format_list(self.attachments))
+
+        return doc
+
+
+class Coordinator(XMLSerializable):
+
+    def __init__(self, name, workflow_app_path, frequency, start, end=None, timezone=None,
+                 workflow_configuration=None, timeout=None, concurrency=None, execution_order=None, throttle=None,
+                 parameters=None):
+        super(Coordinator, self).__init__('coordinator-app')
+        # Compose and validate dates/frequencies
+        if end is None:
+            end = start + datetime.timedelta(days=ONE_HUNDRED_YEARS)
+        assert end > start, "End time ({end}) must be greater than the start time ({start})".format(
+            end=Coordinator.__format_datetime(end), start=Coordinator.__format_datetime(start))
+        assert frequency >= 5, "Frequency ({frequency} min) must be greater than or equal to 5 min".format(
+            frequency=frequency)
+
+        # Coordinator
+        self.name = validate_xml_name(name)
+        self.frequency = frequency
+        self.start = start
+        self.end = end
+        self.timezone = timezone if timezone else 'UTC'
+
+        # Workflow action
+        self.workflow_app_path = workflow_app_path
+        self.workflow_configuration = Configuration(workflow_configuration)
+
+        # Controls
+        self.timeout = timeout
+        self.concurrency = concurrency
+        self.execution_order = execution_order
+        self.throttle = throttle
+
+        self.parameters = Parameters(parameters)
+
+    @staticmethod
+    def __format_datetime(value):
+        return value.strftime('%Y-%m-%dT%H:%MZ')
+
+    def _xml(self, doc, tag, text):
+        with tag(self.xml_tag, xmlns="uri:oozie:coordinator:0.4", name=self.name, frequency=str(self.frequency),
+                 start=Coordinator.__format_datetime(self.start), end=Coordinator.__format_datetime(self.end),
+                 timezone=self.timezone):
+
+            if self.parameters:
+                self.parameters._xml(doc, tag, text)
+
+            if self.timeout or self.concurrency or self.execution_order or self.throttle:
+                with tag('controls'):
+                    if self.timeout:
+                        with tag('timeout'):
+                            text(str(self.timeout))
+                    if self.concurrency:
+                        with tag('concurrency'):
+                            text(str(self.concurrency))
+                    if self.execution_order:
+                        with tag('execution'):
+                            text(str(self.execution_order))
+                    if self.throttle:
+                        with tag('throttle'):
+                            text(str(self.throttle))
+
+            with tag('action'):
+                with tag('workflow'):
+                    with tag('app-path'):
+                        text(self.workflow_app_path)
+                    if self.workflow_configuration:
+                        self.workflow_configuration._xml(doc, tag, text)
 
         return doc
