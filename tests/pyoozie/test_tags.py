@@ -158,11 +158,11 @@ def test_configuration(expected_property_values, expected_property_values_xml):
     assert tests.utils.xml_to_dict_unordered(expected) == tests.utils.xml_to_dict_unordered(actual)
 
 
-def test_credentials(expected_property_values, expected_property_values_xml):
-    actual = tags.Credentials(expected_property_values,
-                              credential_name='my-hcat-creds',
-                              credential_type='hcat').xml(indent=True)
-    expected = "<credentials name='my-hcat-creds' type='hcat'>{xml}</credentials>".format(
+def test_credential(expected_property_values, expected_property_values_xml):
+    actual = tags.Credential(expected_property_values,
+                             credential_name='my-hcat-creds',
+                             credential_type='hcat').xml(indent=True)
+    expected = "<credential name='my-hcat-creds' type='hcat'>{xml}</credential>".format(
         xml=expected_property_values_xml)
     assert tests.utils.xml_to_dict_unordered(expected) == tests.utils.xml_to_dict_unordered(actual)
 
