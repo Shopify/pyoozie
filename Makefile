@@ -1,4 +1,6 @@
 python_files := find . -path '*/.*' -prune -o -name '*.py' -print0
+python_version_full := $(wordlist 2,4,$(subst ., ,$(shell python --version 2>&1)))
+python_version_major := $(word 1,${python_version_full})
 
 all: install test lint
 
@@ -27,7 +29,11 @@ autopep8:
 
 lint:
 		@echo 'Linting...'
-		@pylint --rcfile=pylintrc pyoozie tests
-		@flake8
+		@pylint --rcfile=pylintrc setup.py pyoozie tests
+		@if [ "$(python_version_major)" = "3" ]; then \
+			echo 'Checking type annotations...'; \
+			mypy --py2 pyoozie tests --ignore-missing-imports; \
+		fi
+		@pep8
 
 autolint: autopep8 lint
