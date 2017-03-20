@@ -5,26 +5,24 @@ import re
 
 
 try:
-    from setuptools import setup
-except:
-    from distutils.core import setup
+    import setuptools as setuplib
+except ImportError:
+    import distutils.core as setuplib
 
 
-with open('README.md') as fh:
-    long_description = fh.read()
+def get_version():
+    version = None
+    with open('pyoozie/__init__.py', 'r') as fdesc:
+        version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]', fdesc.read(), re.MULTILINE).group(1)
+    if not version:
+        raise RuntimeError('Cannot find version information')
+    return version
 
-with open('pyoozie/__init__.py', 'r') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                        fd.read(), re.MULTILINE).group(1)
 
-if not version:
-    raise RuntimeError('Cannot find version information')
-
-setup(
+setuplib.setup(
     name='pyoozie',
-    version=version,
+    version=get_version(),
     description='A Python client for querying and scheduling with Oozie',
-    long_description=long_description,
     author='Shopify Data Acceleration',
     author_email='data-acceleration@shopify.com',
     url='https://github.com/Shopify/pyoozie',
@@ -33,6 +31,7 @@ setup(
         'enum34>=0.9.23',
         'requests>=2.12.3',
         'six>=1.10.0',
+        'typing',
         'untangle>=1.1.0',
         'yattag>=1.7.2',
     ],
@@ -44,13 +43,15 @@ setup(
             'autopep8',
             'flake8',
             'mock',
+            'mypy; python_version >= "3.3"',
+            'pep8',
             'pylint',
             'pytest-cov',
             'pytest-randomly',
             'pytest>=2.7',
             'requests-mock',
-            'xmltodict',
             'shopify_python==0.2.0',
+            'xmltodict',
         ],
     },
     dependency_links=[

@@ -7,6 +7,7 @@ import datetime
 import re
 
 import enum
+import typing  # pylint: disable=unused-import
 import untangle
 
 from pyoozie import exceptions
@@ -244,9 +245,9 @@ class WorkflowActionStatus(_StatusEnum):
 
 class _OozieArtifact(object):
 
-    REQUIRED_KEYS = {}
+    REQUIRED_KEYS = {}  # type: typing.Dict[unicode, typing.Callable]
 
-    SUPPORTED_KEYS = {'toString': None}
+    SUPPORTED_KEYS = {'toString': None}  # type: typing.Dict[unicode, typing.Callable]
 
     def __init__(self, oozie_client, details, parent=None):
         self._client = oozie_client
