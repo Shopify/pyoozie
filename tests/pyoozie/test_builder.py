@@ -10,6 +10,7 @@ import tests.utils
 
 from pyoozie import builder
 from pyoozie import tags
+from pyoozie import transforms
 
 
 @pytest.fixture
@@ -25,18 +26,6 @@ def coord_app_path():
 @pytest.fixture
 def username():
     return 'test'
-
-
-@pytest.fixture
-def workflow_builder():
-    return builder.WorkflowBuilder(
-        name='descriptive-name'
-    ).add_action(
-        name='payload',
-        action=tags.Shell(exec_command='echo "test"'),
-        action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
-        kill_on_error='Failure message',
-    )
 
 
 def test_workflow_submission_xml(username, workflow_app_path):
@@ -130,7 +119,39 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
     </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
 
 
-def test_workflow_builder(tmpdir, workflow_builder):
+def test_workflow_builder(tmpdir):
+
+    workflow_builder = builder.WorkflowBuilder(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+    ).add_action(
+        name='extract',
+        action=tags.Shell(exec_command='echo', arguments=["'Extract data from an operational system'"]),
+        action_on_error=tags.Email(to='person@example.com', subject='Error',
+                                   body='A bad thing happened while extracting'),
+        kill_on_error='Failure message on extracting',
+    ).add_action(
+        name='transform',
+        action=tags.Shell(exec_command='echo', arguments=["'Transform data'"]),
+        action_on_error=tags.Email(to='person@example.com', subject='Error',
+                                   body='A bad thing happened while transforming'),
+        kill_on_error='Failure message on transforming',
+        depends_upon=('extract',),
+    ).add_action(
+        name='load',
+        action=tags.Shell(exec_command='echo', arguments=["'Load data into a database'"]),
+        action_on_error=tags.Email(to='person@example.com', subject='Error',
+                                   body='A bad thing happened while loading'),
+        kill_on_error='Failure message on loading',
+        depends_upon=('transform',),
+    ).add_transform(
+        transforms.final_action,
+        action=tags.Email(to='person@example.com', subject='Success', body='ETL succeeded'),
+    ).add_transform(
+        transforms.add_actions_on_error
+    )
+
     with open('tests/data/workflow.xml', 'r') as fh:
         expected_xml = fh.read()
 
@@ -194,18 +215,6 @@ def test_builder_raises_on_bad_action_name():
             kill_on_error='Failure message',
         )
     assert "Identifier must be less than " in str(assertion_info.value)
-
-
-def test_builder_raises_on_multiple_actions(workflow_builder):
-    # Does it raise an exception when you try to add multiple actions?
-    with pytest.raises(NotImplementedError) as assertion_info:
-        workflow_builder.add_action(
-            name='payload',
-            action=tags.Shell(exec_command='echo "test"'),
-            action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
-            kill_on_error='Failure message',
-        )
-    assert str(assertion_info.value) == 'Can only add one action in this version'
 
 
 def test_coordinator_builder(coordinator_xml_with_controls, workflow_app_path):

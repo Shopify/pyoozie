@@ -407,3 +407,16 @@ class Coordinator(XMLSerializable):
                         self.workflow_configuration._xml(doc, tag, text)
 
         return doc
+
+
+class Workflow(XMLSerializable):
+    """Workflow 0.5"""
+
+    def __init__(self, name, **kwargs):
+        XMLSerializable.__init__(self, 'workflow')
+        self.name = validate_xml_name(name)
+        self.kwargs = kwargs
+
+    def _xml(self, doc, tag, text):
+        with tag(self.xml_tag, xmlns="uri:oozie:workflow:0.5"):
+            raise NotImplementedError()

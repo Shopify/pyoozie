@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 
 from pyoozie import tags
+from pyoozie import transforms
 
 
 def _workflow_submission_xml(username, workflow_xml_path, configuration=None, indent=False):
@@ -27,56 +28,82 @@ def _coordinator_submission_xml(username, coord_xml_path, configuration=None, in
 
 class WorkflowBuilder(object):
 
-    def __init__(self, name):
-        # Initially, let's just use a static template and only one action payload and one action on error
-        self._name = tags.validate_xml_name(name)
-        self._action_name = None
-        self._action_payload = None
-        self._action_error = None
-        self._kill_message = None
+    def __init__(self, name, parameters=None, configuration=None, credentials=None, job_tracker=None,
+                 name_node=None, job_xml_files=None, default_retry_max=None, default_retry_interval=None,
+                 default_retry_policy=None):
+        self.__workflow = tags.Workflow(
+            name=name,
+            parameters=parameters,
+            configuration=configuration,
+            credentials=credentials,
+            job_tracker=job_tracker,
+            name_node=name_node,
+            job_xml_files=job_xml_files,
+            default_retry_max=default_retry_max,
+            default_retry_interval=default_retry_interval,
+            default_retry_policy=default_retry_policy,
+        )
+        self.__action_layout_strategy = transforms.serial_layout
+        self.__action_layout_kwargs = {}
+        self.__actions = {}
+        self.__action_kwargs = {}
+        self.__dependencies = {}
+        self.__transformations = []
+        self.__transformation_kwargs = {}
 
-    def add_action(self, name, action, action_on_error, kill_on_error='${wf:lastErrorNode()} - ${wf:id()}'):
-        # Today you can't rename your action and you can only have one, but in the future you can add multiple
-        # named actions
-        if any((self._action_name, self._action_payload, self._action_error, self._kill_message)):
-            raise NotImplementedError("Can only add one action in this version")
-        else:
-            self._action_name = tags.validate_xml_id('action-' + name)
-            self._action_payload = action
-            self._action_error = action_on_error
-            self._kill_message = kill_on_error
+    def set_layout(self, fnc_layout, **kwargs):
+        self.__action_layout_strategy = fnc_layout
+        self.__action_layout_kwargs = kwargs
+
+    def add_action(self, name, action, depends_upon=None, **kwargs):
+        def create_action_name(name):
+            return tags.validate_xml_id('action-' + name)
+
+        # Validate name
+        name = create_action_name(name)
+        assert name not in self.__actions, "Cannot add an action with the same name (%(name)s) twice".format(
+            name=name)
+
+        # Compose and validate dependency names
+        dependencies = set()
+        for dependency_name in depends_upon or {}:
+            dependencies.add(create_action_name(dependency_name))
+        self.__dependencies[name] = dependencies
+
+        # Store actions
+        self.__actions[name] = action
+        self.__action_kwargs[name] = kwargs
 
         return self
 
+    def add_transform(self, fnc_transform, **kwargs):
+        assert fnc_transform not in self.__transformation_kwargs, (
+            "Cannot add a transformation function (%(fnc)r) twice".format(fnc=fnc_transform))
+        self.__transformation_kwargs[fnc_transform] = kwargs
+        self.__transformations.append(fnc_transform)
+        return self
+
     def build(self, indent=False):
-        def format_xml(xml):
-            xml = xml.replace("<?xml version='1.0' encoding='UTF-8'?>", '')
-            return '\n'.join([(' ' * 8) + line for line in xml.strip().split('\n')])
-        return '''
-<?xml version="1.0" encoding="UTF-8"?>
-<workflow-app xmlns="uri:oozie:workflow:0.5"
-              name="{name}">
-    <start to="{action_name}" />
-    <action name="{action_name}">
-{action_payload_xml}
-        <ok to="end" />
-        <error to="action-error" />
-    </action>
-    <action name="action-error">
-{action_error_xml}
-        <ok to="kill" />
-        <error to="kill" />
-    </action>
-    <kill name="kill">
-        <message>{kill_message}</message>
-    </kill>
-    <end name="end" />
-</workflow-app>
-'''.format(action_payload_xml=format_xml(self._action_payload.xml(indent=indent)),
-           action_error_xml=format_xml(self._action_error.xml(indent=indent)),
-           kill_message=self._kill_message,
-           action_name=self._action_name,
-           name=self._name).strip()
+        env = {
+            'actions': self.__actions,
+            'action_kwargs': self.__action_kwargs,
+            'dependencies': self.__dependencies,
+            'workflow': self.__workflow,
+        }
+
+        # Ensure that this operation can only be called once
+        assert self.__workflow, "Workflow already built"
+        self.__workflow = None
+
+        # Layout the action nodes provided
+        env = self.__action_layout_strategy(env, **self.__action_layout_kwargs)
+
+        # Manipulate those action nodes (and potentially add others)
+        for transformation in self.__transformations:
+            transformation_kwargs = self.__transformation_kwargs[transformation]
+            env = transformation(env, **transformation_kwargs)
+
+        return env['workflow'].xml(indent=indent)
 
 
 class CoordinatorBuilder(object):
