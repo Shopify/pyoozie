@@ -417,7 +417,7 @@ class Workflow(XMLSerializable):
                  default_retry_policy=None):
         XMLSerializable.__init__(self, 'workflow-app')
         self.name = validate_xml_name(name)
-        
+
         self.parameters = Parameters(parameters)
         self.global_configuration = GlobalConfiguration(
             job_tracker=job_tracker,
@@ -430,7 +430,6 @@ class Workflow(XMLSerializable):
         self.default_retry_max = default_retry_max
         self.default_retry_interval = default_retry_interval
         self.default_retry_policy = default_retry_policy
-
 
     def _xml(self, doc, tag, text):
         with tag(self.xml_tag, name=self.name, xmlns="uri:oozie:workflow:0.5"):

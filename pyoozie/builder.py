@@ -56,19 +56,23 @@ class WorkflowBuilder(object):
         self.__action_layout_kwargs = kwargs
 
     def add_action(self, name, action, depends_upon=None, **kwargs):
-        def create_action_name(name):
-            return tags.validate_xml_id('action-' + name)
 
         # Validate name
-        name = create_action_name(name)
+        name = tags.validate_xml_id('action-' + name)
         assert name not in self.__actions, "Cannot add an action with the same name (%(name)s) twice".format(
             name=name)
+        assert action not in self.__actions.values(), "Cannot add the same action (%(action)r) twice".format(
+            action=action
+        )
 
         # Compose and validate dependency names
         dependencies = set()
-        for dependency_name in depends_upon or {}:
-            dependencies.add(create_action_name(dependency_name))
-        self.__dependencies[name] = dependencies
+        for dependency in depends_upon or {}:
+            assert dependency in self.__actions.values(), (
+                "%(dependency)r required by %(action)r but hasn't been added"
+                .format(dependency=dependency, action=action))
+            dependencies.add(dependency)
+        self.__dependencies[action] = dependencies
 
         # Store actions
         self.__actions[name] = action

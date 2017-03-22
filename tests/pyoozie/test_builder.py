@@ -122,37 +122,40 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
 @pytest.mark.xfail
 def test_workflow_builder(tmpdir):
 
+    extract_action = tags.Shell(exec_command='echo', arguments=["'Extract data from an operational system'"])
+    transform_action = tags.Shell(exec_command='echo', arguments=["'Transform data'"])
+    load_action = tags.Shell(exec_command='echo', arguments=["'Load data into a database'"])
+
     workflow_builder = builder.WorkflowBuilder(
         name='descriptive-name',
         job_tracker='job-tracker',
         name_node='name-node',
     ).add_action(
         name='extract',
-        action=tags.Shell(exec_command='echo', arguments=["'Extract data from an operational system'"]),
+        action=extract_action,
         action_on_error=tags.Email(to='person@example.com', subject='Error',
                                    body='A bad thing happened while extracting'),
         kill_on_error='Failure message on extracting',
     ).add_action(
         name='transform',
-        action=tags.Shell(exec_command='echo', arguments=["'Transform data'"]),
+        action=transform_action,
         action_on_error=tags.Email(to='person@example.com', subject='Error',
                                    body='A bad thing happened while transforming'),
         kill_on_error='Failure message on transforming',
-        depends_upon=('extract',),
+        depends_upon=(extract_action,),
     ).add_action(
         name='load',
-        action=tags.Shell(exec_command='echo', arguments=["'Load data into a database'"]),
+        action=load_action,
         action_on_error=tags.Email(to='person@example.com', subject='Error',
                                    body='A bad thing happened while loading'),
         kill_on_error='Failure message on loading',
-        depends_upon=('transform',),
+        depends_upon=(transform_action,),
     ).add_transform(
         transforms.final_action,
         action=tags.Email(to='person@example.com', subject='Success', body='ETL succeeded'),
     ).add_transform(
         transforms.add_actions_on_error
     )
-
 
     expected_xml = """
 <?xml version='1.0' encoding='UTF-8'?>
