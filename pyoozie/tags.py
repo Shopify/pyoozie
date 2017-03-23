@@ -345,7 +345,7 @@ class CoordinatorApp(XMLSerializable):
                  workflow_configuration=None, timeout=None, concurrency=None, execution_order=None, throttle=None,
                  parameters=None):
         super(CoordinatorApp, self).__init__(xml_tag='coordinator-app')
-        
+
         # Compose and validate dates/frequencies
         if end is None:
             end = start + datetime.timedelta(days=ONE_HUNDRED_YEARS)
