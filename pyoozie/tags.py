@@ -101,11 +101,9 @@ class _PropertyList(XMLSerializable, dict):
     """
 
     def __init__(self, xml_tag, attributes=None, values=None):
-        XMLSerializable.__init__(self, xml_tag)
+        super(_PropertyList, self).__init__(xml_tag=xml_tag)
         if values:
-            dict.__init__(self, values)
-        else:
-            dict.__init__(self)
+            self.update(values)
         self.attributes = attributes or {}
 
     def _xml(self, doc, tag, text):
@@ -130,14 +128,14 @@ class Parameters(_PropertyList):
     """
 
     def __init__(self, values=None):
-        _PropertyList.__init__(self, 'parameters', values=values)
+        super(Parameters, self).__init__(xml_tag='parameters', values=values)
 
 
 class Configuration(_PropertyList):
     """Coordinator job submission, workflow, workflow action configuration XML."""
 
     def __init__(self, values=None):
-        _PropertyList.__init__(self, 'configuration', values=values)
+        super(Configuration, self).__init__(xml_tag='configuration', values=values)
 
 
 class Credential(_PropertyList):
@@ -162,12 +160,14 @@ class Credential(_PropertyList):
     """
 
     def __init__(self, values, credential_name, credential_type):
-        _PropertyList.__init__(self, 'credential',
-                               attributes={
-                                   'name': credential_name,
-                                   'type': credential_type,
-                               },
-                               values=values)
+        super(Credential, self).__init__(
+            xml_tag='credential',
+            attributes={
+                'name': credential_name,
+                'type': credential_type,
+            },
+            values=values
+        )
         self.name = validate_xml_id(credential_name)
 
 
@@ -176,7 +176,7 @@ class Shell(XMLSerializable):
 
     def __init__(self, exec_command, job_tracker=None, name_node=None, prepares=None, job_xml_files=None,
                  configuration=None, arguments=None, env_vars=None, files=None, archives=None, capture_output=False):
-        XMLSerializable.__init__(self, 'shell')
+        super(Shell, self).__init__(xml_tag='shell')
         self.exec_command = exec_command
         self.job_tracker = job_tracker
         self.name_node = name_node
@@ -242,7 +242,7 @@ class SubWorkflow(XMLSerializable):
     """
 
     def __init__(self, app_path, propagate_configuration=True, configuration=None):
-        XMLSerializable.__init__(self, 'sub-workflow')
+        super(SubWorkflow, self).__init__(xml_tag='sub-workflow')
         self.app_path = app_path
         self.propagate_configuration = propagate_configuration
         self.configuration = Configuration(configuration)
@@ -272,7 +272,7 @@ class GlobalConfiguration(XMLSerializable):
     """
 
     def __init__(self, job_tracker=None, name_node=None, job_xml_files=None, configuration=None):
-        XMLSerializable.__init__(self, 'global')
+        super(GlobalConfiguration, self).__init__(xml_tag='global')
         self.job_tracker = job_tracker
         self.name_node = name_node
         self.job_xml_files = job_xml_files if job_xml_files else list()
@@ -300,7 +300,7 @@ class Email(XMLSerializable):
     """Email action for use within a workflow."""
 
     def __init__(self, to, subject, body, cc=None, bcc=None, content_type=None, attachments=None):
-        XMLSerializable.__init__(self, 'email')
+        super(Email, self).__init__(xml_tag='email')
         self.to = to
         self.subject = subject
         self.body = body
@@ -344,7 +344,7 @@ class Coordinator(XMLSerializable):
     def __init__(self, name, workflow_app_path, frequency, start, end=None, timezone=None,
                  workflow_configuration=None, timeout=None, concurrency=None, execution_order=None, throttle=None,
                  parameters=None):
-        super(Coordinator, self).__init__('coordinator-app')
+        super(Coordinator, self).__init__(xml_tag='coordinator-app')
         # Compose and validate dates/frequencies
         if end is None:
             end = start + datetime.timedelta(days=ONE_HUNDRED_YEARS)
