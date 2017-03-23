@@ -2,6 +2,8 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 
+import warnings
+
 from pyoozie import tags
 
 
@@ -28,6 +30,9 @@ def _coordinator_submission_xml(username, coord_xml_path, configuration=None, in
 class WorkflowBuilder(object):
 
     def __init__(self, name):
+        warnings.warn("WorkflowBuilder will be replaced in the future with a different API to construct workflows",
+                      PendingDeprecationWarning)
+
         # Initially, let's just use a static template and only one action payload and one action on error
         self._name = tags.validate_xml_name(name)
         self._action_name = None
@@ -84,6 +89,10 @@ class CoordinatorBuilder(object):
     def __init__(self, name, workflow_xml_path, frequency_in_minutes, start, end=None, timezone=None,
                  workflow_configuration=None, timeout_in_minutes=None, concurrency=None, execution_order=None,
                  throttle=None, parameters=None):
+        warnings.warn(
+            "CoordinatorBuilder is deprecated in favour of pyoozie.CoordinatorApp and will soon be removed",
+            DeprecationWarning
+        )
         self._coordinator = tags.CoordinatorApp(
             name=name,
             workflow_app_path=workflow_xml_path,
