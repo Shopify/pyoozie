@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import logging
 import requests
 
-from pyoozie import builder
+from pyoozie import xml
 from pyoozie import exceptions
 from pyoozie import model
 
@@ -550,7 +550,7 @@ class OozieClient(object):
 
     def jobs_submit_coordinator(self, xml_path, configuration=None):
         user = self._user or 'oozie'
-        conf = builder._coordinator_submission_xml(user, xml_path, configuration=configuration)
+        conf = xml._coordinator_submission_xml(user, xml_path, configuration=configuration)
         if self._verbose:
             self.logger.info('Preparing to submit coordinator %s:\n%s', xml_path, conf)
         reply = self._post('jobs', conf)
@@ -563,7 +563,7 @@ class OozieClient(object):
 
     def jobs_submit_workflow(self, xml_path, configuration=None, start=False):
         user = self._user or 'oozie'
-        conf = builder._workflow_submission_xml(user, xml_path, configuration=configuration)
+        conf = xml._workflow_submission_xml(user, xml_path, configuration=configuration)
         if self._verbose:
             self.logger.info('Preparing to submit workflow %s:\n%s', xml_path, conf)
         endpoint = 'jobs?action=start' if start else 'jobs'

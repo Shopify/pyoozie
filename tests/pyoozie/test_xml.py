@@ -8,7 +8,7 @@ import subprocess
 import pytest
 import tests.utils
 
-from pyoozie import builder
+from pyoozie import xml
 from pyoozie import tags
 
 
@@ -29,7 +29,7 @@ def username():
 
 @pytest.fixture
 def workflow_builder():
-    return builder.WorkflowBuilder(
+    return xml.WorkflowBuilder(
         name='descriptive-name'
     ).add_action(
         name='payload',
@@ -40,7 +40,7 @@ def workflow_builder():
 
 
 def test_workflow_submission_xml(username, workflow_app_path):
-    actual = builder._workflow_submission_xml(
+    actual = xml._workflow_submission_xml(
         username=username,
         workflow_xml_path=workflow_app_path,
         indent=True,
@@ -59,7 +59,7 @@ def test_workflow_submission_xml(username, workflow_app_path):
 
 
 def test_workflow_submission_xml_with_configuration(username, workflow_app_path):
-    actual = builder._workflow_submission_xml(
+    actual = xml._workflow_submission_xml(
         username=username,
         workflow_xml_path=workflow_app_path,
         configuration={
@@ -86,7 +86,7 @@ def test_workflow_submission_xml_with_configuration(username, workflow_app_path)
 
 
 def test_coordinator_submission_xml(username, coord_app_path):
-    actual = builder._coordinator_submission_xml(
+    actual = xml._coordinator_submission_xml(
         username=username,
         coord_xml_path=coord_app_path,
         indent=True
@@ -105,7 +105,7 @@ def test_coordinator_submission_xml(username, coord_app_path):
 
 
 def test_coordinator_submission_xml_with_configuration(username, coord_app_path):
-    actual = builder._coordinator_submission_xml(
+    actual = xml._coordinator_submission_xml(
         username=username,
         coord_xml_path=coord_app_path,
         configuration={
@@ -158,7 +158,7 @@ def test_workflow_builder(tmpdir, workflow_builder):
 def test_builder_raises_on_bad_workflow_name():
     # Does it throw an exception on a bad workflow name?
     with pytest.raises(AssertionError) as assertion_info:
-        builder.WorkflowBuilder(
+        xml.WorkflowBuilder(
             name='l' * (tags.MAX_NAME_LENGTH + 1)
         ).add_action(
             name='payload',
@@ -172,7 +172,7 @@ def test_builder_raises_on_bad_workflow_name():
 def test_builder_raises_on_bad_action_name():
     # Does it throw an exception on a bad action name?
     with pytest.raises(AssertionError) as assertion_info:
-        builder.WorkflowBuilder(
+        xml.WorkflowBuilder(
             name='descriptive-name'
         ).add_action(
             name='Action name with invalid characters',
@@ -185,7 +185,7 @@ def test_builder_raises_on_bad_action_name():
 
     # Does it throw an exception on an action name that's too long?
     with pytest.raises(AssertionError) as assertion_info:
-        builder.WorkflowBuilder(
+        xml.WorkflowBuilder(
             name='descriptive-name'
         ).add_action(
             name='l' * (tags.MAX_IDENTIFIER_LENGTH + 1),
@@ -210,7 +210,7 @@ def test_builder_raises_on_multiple_actions(workflow_builder):
 
 def test_coordinator_builder(coordinator_xml_with_controls, workflow_app_path):
 
-    coord_builder = builder.CoordinatorBuilder(
+    coord_builder = xml.CoordinatorBuilder(
         name='coordinator-name',
         workflow_xml_path=workflow_app_path,
         frequency_in_minutes=24 * 60,  # In minutes
