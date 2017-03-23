@@ -388,18 +388,18 @@ def parse_datetime(string):
 
 
 def test_coordinator(coordinator_xml, expected_coordinator_options):
-    actual = tags.Coordinator(**expected_coordinator_options).xml()
+    actual = tags.CoordinatorApp(**expected_coordinator_options).xml()
     assert tests.utils.xml_to_dict_unordered(coordinator_xml) == tests.utils.xml_to_dict_unordered(actual)
 
 
 def test_coordinator_end_default(coordinator_xml, expected_coordinator_options):
     del expected_coordinator_options['end']
-    actual = tags.Coordinator(**expected_coordinator_options).xml()
+    actual = tags.CoordinatorApp(**expected_coordinator_options).xml()
     assert tests.utils.xml_to_dict_unordered(coordinator_xml) == tests.utils.xml_to_dict_unordered(actual)
 
 
 def test_coordinator_with_controls_and_more(coordinator_xml_with_controls, expected_coordinator_options):
-    actual = tags.Coordinator(
+    actual = tags.CoordinatorApp(
         timeout=10,
         concurrency=1,
         execution_order=tags.EXEC_LAST_ONLY,
@@ -420,14 +420,14 @@ def test_coordinator_with_controls_and_more(coordinator_xml_with_controls, expec
 def test_really_long_coordinator_name(expected_coordinator_options):
     with pytest.raises(AssertionError) as assertion_info:
         del expected_coordinator_options['name']
-        tags.Coordinator(name='l' * (tags.MAX_NAME_LENGTH + 1), **expected_coordinator_options)
+        tags.CoordinatorApp(name='l' * (tags.MAX_NAME_LENGTH + 1), **expected_coordinator_options)
     assert "Name must be less than" in str(assertion_info.value)
 
 
 def test_coordinator_bad_frequency(expected_coordinator_options):
     expected_coordinator_options['frequency'] = 0
     with pytest.raises(AssertionError) as assertion_info:
-        tags.Coordinator(**expected_coordinator_options)
+        tags.CoordinatorApp(**expected_coordinator_options)
     assert str(assertion_info.value) == \
         'Frequency (0 min) must be greater than or equal to 5 min'
 
@@ -435,6 +435,6 @@ def test_coordinator_bad_frequency(expected_coordinator_options):
 def test_coordinator_end_before_start(expected_coordinator_options):
     expected_coordinator_options['end'] = expected_coordinator_options['start'] - datetime.timedelta(days=10)
     with pytest.raises(AssertionError) as assertion_info:
-        tags.Coordinator(**expected_coordinator_options)
+        tags.CoordinatorApp(**expected_coordinator_options)
     assert str(assertion_info.value) == \
         'End time (2014-12-22T10:56Z) must be greater than the start time (2015-01-01T10:56Z)'

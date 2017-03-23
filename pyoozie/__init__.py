@@ -4,8 +4,8 @@ from __future__ import unicode_literals
 
 # pylint: disable=import-modules-only
 
-from pyoozie.builder import CoordinatorBuilder
-from pyoozie.builder import WorkflowBuilder
+from pyoozie.xml import CoordinatorBuilder
+from pyoozie.xml import WorkflowBuilder
 
 from pyoozie.client import OozieClient
 
@@ -20,7 +20,7 @@ from pyoozie.model import parse_coordinator_id
 from pyoozie.model import parse_workflow_id
 
 from pyoozie.tags import Configuration
-from pyoozie.tags import Coordinator
+from pyoozie.tags import CoordinatorApp
 from pyoozie.tags import Credential
 from pyoozie.tags import Email
 from pyoozie.tags import ExecutionOrder
@@ -60,7 +60,7 @@ __all__ = (
 
     # tags
     'Configuration',
-    'Coordinator',
+    'CoordinatorApp',
     'Credential',
     'Email',
     'ExecutionOrder',

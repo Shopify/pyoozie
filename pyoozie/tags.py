@@ -339,17 +339,18 @@ class Email(XMLSerializable):
         return doc
 
 
-class Coordinator(XMLSerializable):
+class CoordinatorApp(XMLSerializable):
 
     def __init__(self, name, workflow_app_path, frequency, start, end=None, timezone=None,
                  workflow_configuration=None, timeout=None, concurrency=None, execution_order=None, throttle=None,
                  parameters=None):
-        super(Coordinator, self).__init__(xml_tag='coordinator-app')
+        super(CoordinatorApp, self).__init__(xml_tag='coordinator-app')
+        
         # Compose and validate dates/frequencies
         if end is None:
             end = start + datetime.timedelta(days=ONE_HUNDRED_YEARS)
         assert end > start, "End time ({end}) must be greater than the start time ({start})".format(
-            end=Coordinator.__format_datetime(end), start=Coordinator.__format_datetime(start))
+            end=CoordinatorApp.__format_datetime(end), start=CoordinatorApp.__format_datetime(start))
         assert frequency >= 5, "Frequency ({frequency} min) must be greater than or equal to 5 min".format(
             frequency=frequency)
 
@@ -378,7 +379,7 @@ class Coordinator(XMLSerializable):
 
     def _xml(self, doc, tag, text):
         with tag(self.xml_tag, xmlns="uri:oozie:coordinator:0.4", name=self.name, frequency=str(self.frequency),
-                 start=Coordinator.__format_datetime(self.start), end=Coordinator.__format_datetime(self.end),
+                 start=CoordinatorApp.__format_datetime(self.start), end=CoordinatorApp.__format_datetime(self.end),
                  timezone=self.timezone):
 
             if self.parameters:

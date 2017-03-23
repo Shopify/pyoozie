@@ -84,7 +84,7 @@ class CoordinatorBuilder(object):
     def __init__(self, name, workflow_xml_path, frequency_in_minutes, start, end=None, timezone=None,
                  workflow_configuration=None, timeout_in_minutes=None, concurrency=None, execution_order=None,
                  throttle=None, parameters=None):
-        self._coordinator = tags.Coordinator(
+        self._coordinator = tags.CoordinatorApp(
             name=name,
             workflow_app_path=workflow_xml_path,
             frequency=frequency_in_minutes,
