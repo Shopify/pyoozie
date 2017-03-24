@@ -2,6 +2,7 @@
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
+from __future__ import print_function
 
 import datetime
 import decimal
@@ -442,7 +443,23 @@ def test_coordinator_end_before_start(minimal_coordinator_options):
         'End time (2014-12-22T10:56Z) must be greater than the start time (2015-01-01T10:56Z)'
 
 
-def test_workflow_app():
+def assert_workflow(request, workflow_app, expected_xml=None):
+    # What does this doc look like?
+    actual_xml = workflow_app.xml(indent=True)
+    if request.config.getoption('verbose') > 2:
+        print(actual_xml.decode('utf-8'))
+
+    # Is this a valid XML doc?
+    tests.utils.assert_valid_workflow(actual_xml)
+
+    # Is this the doc that we expect?
+    if expected_xml:
+        actual_dict = tests.utils.xml_to_comparable_dict(actual_xml)
+        expected_dict = tests.utils.xml_to_comparable_dict(expected_xml)
+        assert expected_dict == actual_dict
+
+
+def test_workflow_app(request):
     workflow_app = tags.WorkflowApp(
         name='descriptive-name',
         parameters={'property_key': 'property_value'},
@@ -455,10 +472,7 @@ def test_workflow_app():
         name_node='name-node',
         job_xml_files=['/user/${wf:user()}/job.xml'],
     )
-
-    actual_xml = workflow_app.xml(indent=True)
-    actual_dict = tests.utils.xml_to_comparable_dict(actual_xml)
-    expected_dict = tests.utils.xml_to_comparable_dict("""
+    assert_workflow(request, workflow_app, """
 <workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
     <parameters>
         <property>
@@ -489,5 +503,86 @@ def test_workflow_app():
     <end name="end" />
 </workflow-app>
 """)
-    assert expected_dict == actual_dict
-    tests.utils.assert_valid_workflow(actual_xml)
+
+
+def test_workflow_action(request):
+    actions = tags.Action(
+        name='action-name',
+        action=tags.Shell(exec_command='echo', arguments=['build']),
+        credential='my-hcat-creds',
+        retry_max=10,
+        retry_interval=20,
+        on_error=tags.Kill(name='error', message='A bad thing happened'),
+    )
+    assert len(set(actions)) == 2
+
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        credentials=[tags.Credential(
+            {'cred_name': 'cred_value'},
+            credential_name='my-hcat-creds',
+            credential_type='hcat')],
+        actions=actions
+    )
+    assert_workflow(request, workflow_app, """
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+    <global>
+        <job-tracker>job-tracker</job-tracker>
+        <name-node>name-node</name-node>
+    </global>
+    <credentials>
+        <credential type="hcat" name="my-hcat-creds">
+            <property>
+                <name>cred_name</name>
+                <value>cred_value</value>
+            </property>
+        </credential>
+    </credentials>
+    <start to="action-action-name" />
+    <action retry-max="10" cred="my-hcat-creds" name="action-action-name" retry-interval="20">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>build</argument>
+        </shell>
+        <ok to="end" />
+        <error to="kill-error" />
+    </action>
+    <kill name="kill-error">
+        <message>A bad thing happened</message>
+    </kill>
+    <end name="end" />
+</workflow-app>
+""")
+
+
+def test_workflow_action_without_credential():
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.WorkflowApp(
+            name='descriptive-name',
+            job_tracker='job-tracker',
+            name_node='name-node',
+            actions=tags.Action(
+                name='action-name',
+                action=tags.Shell(exec_command='echo', arguments=['build']),
+                credential='my-hcat-creds',
+                retry_max=10,
+                retry_interval=20,
+            )
+        )
+    assert str(assertion_info.value) == str('Missing credentials: my-hcat-creds')
+
+
+def test_workflow_with_reused_identifier():
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.WorkflowApp(
+            name='descriptive-name',
+            job_tracker='job-tracker',
+            name_node='name-node',
+            actions=tags.Action(
+                name='build', action=tags.Shell(exec_command='echo', arguments=['build']),
+                on_error=tags.Action(name='build', action=tags.Shell(exec_command='echo', arguments=['error']))
+            )
+        )
+    assert str(assertion_info.value) == 'Name(s) reused: action-build'
