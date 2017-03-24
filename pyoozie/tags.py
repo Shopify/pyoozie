@@ -5,6 +5,7 @@ import abc
 import collections
 import copy
 import datetime
+import itertools
 import re
 import string  # pylint: disable=deprecated-module
 import uuid
@@ -619,6 +620,87 @@ class Action(_AbstractWorkflowEntity):
         return doc
 
 
+class Serial(_WorkflowEntity):
+    """Sequence of actions to execute (implemented by chaining actions and 'OK' transitions)"""
+
+    def __init__(self, *actions, **kwargs):
+        # type: (*_WorkflowEntity, **_WorkflowEntity) -> None
+        super(Serial, self).__init__(xml_tag=None, on_error=kwargs.get(str('on_error')))
+        self.__actions = tuple(copy.deepcopy(actions))  # type: typing.Tuple[_WorkflowEntity, ...]
+
+    def identifier(self):
+        return self.__actions[0].identifier() if self.__actions else None
+
+    def _xml(self, doc, tag, text, on_next, on_error):
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+        _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
+        action_nextidentifier = zip(self.__actions, itertools.chain(
+            (a.identifier() for a in self.__actions[1:]),
+            (on_next,)
+        ))
+        for action, next_identifier in action_nextidentifier:
+            action._xml(doc, tag, text, on_next=next_identifier, on_error=_on_error)
+        return doc
+
+    def __iter__(self):
+        for action in self.__actions:
+            yield action
+        for action in super(Serial, self).__iter__():
+            yield action
+
+    def __bool__(self):
+        return bool(self.__actions)
+
+    def __nonzero__(self):
+        return self.__bool__()
+
+
+class Parallel(_WorkflowEntity):
+    """Set of actions to execute in parallel (implemented as fork/join tag pair)"""
+
+    def __init__(self, *actions, **kwargs):
+        # type: (*_WorkflowEntity, **typing.Union[_WorkflowEntity, typing.Text]) -> None
+        name = kwargs.get(str('name'))
+        name = name if isinstance(name, six.string_types) else None
+        on_error = kwargs.get(str('on_error'))
+        on_error = on_error if isinstance(on_error, _WorkflowEntity) else None
+        super(Parallel, self).__init__(
+            xml_tag=None,
+            name=name,
+            on_error=on_error
+        )
+        assert actions, 'At least 1 action required'
+        self.__actions = frozenset(copy.deepcopy(actions))  # type: typing.FrozenSet[_WorkflowEntity]
+        self.__fork_identifier = self.create_identifier('fork')
+        self.__join_identifier = self.create_identifier('join')
+
+    def identifier(self):
+        return self.__fork_identifier
+
+    def _xml(self, doc, tag, text, on_next, on_error):
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+        _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
+        with tag('fork', name=self.__fork_identifier):
+            for action in self.__actions:
+                doc.stag('path', start=action.identifier())
+        for action in self.__actions:
+            action._xml(doc, tag, text, on_next=self.__join_identifier, on_error=_on_error)
+        doc.stag('join', name=self.__join_identifier, to=on_next)
+        return doc
+
+    def __iter__(self):
+        for action in self.__actions:
+            yield action
+        for action in super(Parallel, self).__iter__():
+            yield action
+
+    def __bool__(self):
+        return bool(self.__actions)
+
+    def __nonzero__(self):
+        return self.__bool__()
+
+
 class WorkflowApp(XMLSerializable):
 
     def __init__(
@@ -645,7 +727,7 @@ class WorkflowApp(XMLSerializable):
             configuration=configuration
         )
         self.__credentials = copy.deepcopy(credentials) or []
-        self.__entities = copy.deepcopy(entities) or None
+        self.__entities = copy.deepcopy(entities) or Serial()
         self.__validate()
 
     def __validate(self):  # type () -> None
@@ -691,10 +773,9 @@ class WorkflowApp(XMLSerializable):
                     for credential in self.__credentials:
                         credential._xml(doc, tag, text)
 
-            # Parse a collection of entities and write them as XML
+            # Create a serial collection of workflow entities to hold actions
             doc.stag('start', to=self.__entities.identifier() if self.__entities else 'end')
-            if self.__entities:
-                self.__entities._xml(doc, tag, text, on_next='end', on_error=None)
+            self.__entities._xml(doc, tag, text, on_next='end', on_error=None)
             doc.stag('end', name='end')
 
         return doc

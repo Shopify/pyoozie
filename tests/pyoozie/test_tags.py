@@ -14,6 +14,9 @@ import tests.utils
 from pyoozie import tags
 
 
+pytestmark = pytest.mark.usefixtures("fake_uuid4")  # pylint: disable=global-variable
+
+
 @pytest.fixture
 def expected_property_values():
     return {
@@ -646,3 +649,170 @@ def test_workflow_with_reused_identifier():
             )
         )
     assert str(assertion_info.value) == 'Name(s) reused: action-build'
+
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.WorkflowApp(
+            name='descriptive-name',
+            job_tracker='job-tracker',
+            name_node='name-node',
+            actions=tags.Serial(
+                tags.Action(name='build', action=tags.Shell(exec_command='echo', arguments=['build'])),
+                tags.Action(name='resolve', action=tags.Shell(exec_command='echo', arguments=['resolve'])),
+                on_error=tags.Serial(
+                    tags.Action(name='build', action=tags.Shell(exec_command='echo', arguments=['error'])),
+                    tags.Kill('A bad thing happened')
+                )
+            )
+        )
+    assert str(assertion_info.value) == 'Name(s) reused: action-build'
+
+
+def test_workflow_app_serial_actions(request):
+    actions = tags.Serial(
+        tags.Action(tags.Shell(exec_command='echo', arguments=['build'])),
+        tags.Action(tags.Shell(exec_command='echo', arguments=['resolve'])),
+        on_error=tags.Serial(
+            tags.Action(tags.Shell(exec_command='echo', arguments=['error'])),
+            tags.Kill('A bad thing happened')
+        )
+    )
+    assert len(set(actions)) == 6
+
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        actions=actions
+    )
+    assert_workflow(request, workflow_app, """
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+    <global>
+        <job-tracker>job-tracker</job-tracker>
+        <name-node>name-node</name-node>
+    </global>
+    <start to="action-00000000" />
+    <action name="action-00000002">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>error</argument>
+        </shell>
+        <ok to="kill-00000003" />
+        <error to="end" />
+    </action>
+    <kill name="kill-00000003">
+        <message>A bad thing happened</message>
+    </kill>
+    <action name="action-00000000">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>build</argument>
+        </shell>
+        <ok to="action-00000001" />
+        <error to="action-00000002" />
+    </action>
+    <action name="action-00000001">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>resolve</argument>
+        </shell>
+        <ok to="end" />
+        <error to="action-00000002" />
+    </action>
+    <end name="end" />
+</workflow-app>
+""")
+
+
+def test_workflow_app_parallel_actions(request):
+    actions = tags.Parallel(
+        tags.Action(tags.Shell(exec_command='echo', arguments=['build'])),
+        tags.Action(tags.Shell(exec_command='echo', arguments=['resolve'])),
+        on_error=tags.Serial(
+            tags.Action(tags.Shell(exec_command='echo', arguments=['error'])),
+            tags.Kill('A bad thing happened')
+        )
+    )
+    assert len(set(actions)) == 6
+
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        actions=actions
+    )
+    assert_workflow(request, workflow_app, """
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+    <global>
+        <job-tracker>job-tracker</job-tracker>
+        <name-node>name-node</name-node>
+    </global>
+    <start to="fork-00000005" />
+    <action name="action-00000002">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>error</argument>
+        </shell>
+        <ok to="kill-00000003" />
+        <error to="end" />
+    </action>
+    <kill name="kill-00000003">
+        <message>A bad thing happened</message>
+    </kill>
+    <fork name="fork-00000005">
+        <path start="action-00000000" />
+        <path start="action-00000001" />
+    </fork>
+    <action name="action-00000000">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>build</argument>
+        </shell>
+        <ok to="join-00000005" />
+        <error to="action-00000002" />
+    </action>
+    <action name="action-00000001">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>resolve</argument>
+        </shell>
+        <ok to="join-00000005" />
+        <error to="action-00000002" />
+    </action>
+    <join name="join-00000005" to="end" />
+    <end name="end" />
+</workflow-app>
+""")
+
+
+def test_workflow_app_inherit_parent_error(request):
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        actions=tags.Serial(
+            tags.Parallel(
+                tags.Action(name='build_a', action=tags.Shell(exec_command='echo', arguments=['build_a'])),
+                tags.Action(name='build_b', action=tags.Shell(exec_command='echo', arguments=['build_b'])),
+                name='builders'
+            ),
+            tags.Parallel(
+                tags.Action(name='resolve_a', action=tags.Shell(exec_command='echo', arguments=['resolve_a'])),
+                tags.Action(name='resolve_b', action=tags.Shell(exec_command='echo', arguments=['resolve_b'])),
+                name='resolvers'
+            ),
+            on_error=tags.Serial(
+                tags.Action(name='error', action=tags.Shell(exec_command='echo', arguments=['error'])),
+                tags.Kill(name='error', message='A bad thing happened')
+            )
+        )
+    )
+
+    assert_workflow(request, workflow_app)
+
+    app = tests.utils.ParsedXml(workflow_app.xml())
+    app.assert_node("/action[@name='action-build_a']/error", to='action-error')
+    app.assert_node("/action[@name='action-build_b']/error", to='action-error')
+    app.assert_node("/action[@name='action-resolve_a']/error", to='action-error')
+    app.assert_node("/action[@name='action-resolve_a']/error", to='action-error')
+    app.assert_node("/action[@name='action-error']/error", to='end')
+    app.assert_node("/action[@name='action-error']/ok", to='kill-error')
