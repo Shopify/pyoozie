@@ -115,29 +115,3 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
             <value>test</value>
         </property>
     </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
-
-
-def test_coordinator_builder(coordinator_xml_with_controls, workflow_app_path):
-
-    coord_builder = xml.CoordinatorBuilder(
-        name='coordinator-name',
-        workflow_xml_path=workflow_app_path,
-        frequency_in_minutes=24 * 60,  # In minutes
-        start=datetime.datetime(2015, 1, 1, 10, 56),
-        end=datetime.datetime(2115, 1, 1, 10, 56),
-        concurrency=1,
-        throttle='${throttle}',
-        timeout_in_minutes=10,
-        execution_order=tags.EXEC_LAST_ONLY,
-        parameters={
-            'throttle': 1,
-        },
-        workflow_configuration={
-            'mapred.job.queue.name': 'production',
-        })
-
-    # Can it XML?
-    expected_xml = coord_builder.build()
-    actual_dict = tests.utils.xml_to_dict_unordered(coordinator_xml_with_controls)
-    expected_dict = tests.utils.xml_to_dict_unordered(expected_xml)
-    assert actual_dict == expected_dict
