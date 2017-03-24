@@ -470,4 +470,4 @@ def test_workflow_app():
             on_error=workflow.Kill(message='Workflow failed')
         ),
     )
-    assert workflow_builder.xml(indent=True)
+    assert workflow_app.xml(indent=True)
