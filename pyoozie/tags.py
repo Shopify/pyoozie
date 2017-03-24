@@ -447,4 +447,6 @@ class WorkflowApp(XMLSerializable):
                     for credential in self.credentials:
                         credential._xml(doc, tag, text)
 
+            # TODO add actions
+
         return doc
