@@ -11,7 +11,6 @@ import six
 import tests.utils
 
 from pyoozie import tags
-from pyoozie import builder
 from pyoozie import workflow
 
 
@@ -444,8 +443,7 @@ def test_coordinator_end_before_start(expected_coordinator_options):
 
 @pytest.mark.xfail(raises=NotImplementedError)
 def test_workflow_app():
-
-    workflow_builder = builder.WorkflowBuilder(
+    workflow_app = tags.WorkflowApp(
         name='descriptive-name',
         actions=workflow.Serial(
             workflow.Action(tags.Shell(exec_command='echo', arguments=("'A'",))),
@@ -472,4 +470,4 @@ def test_workflow_app():
             on_error=workflow.Kill(message='Workflow failed')
         ),
     )
-    assert workflow_builder.build()
+    assert workflow_builder.xml(indent=True)
