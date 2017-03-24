@@ -438,3 +438,57 @@ def test_coordinator_end_before_start(expected_coordinator_options):
         tags.CoordinatorApp(**expected_coordinator_options)
     assert str(assertion_info.value) == \
         'End time (2014-12-22T10:56Z) must be greater than the start time (2015-01-01T10:56Z)'
+
+
+def test_workflow_app():
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        parameters={'property_key': 'property_value'},
+        configuration={'config_key': 'config_value'},
+        credentials=[tags.Credential(
+            {'cred_name': 'cred_value'},
+            credential_name='my-hcat-creds',
+            credential_type='hcat')],
+        job_tracker='job-tracker',
+        name_node='name-node',
+        job_xml_files=['/user/${wf:user()}/job.xml'],
+        default_retry_max=10,
+        default_retry_interval=1,
+        default_retry_policy=tags.RETRY_PERIODIC
+    )
+
+    actual_xml = workflow_app.xml(indent=True)
+    actual_dict = tests.utils.xml_to_dict_unordered(actual_xml)
+    expected_dict = tests.utils.xml_to_dict_unordered("""
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+    <parameters>
+        <property>
+            <name>property_key</name>
+            <value>property_value</value>
+        </property>
+    </parameters>
+    <global>
+        <job-tracker>job-tracker</job-tracker>
+        <name-node>name-node</name-node>
+        <job-xml>/user/${wf:user()}/job.xml</job-xml>
+        <configuration>
+            <property>
+                <name>config_key</name>
+                <value>config_value</value>
+            </property>
+        </configuration>
+    </global>
+    <credentials>
+        <credential type="hcat" name="my-hcat-creds">
+            <property>
+                <name>cred_name</name>
+                <value>cred_value</value>
+            </property>
+        </credential>
+    </credentials>
+    <start to="end" />
+    <end name="end" />
+</workflow-app>
+""")
+    assert expected_dict == actual_dict
+    tests.utils.assert_valid_workflow(actual_xml)

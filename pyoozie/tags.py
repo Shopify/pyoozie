@@ -5,6 +5,7 @@ import abc
 import datetime
 import re
 import string  # pylint: disable=deprecated-module
+import warnings
 
 import enum
 import typing  # pylint: disable=unused-import
@@ -39,6 +40,20 @@ EXEC_FIFO = ExecutionOrder.FIFO
 EXEC_LAST_ONLY = ExecutionOrder.LAST_ONLY
 EXEC_LIFO = ExecutionOrder.LIFO
 EXEC_NONE = ExecutionOrder.NONE
+
+
+class RetryPolicy(enum.Enum):
+    """Retry policy for workflow actions"""
+
+    EXPONENTIAL = 'EXPONENTIAL'
+    PERIODIC = 'PERIODIC'
+
+    def __str__(self):
+        return self.value
+
+
+RETRY_EXPONENTIAL = RetryPolicy.EXPONENTIAL
+RETRY_PERIODIC = RetryPolicy.PERIODIC
 
 
 def validate_xml_name(name):
@@ -489,5 +504,57 @@ class CoordinatorApp(XMLSerializable):
                         text(self.workflow_app_path)
                     if self.workflow_configuration:
                         self.workflow_configuration._xml(doc, tag, text)
+
+        return doc
+
+
+class WorkflowApp(XMLSerializable):
+
+    def __init__(
+            self,
+            name,                         # type: typing.Text
+            parameters=None,              # type: typing.Optional[PropertyValuesType]
+            configuration=None,           # type: typing.Optional[PropertyValuesType]
+            credentials=None,             # type: typing.Optional[typing.Iterable[Credential]]
+            job_tracker=None,             # type: typing.Optional[typing.Text]
+            name_node=None,               # type: typing.Optional[typing.Text]
+            job_xml_files=None,           # type: typing.Optional[JobXmlFilesType]
+            default_retry_max=None,       # type: typing.Optional[int]
+            default_retry_interval=None,  # type: typing.Optional[int]
+            default_retry_policy=None     # type: typing.Optional[RetryPolicy]
+    ):
+        # type: (...) -> None
+        XMLSerializable.__init__(self, 'workflow-app')
+        self.name = validate_xml_name(name)
+
+        self.parameters = Parameters(parameters)
+        self.global_configuration = GlobalConfiguration(
+            job_tracker=job_tracker,
+            name_node=name_node,
+            job_xml_files=job_xml_files,
+            configuration=configuration
+        )
+        self.credentials = credentials
+
+        self.default_retry_max = default_retry_max
+        self.default_retry_interval = default_retry_interval
+        self.default_retry_policy = default_retry_policy
+
+    def _xml(self, doc, tag, text):
+        with tag(self.xml_tag, name=self.name, xmlns="uri:oozie:workflow:0.5"):
+
+            # Preamble
+            if self.parameters:
+                self.parameters._xml(doc, tag, text)
+            if self.global_configuration:
+                self.global_configuration._xml(doc, tag, text)
+            if self.credentials:
+                with tag('credentials'):
+                    for credential in self.credentials:
+                        credential._xml(doc, tag, text)
+
+            doc.stag('start', to='end')
+            warnings.warn("This will contain more than just a start and end tag in the future", FutureWarning)
+            doc.stag('end', name='end')
 
         return doc
