@@ -9,7 +9,6 @@ import tests.utils
 
 from pyoozie import xml
 from pyoozie import tags
-from pyoozie import workflow
 
 
 @pytest.fixture
@@ -116,32 +115,6 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
             <value>test</value>
         </property>
     </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
-
-
-@pytest.mark.xfail(raises=NotImplementedError)
-def test_workflow_builder():
-
-    workflow_builder = builder.WorkflowBuilder(
-        name='descriptive-name',
-        actions=workflow.Sequence(
-            workflow.Action(tags.Shell(exec_command='echo', arguments=("'A'",))),
-            workflow.Parallelization(
-                workflow.Sequence(
-                    workflow.Action(
-                        tags.Shell(exec_command='echo', arguments=("'B'",)),
-                        on_error=tags.Shell(exec_command='echo', arguments=("'Notify B failed'",)),
-                    )
-                ),
-                workflow.Sequence(
-                    workflow.Action(tags.Shell(exec_command='echo', arguments=("'C'",))),
-                    workflow.Action(tags.Shell(exec_command='echo', arguments=("'D'",))),
-                ),
-                on_error=workflow.Action(tags.Shell(exec_command='echo', arguments=("'A parallel action failed'",))),
-            ),
-            on_error=workflow.Kill('Flow failed')
-        ),
-    )
-    assert workflow_builder.build()
 
 
 def test_coordinator_builder(coordinator_xml_with_controls, workflow_app_path):
