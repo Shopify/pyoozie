@@ -4,7 +4,6 @@
 from __future__ import unicode_literals
 
 import datetime
-import subprocess
 
 import pytest
 import tests.utils
@@ -131,7 +130,7 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
     </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
 
 
-def test_workflow_builder(tmpdir, workflow_builder):
+def test_workflow_builder(workflow_builder):
     with open('tests/data/workflow.xml', 'r') as fh:
         expected_xml = fh.read()
 
@@ -140,20 +139,7 @@ def test_workflow_builder(tmpdir, workflow_builder):
     assert tests.utils.xml_to_dict_unordered(expected_xml) == tests.utils.xml_to_dict_unordered(actual_xml)
 
     # Does it validate against the workflow XML schema?
-    filename = tmpdir.join("workflow.xml")
-    filename.write_binary(actual_xml)
-    try:
-        subprocess.check_output(
-            'java -cp lib/oozie-client-4.1.0.jar:lib/commons-cli-1.2.jar '
-            'org.apache.oozie.cli.OozieCLI validate {path}'.format(path=str(filename)),
-            stderr=subprocess.STDOUT,
-            shell=True
-        )
-    except subprocess.CalledProcessError as e:
-        raise AssertionError('An XML validation error\n\n{error}\n\noccurred while parsing:\n\n{xml}'.format(
-            error=e.output.decode('utf8').strip(),
-            xml=actual_xml,
-        ))
+    tests.utils.assert_valid_workflow(actual_xml)
 
 
 def test_builder_raises_on_bad_workflow_name():
