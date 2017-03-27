@@ -19,7 +19,7 @@
         <error to="kill" />
     </action>
     <kill name="kill">
-        <message>Failure message</message>
+        <message>Failure message 😢</message>
     </kill>
     <end name="end" />
 </workflow-app>

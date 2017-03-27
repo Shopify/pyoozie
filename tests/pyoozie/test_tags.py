@@ -190,7 +190,7 @@ def test_shell():
         exec_command='${EXEC}',
         job_tracker='${jobTracker}',
         name_node='${nameNode}',
-        prepares=None,
+        prepare=None,
         job_xml_files=['/user/${wf:user()}/job.xml'],
         configuration={
             'mapred.job.queue.name': '${queueName}'
@@ -225,13 +225,13 @@ def test_shell():
         <capture-output />
     </shell>''') == tests.utils.xml_to_dict_unordered(actual)
 
-    # Test using prepares fails
+    # Test using prepare fails
     with pytest.raises(NotImplementedError) as assertion_info:
         tags.Shell(
             exec_command='${EXEC}',
-            prepares=['anything'],
+            prepare=['anything'],
         ).xml()
-    assert str(assertion_info.value) == "Shell action's prepares has not yet been implemented"
+    assert str(assertion_info.value) == "Shell action's prepare has not yet been implemented"
 
 
 def test_subworkflow():

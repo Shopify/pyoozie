@@ -7,6 +7,9 @@ import re
 import string  # pylint: disable=deprecated-module
 
 import enum
+import typing  # pylint: disable=unused-import
+
+import six
 import yattag
 
 MAX_NAME_LENGTH = 255
@@ -36,6 +39,8 @@ EXEC_NONE = ExecutionOrder.NONE
 
 
 def validate_xml_name(name):
+    # type: (typing.Text) -> typing.Text
+
     assert len(name) <= MAX_NAME_LENGTH, \
         "Name must be less than {max_length} chars long, '{name}' is {length}".format(
             max_length=MAX_NAME_LENGTH,
@@ -49,6 +54,8 @@ def validate_xml_name(name):
 
 
 def validate_xml_id(identifier):
+    # type: (typing.Text) -> typing.Text
+
     assert len(identifier) <= MAX_IDENTIFIER_LENGTH, \
         "Identifier must be less than {max_length} chars long, '{identifier}' is {length}".format(
             max_length=MAX_IDENTIFIER_LENGTH,
@@ -69,19 +76,21 @@ class XMLSerializable(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, xml_tag):
+        # type: (typing.Text) -> None
         self.xml_tag = xml_tag
 
     def xml(self, indent=False):
+        # type: (bool) -> str
         doc, tag, text = yattag.Doc().tagtext()
         doc.asis("<?xml version='1.0' encoding='UTF-8'?>")
         xml = self._xml(doc, tag, text).getvalue()
         if indent:
-            return yattag.indent(xml, indentation=' ' * 4, newline='\r\n')
-        else:
-            return xml
+            xml = yattag.indent(xml, indentation=' ' * 4, newline='\r\n')
+        return xml.encode('utf-8')
 
     @abc.abstractmethod
     def _xml(self, doc, tag, text):
+        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
         raise NotImplementedError()
 
 
@@ -101,12 +110,14 @@ class _PropertyList(XMLSerializable, dict):
     """
 
     def __init__(self, xml_tag, attributes=None, values=None):
+        # type: (typing.Text, typing.Dict, typing.Dict) -> None
         super(_PropertyList, self).__init__(xml_tag=xml_tag)
         if values:
             self.update(values)
         self.attributes = attributes or {}
 
     def _xml(self, doc, tag, text):
+        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
         with tag(self.xml_tag, **self.attributes):
             for name, value in sorted(self.items()):
                 with tag('property'):
@@ -128,6 +139,7 @@ class Parameters(_PropertyList):
     """
 
     def __init__(self, values=None):
+        # type: (typing.Dict) -> None
         super(Parameters, self).__init__(xml_tag='parameters', values=values)
 
 
@@ -135,6 +147,7 @@ class Configuration(_PropertyList):
     """Coordinator job submission, workflow, workflow action configuration XML."""
 
     def __init__(self, values=None):
+        # type: (typing.Dict) -> None
         super(Configuration, self).__init__(xml_tag='configuration', values=values)
 
 
@@ -160,6 +173,7 @@ class Credential(_PropertyList):
     """
 
     def __init__(self, values, credential_name, credential_type):
+        # type: (typing.Dict, typing.Text, typing.Text) -> None
         super(Credential, self).__init__(
             xml_tag='credential',
             attributes={
@@ -174,22 +188,36 @@ class Credential(_PropertyList):
 class Shell(XMLSerializable):
     """Workflow shell action (v0.3)."""
 
-    def __init__(self, exec_command, job_tracker=None, name_node=None, prepares=None, job_xml_files=None,
-                 configuration=None, arguments=None, env_vars=None, files=None, archives=None, capture_output=False):
+    def __init__(
+            self,
+            exec_command,  # type: typing.Text
+            job_tracker=None,  # type: typing.Text
+            name_node=None,  # type: typing.Text
+            prepare=None,  # type: typing.Sequence
+            job_xml_files=None,  # type: typing.Iterable[typing.Text]
+            configuration=None,  # type: typing.Dict[typing.Text, typing.Text]
+            arguments=None,  # type: typing.Iterable[typing.Text]
+            env_vars=None,  # type: typing.Dict[typing.Text, typing.Text]
+            files=None,  # type: typing.Iterable[typing.Text]
+            archives=None,  # type: typing.Iterable[typing.Text]
+            capture_output=False  # type: bool
+    ):
+        # type: (...) -> None
         super(Shell, self).__init__(xml_tag='shell')
         self.exec_command = exec_command
         self.job_tracker = job_tracker
         self.name_node = name_node
-        self.prepares = prepares if prepares else list()
-        self.job_xml_files = job_xml_files if job_xml_files else list()
+        self.prepare = prepare if prepare else []
+        self.job_xml_files = job_xml_files if job_xml_files else []
         self.configuration = Configuration(configuration)
-        self.arguments = arguments if arguments else list()
-        self.env_vars = env_vars if env_vars else dict()
-        self.files = files if files else list()
-        self.archives = archives if archives else list()
+        self.arguments = arguments if arguments else []
+        self.env_vars = env_vars if env_vars else {}
+        self.files = files if files else []
+        self.archives = archives if archives else []
         self.capture_output = capture_output
 
     def _xml(self, doc, tag, text):
+        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
         with tag(self.xml_tag, xmlns='uri:oozie:shell-action:0.3'):
             if self.job_tracker:
                 with tag('job-tracker'):
@@ -199,8 +227,8 @@ class Shell(XMLSerializable):
                 with tag('name-node'):
                     doc.text(self.name_node)
 
-            if self.prepares:
-                raise NotImplementedError("Shell action's prepares has not yet been implemented")
+            if self.prepare:
+                raise NotImplementedError("Shell action's prepare has not yet been implemented")
 
             for xml_file in self.job_xml_files:
                 with tag('job-xml'):
@@ -241,13 +269,20 @@ class SubWorkflow(XMLSerializable):
     until the child workflow job has completed."
     """
 
-    def __init__(self, app_path, propagate_configuration=True, configuration=None):
+    def __init__(
+            self,
+            app_path,  # type: str
+            propagate_configuration=True,  # type: bool
+            configuration=None  # type: typing.Dict[typing.Text, typing.Text]
+    ):
+        # type: (...) -> None
         super(SubWorkflow, self).__init__(xml_tag='sub-workflow')
         self.app_path = app_path
         self.propagate_configuration = propagate_configuration
         self.configuration = Configuration(configuration)
 
     def _xml(self, doc, tag, text):
+        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
         with tag(self.xml_tag):
             with tag('app-path'):
                 doc.text(self.app_path)
@@ -271,14 +306,22 @@ class GlobalConfiguration(XMLSerializable):
     application."
     """
 
-    def __init__(self, job_tracker=None, name_node=None, job_xml_files=None, configuration=None):
+    def __init__(
+            self,
+            job_tracker=None,  # type: typing.Text
+            name_node=None,  # typing.Text
+            job_xml_files=None,  # type: typing.Iterable[typing.Text]
+            configuration=None,  # type: typing.Dict[typing.Text, typing.Text]
+    ):
+        # type: (...) -> None
         super(GlobalConfiguration, self).__init__(xml_tag='global')
         self.job_tracker = job_tracker
         self.name_node = name_node
-        self.job_xml_files = job_xml_files if job_xml_files else list()
+        self.job_xml_files = job_xml_files if job_xml_files else []
         self.configuration = Configuration(configuration)
 
     def _xml(self, doc, tag, text):
+        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
         with tag(self.xml_tag):
             if self.job_tracker:
                 with tag('job-tracker'):
@@ -299,7 +342,17 @@ class GlobalConfiguration(XMLSerializable):
 class Email(XMLSerializable):
     """Email action for use within a workflow."""
 
-    def __init__(self, to, subject, body, cc=None, bcc=None, content_type=None, attachments=None):
+    def __init__(
+            self,
+            to,  # type: typing.Union[typing.Text, typing.Iterable[typing.Text]]
+            subject,  # type: typing.Text
+            body,  # type: typing.Text
+            cc=None,  # type: typing.Union[typing.Text, typing.Iterable[typing.Text]]
+            bcc=None,  # type: typing.Union[typing.Text, typing.Iterable[typing.Text]]
+            content_type=None,  # type: typing.Text
+            attachments=None  # type: typing.Text
+    ):
+        # type: (...) -> None
         super(Email, self).__init__(xml_tag='email')
         self.to = to
         self.subject = subject
@@ -310,11 +363,13 @@ class Email(XMLSerializable):
         self.attachments = attachments
 
     def _xml(self, doc, tag, text):
-        def format_list(emails):
-            if hasattr(emails, '__iter__') and not isinstance(emails, str):
-                return ','.join(sorted(emails))
+        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
+
+        def format_list(strings):
+            if hasattr(strings, '__iter__') and not isinstance(strings, six.string_types):
+                return ','.join(sorted(strings))
             else:
-                return emails
+                return strings
 
         with tag(self.xml_tag, xmlns='uri:oozie:email-action:0.2'):
             with tag('to'):
@@ -341,9 +396,22 @@ class Email(XMLSerializable):
 
 class CoordinatorApp(XMLSerializable):
 
-    def __init__(self, name, workflow_app_path, frequency, start, end=None, timezone=None,
-                 workflow_configuration=None, timeout=None, concurrency=None, execution_order=None, throttle=None,
-                 parameters=None):
+    def __init__(
+            self,
+            name,  # type: typing.Text
+            workflow_app_path,  # type: typing.Text
+            frequency,  # type: int
+            start,  # type: datetime.datetime
+            end=None,  # type: datetime.datetime
+            timezone=None,  # type: typing.Text
+            workflow_configuration=None,  # type: typing.Dict[typing.Text, typing.Text]
+            timeout=None,  # type: int
+            concurrency=None,  # type: int
+            execution_order=None,  # type: ExecutionOrder
+            throttle=None,  # type: int
+            parameters=None  # type: typing.Dict[typing.Text, typing.Text]
+    ):
+        # type: (...) -> None
         super(CoordinatorApp, self).__init__(xml_tag='coordinator-app')
 
         # Compose and validate dates/frequencies
@@ -374,10 +442,12 @@ class CoordinatorApp(XMLSerializable):
         self.parameters = Parameters(parameters)
 
     @staticmethod
-    def __format_datetime(value):
+    def __format_datetime(value):  # type: (datetime.datetime) -> typing.Text
         return value.strftime('%Y-%m-%dT%H:%MZ')
 
     def _xml(self, doc, tag, text):
+        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
+
         with tag(self.xml_tag, xmlns="uri:oozie:coordinator:0.4", name=self.name, frequency=str(self.frequency),
                  start=CoordinatorApp.__format_datetime(self.start), end=CoordinatorApp.__format_datetime(self.end),
                  timezone=self.timezone):

@@ -55,7 +55,7 @@ class WorkflowBuilder(object):
 
     def build(self, indent=False):
         def format_xml(xml):
-            xml = xml.replace("<?xml version='1.0' encoding='UTF-8'?>", '')
+            xml = xml.decode('utf-8').replace("<?xml version='1.0' encoding='UTF-8'?>", '')
             return '\n'.join([(' ' * 8) + line for line in xml.strip().split('\n')])
         return '''
 <?xml version="1.0" encoding="UTF-8"?>
@@ -81,7 +81,7 @@ class WorkflowBuilder(object):
            action_error_xml=format_xml(self._action_error.xml(indent=indent)),
            kill_message=self._kill_message,
            action_name=self._action_name,
-           name=self._name).strip()
+           name=self._name).strip().encode('utf-8')
 
 
 class CoordinatorBuilder(object):
