@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
@@ -360,12 +361,12 @@ def test_parse_configuration():
     </property>
     <property>
         <name>key2</name>
-        <value>value2</value>
+        <value>😢</value>
     </property>
 </configuration>
 """
     result = model._parse_configuration(None, conf_string)
-    assert result == {'key1': 'value1', 'key2': 'value2'}
+    assert result == {'key1': 'value1', 'key2': '😢'}
 
 
 @pytest.mark.parametrize("string, expected", [
