@@ -2,6 +2,7 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 import abc
+import copy
 import datetime
 import re
 import string  # pylint: disable=deprecated-module
@@ -406,5 +407,46 @@ class CoordinatorApp(XMLSerializable):
                         text(self.workflow_app_path)
                     if self.workflow_configuration:
                         self.workflow_configuration._xml(doc, tag, text)
+
+        return doc
+
+
+class WorkflowApp(XMLSerializable):
+    """Workflow 0.5"""
+
+    def __init__(self, name, actions, parameters=None, configuration=None, credentials=None, job_tracker=None,
+                 name_node=None, job_xml_files=None, default_retry_max=None, default_retry_interval=None,
+                 default_retry_policy=None):
+        XMLSerializable.__init__(self, 'workflow-app')
+        self.name = validate_xml_name(name)
+        self.actions = copy.deepcopy(actions)
+
+        self.parameters = Parameters(parameters)
+        self.global_configuration = GlobalConfiguration(
+            job_tracker=job_tracker,
+            name_node=name_node,
+            job_xml_files=job_xml_files,
+            configuration=configuration
+        )
+        self.credentials = [Credential(**credential) for credential in credentials] if credentials else None
+
+        self.default_retry_max = default_retry_max
+        self.default_retry_interval = default_retry_interval
+        self.default_retry_policy = default_retry_policy
+
+    def _xml(self, doc, tag, text):
+        with tag(self.xml_tag, name=self.name, xmlns="uri:oozie:workflow:0.5"):
+
+            # Preamble
+            if self.parameters:
+                self.parameters._xml(doc, tag, text)
+            if self.global_configuration:
+                self.global_configuration._xml(doc, tag, text)
+            if self.credentials:
+                with tag('credentials'):
+                    for credential in self.credentials:
+                        credential._xml(doc, tag, text)
+
+            # TODO add actions
 
         return doc

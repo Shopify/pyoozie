@@ -11,6 +11,7 @@ import six
 import tests.utils
 
 from pyoozie import tags
+from pyoozie import workflow
 
 
 @pytest.fixture
@@ -438,3 +439,35 @@ def test_coordinator_end_before_start(expected_coordinator_options):
         tags.CoordinatorApp(**expected_coordinator_options)
     assert str(assertion_info.value) == \
         'End time (2014-12-22T10:56Z) must be greater than the start time (2015-01-01T10:56Z)'
+
+
+@pytest.mark.xfail(raises=NotImplementedError)
+def test_workflow_app():
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        actions=workflow.Serial(
+            workflow.Action(tags.Shell(exec_command='echo', arguments=("'A'",))),
+            workflow.Parallel(
+                workflow.Action(
+                    tags.Shell(exec_command='echo', arguments=("'B'",)),
+                    on_error=tags.Shell(exec_command='echo', arguments=("'Notify B failed'",)),
+                ),
+                workflow.Serial(
+                    workflow.Action(tags.Shell(exec_command='echo', arguments=("'C'",))),
+                    workflow.Action(tags.Shell(exec_command='echo', arguments=("'D'",))),
+                ),
+                on_error=workflow.Action(
+                    tags.Shell(exec_command='echo', arguments=("'A parallel action failed'",))),
+            ),
+            workflow.Switch(
+                cases={
+                    "${wf:lastErrorNode() == ''}": workflow.Action(
+                        tags.Shell(exec_command='echo', arguments=("'All actions succeeded'",))),
+                },
+                default=workflow.Action(
+                    tags.Shell(exec_command='echo', arguments=("'At least one action failed failed'",))),
+            ),
+            on_error=workflow.Kill(message='Workflow failed')
+        ),
+    )
+    assert workflow_app.xml(indent=True)
