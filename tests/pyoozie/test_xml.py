@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
@@ -35,7 +36,7 @@ def workflow_builder():
         name='payload',
         action=tags.Shell(exec_command='echo "test"'),
         action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
-        kill_on_error='Failure message',
+        kill_on_error='Failure message 😢',
     )
 
 
@@ -140,7 +141,7 @@ def test_workflow_builder(tmpdir, workflow_builder):
 
     # Does it validate against the workflow XML schema?
     filename = tmpdir.join("workflow.xml")
-    filename.write_text(actual_xml, encoding='utf8')
+    filename.write_binary(actual_xml)
     try:
         subprocess.check_output(
             'java -cp lib/oozie-client-4.1.0.jar:lib/commons-cli-1.2.jar '

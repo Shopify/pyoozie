@@ -1212,13 +1212,13 @@ class TestOozieClientJobSubmit(object):
                 mock_post.return_value = {'id': SAMPLE_COORD_ID}
 
                 api.jobs_submit_coordinator('/dummy/coord-path')
-                conf = mock_post.call_args[0][1]
+                conf = mock_post.call_args[0][1].decode('utf-8')
                 assert '<name>oozie.coord.application.path</name><value>/dummy/coord-path</value>' in conf
                 assert '<name>user.name</name><value>oozie</value>' in conf
                 mock_post.reset_mock()
 
                 api.jobs_submit_coordinator('/dummy/coord-path', configuration={'test.prop': 'this is a test'})
-                conf = mock_post.call_args[0][1]
+                conf = mock_post.call_args[0][1].decode('utf-8')
                 assert '<name>test.prop</name><value>this is a test</value>' in conf
                 mock_post.reset_mock()
 
@@ -1254,12 +1254,12 @@ class TestOozieClientJobSubmit(object):
                 mock_post.return_value = {'id': SAMPLE_WF_ID}
 
                 api.jobs_submit_workflow('/dummy/wf-path')
-                conf = mock_post.call_args[0][1]
+                conf = mock_post.call_args[0][1].decode('utf-8')
                 assert '<name>oozie.wf.application.path</name><value>/dummy/wf-path</value>' in conf
                 assert '<name>user.name</name><value>oozie</value>' in conf
                 mock_post.reset_mock()
 
                 api.jobs_submit_workflow('/dummy/wf-path', configuration={'test.prop': 'this is a test'})
-                conf = mock_post.call_args[0][1]
+                conf = mock_post.call_args[0][1].decode('utf-8')
                 assert '<name>test.prop</name><value>this is a test</value>' in conf
                 mock_post.reset_mock()

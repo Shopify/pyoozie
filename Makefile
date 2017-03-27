@@ -27,13 +27,17 @@ autopep8:
 		@echo 'Auto Formatting...'
 		@$(python_files) | xargs -0 autopep8 --max-line-length 120 --jobs 0 --in-place --aggressive
 
-lint:
-		@echo 'Linting...'
-		@pylint --rcfile=pylintrc setup.py pyoozie tests
+type:
 		@if [ "$(python_version_major)" = "3" ]; then \
 			echo 'Checking type annotations...'; \
 			mypy --py2 pyoozie tests --ignore-missing-imports; \
 		fi
+
+sourcelint:
+		@echo 'Linting...'
+		@pylint --rcfile=pylintrc setup.py pyoozie tests
 		@pep8
+
+lint: sourcelint type
 
 autolint: autopep8 lint
