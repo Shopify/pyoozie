@@ -5,6 +5,7 @@ from __future__ import unicode_literals
 import collections
 import datetime
 import re
+import sys
 
 import enum
 import typing  # pylint: disable=unused-import
@@ -91,7 +92,8 @@ def _parse_time(_, time_string):
 
 def _parse_configuration(_, conf_string):
     if conf_string:
-        conf = untangle.parse(conf_string).configuration
+        xml = conf_string if sys.version_info >= (3, 0) else conf_string.encode('utf-8')
+        conf = untangle.parse(xml).configuration
         return {prop.name.cdata: prop.value.cdata for prop in conf.property}
     return {}
 
