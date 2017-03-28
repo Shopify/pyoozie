@@ -90,7 +90,7 @@ class XMLSerializable(object):
 
     @abc.abstractmethod
     def _xml(self, doc, tag, text):
-        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text) -> yattag.doc.Doc
         raise NotImplementedError()
 
 
@@ -117,7 +117,7 @@ class _PropertyList(XMLSerializable, dict):
         self.attributes = attributes or {}
 
     def _xml(self, doc, tag, text):
-        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text) -> yattag.doc.Doc
         with tag(self.xml_tag, **self.attributes):
             for name, value in sorted(self.items()):
                 with tag('property'):
@@ -217,7 +217,7 @@ class Shell(XMLSerializable):
         self.capture_output = capture_output
 
     def _xml(self, doc, tag, text):
-        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text) -> yattag.doc.Doc
         with tag(self.xml_tag, xmlns='uri:oozie:shell-action:0.3'):
             if self.job_tracker:
                 with tag('job-tracker'):
@@ -282,7 +282,7 @@ class SubWorkflow(XMLSerializable):
         self.configuration = Configuration(configuration)
 
     def _xml(self, doc, tag, text):
-        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text) -> yattag.doc.Doc
         with tag(self.xml_tag):
             with tag('app-path'):
                 doc.text(self.app_path)
@@ -321,7 +321,7 @@ class GlobalConfiguration(XMLSerializable):
         self.configuration = Configuration(configuration)
 
     def _xml(self, doc, tag, text):
-        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text) -> yattag.doc.Doc
         with tag(self.xml_tag):
             if self.job_tracker:
                 with tag('job-tracker'):
@@ -363,7 +363,7 @@ class Email(XMLSerializable):
         self.attachments = attachments
 
     def _xml(self, doc, tag, text):
-        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text) -> yattag.doc.Doc
 
         def format_list(strings):
             if hasattr(strings, '__iter__') and not isinstance(strings, six.string_types):
@@ -446,7 +446,7 @@ class CoordinatorApp(XMLSerializable):
         return value.strftime('%Y-%m-%dT%H:%MZ')
 
     def _xml(self, doc, tag, text):
-        # type: (yattag.doc.Doc, typing.Callable, typing.Callable) -> yattag.doc.Doc
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text) -> yattag.doc.Doc
 
         with tag(self.xml_tag, xmlns="uri:oozie:coordinator:0.4", name=self.name, frequency=str(self.frequency),
                  start=CoordinatorApp.__format_datetime(self.start), end=CoordinatorApp.__format_datetime(self.end),
