@@ -19,8 +19,8 @@ COMPILED_REGEX_IDENTIFIER = re.compile(REGEX_IDENTIFIER)
 ALLOWABLE_NAME_CHARS = set(string.ascii_letters + string.punctuation + string.digits + ' ')
 ONE_HUNDRED_YEARS = 100 * 365.24
 
-PropertyValuesType = typing.Optional[typing.Dict[typing.Text, typing.Any]]
-JobXmlFilesType = typing.Optional[typing.Iterable[typing.Text]]
+PropertyValuesType = typing.Dict[typing.Text, typing.Any]
+JobXmlFilesType = typing.Iterable[typing.Text]
 
 
 class ExecutionOrder(enum.Enum):
@@ -116,7 +116,7 @@ class _PropertyList(XMLSerializable, dict):
             self,
             xml_tag,          # type: typing.Text
             attributes=None,  # type: typing.Optional[typing.Dict[typing.Text, typing.Text]]
-            values=None       # type: PropertyValuesType
+            values=None       # type: typing.Optional[PropertyValuesType]
     ):
         # type: (...) -> None
         super(_PropertyList, self).__init__(xml_tag=xml_tag)
@@ -147,7 +147,7 @@ class Parameters(_PropertyList):
     """
 
     def __init__(self, values=None):
-        # type: (PropertyValuesType) -> None
+        # type: (typing.Optional[PropertyValuesType]) -> None
         super(Parameters, self).__init__(xml_tag='parameters', values=values)
 
 
@@ -155,7 +155,7 @@ class Configuration(_PropertyList):
     """Coordinator job submission, workflow, workflow action configuration XML."""
 
     def __init__(self, values=None):
-        # type: (PropertyValuesType) -> None
+        # type: (typing.Optional[PropertyValuesType]) -> None
         super(Configuration, self).__init__(xml_tag='configuration', values=values)
 
 
@@ -207,10 +207,10 @@ class Shell(XMLSerializable):
             job_tracker=None,     # type: typing.Optional[typing.Text]
             name_node=None,       # type: typing.Optional[typing.Text]
             prepare=None,         # type: typing.Optional[typing.Sequence]
-            job_xml_files=None,   # type: JobXmlFilesType
-            configuration=None,   # type: PropertyValuesType
+            job_xml_files=None,   # type: typing.Optional[JobXmlFilesType]
+            configuration=None,   # type: typing.Optional[PropertyValuesType]
             arguments=None,       # type: typing.Optional[typing.Iterable[typing.Text]]
-            env_vars=None,        # type: PropertyValuesType
+            env_vars=None,        # type: typing.Optional[PropertyValuesType]
             files=None,           # type: typing.Optional[typing.Iterable[typing.Text]]
             archives=None,        # type: typing.Optional[typing.Iterable[typing.Text]]
             capture_output=False  # type: bool
@@ -286,7 +286,7 @@ class SubWorkflow(XMLSerializable):
             self,
             app_path,                      # type: str
             propagate_configuration=True,  # type: bool
-            configuration=None             # type: PropertyValuesType
+            configuration=None             # type: typing.Optional[PropertyValuesType]
     ):
         # type: (...) -> None
         super(SubWorkflow, self).__init__(xml_tag='sub-workflow')
@@ -323,8 +323,8 @@ class GlobalConfiguration(XMLSerializable):
             self,
             job_tracker=None,    # type: typing.Optional[typing.Text]
             name_node=None,      # type: typing.Optional[typing.Text]
-            job_xml_files=None,  # type: JobXmlFilesType
-            configuration=None,  # type: PropertyValuesType
+            job_xml_files=None,  # type: typing.Optional[JobXmlFilesType]
+            configuration=None,  # type: typing.Optional[PropertyValuesType]
     ):
         # type: (...) -> None
         super(GlobalConfiguration, self).__init__(xml_tag='global')
@@ -417,12 +417,12 @@ class CoordinatorApp(XMLSerializable):
             start,                        # type: datetime.datetime
             end=None,                     # type: typing.Optional[datetime.datetime]
             timezone=None,                # type: typing.Optional[typing.Text]
-            workflow_configuration=None,  # type: PropertyValuesType
+            workflow_configuration=None,  # type: typing.Optional[PropertyValuesType]
             timeout=None,                 # type: typing.Optional[int]
             concurrency=None,             # type: typing.Optional[int]
             execution_order=None,         # type: typing.Optional[ExecutionOrder]
             throttle=None,                # type: typing.Optional[int]
-            parameters=None               # type: PropertyValuesType
+            parameters=None               # type: typing.Optional[PropertyValuesType]
     ):
         # type: (...) -> None
         super(CoordinatorApp, self).__init__(xml_tag='coordinator-app')
