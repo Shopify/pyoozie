@@ -452,9 +452,6 @@ def test_workflow_app():
         job_tracker='job-tracker',
         name_node='name-node',
         job_xml_files=['/user/${wf:user()}/job.xml'],
-        default_retry_max=10,
-        default_retry_interval=1,
-        default_retry_policy=tags.RETRY_PERIODIC
     )
 
     actual_xml = workflow_app.xml(indent=True)
