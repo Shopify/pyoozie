@@ -42,20 +42,6 @@ EXEC_LIFO = ExecutionOrder.LIFO
 EXEC_NONE = ExecutionOrder.NONE
 
 
-class RetryPolicy(enum.Enum):
-    """Retry policy for workflow actions"""
-
-    EXPONENTIAL = 'EXPONENTIAL'
-    PERIODIC = 'PERIODIC'
-
-    def __str__(self):
-        return self.value
-
-
-RETRY_EXPONENTIAL = RetryPolicy.EXPONENTIAL
-RETRY_PERIODIC = RetryPolicy.PERIODIC
-
-
 def validate_xml_name(name):
     # type: (typing.Text) -> typing.Text
 
@@ -519,9 +505,6 @@ class WorkflowApp(XMLSerializable):
             job_tracker=None,             # type: typing.Optional[typing.Text]
             name_node=None,               # type: typing.Optional[typing.Text]
             job_xml_files=None,           # type: typing.Optional[JobXmlFilesType]
-            default_retry_max=None,       # type: typing.Optional[int]
-            default_retry_interval=None,  # type: typing.Optional[int]
-            default_retry_policy=None     # type: typing.Optional[RetryPolicy]
     ):
         # type: (...) -> None
         XMLSerializable.__init__(self, 'workflow-app')
@@ -535,10 +518,6 @@ class WorkflowApp(XMLSerializable):
             configuration=configuration
         )
         self.credentials = credentials
-
-        self.default_retry_max = default_retry_max
-        self.default_retry_interval = default_retry_interval
-        self.default_retry_policy = default_retry_policy
 
     def _xml(self, doc, tag, text):
         with tag(self.xml_tag, name=self.name, xmlns="uri:oozie:workflow:0.5"):
