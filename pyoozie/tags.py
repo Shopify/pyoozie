@@ -109,8 +109,13 @@ class _PropertyList(XMLSerializable, dict):
     </xml_tag>
     """
 
-    def __init__(self, xml_tag, attributes=None, values=None):
-        # type: (typing.Text, typing.Dict, typing.Dict) -> None
+    def __init__(
+            self,
+            xml_tag,          # type: typing.Text
+            attributes=None,  # type: typing.Optional[typing.Dict]
+            values=None       # type: typing.Optional[typing.Dict]
+    ):
+        # type: (...) -> None
         super(_PropertyList, self).__init__(xml_tag=xml_tag)
         if values:
             self.update(values)
@@ -139,7 +144,7 @@ class Parameters(_PropertyList):
     """
 
     def __init__(self, values=None):
-        # type: (typing.Dict) -> None
+        # type: (typing.Optional[typing.Dict]) -> None
         super(Parameters, self).__init__(xml_tag='parameters', values=values)
 
 
@@ -147,7 +152,7 @@ class Configuration(_PropertyList):
     """Coordinator job submission, workflow, workflow action configuration XML."""
 
     def __init__(self, values=None):
-        # type: (typing.Dict) -> None
+        # type: (typing.Optional[typing.Dict]) -> None
         super(Configuration, self).__init__(xml_tag='configuration', values=values)
 
 
@@ -190,16 +195,16 @@ class Shell(XMLSerializable):
 
     def __init__(
             self,
-            exec_command,  # type: typing.Text
-            job_tracker=None,  # type: typing.Text
-            name_node=None,  # type: typing.Text
-            prepare=None,  # type: typing.Sequence
-            job_xml_files=None,  # type: typing.Iterable[typing.Text]
-            configuration=None,  # type: typing.Dict[typing.Text, typing.Text]
-            arguments=None,  # type: typing.Iterable[typing.Text]
-            env_vars=None,  # type: typing.Dict[typing.Text, typing.Text]
-            files=None,  # type: typing.Iterable[typing.Text]
-            archives=None,  # type: typing.Iterable[typing.Text]
+            exec_command,         # type: typing.Text
+            job_tracker=None,     # type: typing.Optional[typing.Text]
+            name_node=None,       # type: typing.Optional[typing.Text]
+            prepare=None,         # type: typing.Optional[typing.Sequence]
+            job_xml_files=None,   # type: typing.Optional[typing.Iterable[typing.Text]]
+            configuration=None,   # type: typing.Optional[typing.Dict[typing.Text, typing.Text]]
+            arguments=None,       # type: typing.Optional[typing.Iterable[typing.Text]]
+            env_vars=None,        # type: typing.Optional[typing.Dict[typing.Text, typing.Text]]
+            files=None,           # type: typing.Optional[typing.Iterable[typing.Text]]
+            archives=None,        # type: typing.Optional[typing.Iterable[typing.Text]]
             capture_output=False  # type: bool
     ):
         # type: (...) -> None
@@ -271,9 +276,9 @@ class SubWorkflow(XMLSerializable):
 
     def __init__(
             self,
-            app_path,  # type: str
+            app_path,                      # type: str
             propagate_configuration=True,  # type: bool
-            configuration=None  # type: typing.Dict[typing.Text, typing.Text]
+            configuration=None             # type: typing.Optional[typing.Dict[typing.Text, typing.Text]]
     ):
         # type: (...) -> None
         super(SubWorkflow, self).__init__(xml_tag='sub-workflow')
@@ -308,10 +313,10 @@ class GlobalConfiguration(XMLSerializable):
 
     def __init__(
             self,
-            job_tracker=None,  # type: typing.Text
-            name_node=None,  # typing.Text
-            job_xml_files=None,  # type: typing.Iterable[typing.Text]
-            configuration=None,  # type: typing.Dict[typing.Text, typing.Text]
+            job_tracker=None,    # type: typing.Optional[typing.Text]
+            name_node=None,      # type: typing.Optional[typing.Text]
+            job_xml_files=None,  # type: typing.Optional[typing.Iterable[typing.Text]]
+            configuration=None,  # type: typing.Optional[typing.Dict[typing.Text, typing.Text]]
     ):
         # type: (...) -> None
         super(GlobalConfiguration, self).__init__(xml_tag='global')
@@ -344,13 +349,13 @@ class Email(XMLSerializable):
 
     def __init__(
             self,
-            to,  # type: typing.Union[typing.Text, typing.Iterable[typing.Text]]
-            subject,  # type: typing.Text
-            body,  # type: typing.Text
-            cc=None,  # type: typing.Union[typing.Text, typing.Iterable[typing.Text]]
-            bcc=None,  # type: typing.Union[typing.Text, typing.Iterable[typing.Text]]
-            content_type=None,  # type: typing.Text
-            attachments=None  # type: typing.Text
+            to,                 # type: typing.Union[typing.Text, typing.Iterable[typing.Text]]
+            subject,            # type: typing.Text
+            body,               # type: typing.Text
+            cc=None,            # type: typing.Optional[typing.Union[typing.Text, typing.Iterable[typing.Text]]]
+            bcc=None,           # type: typing.Optional[typing.Union[typing.Text, typing.Iterable[typing.Text]]]
+            content_type=None,  # type: typing.Optional[typing.Text]
+            attachments=None    # type: typing.Optional[typing.Text]
     ):
         # type: (...) -> None
         super(Email, self).__init__(xml_tag='email')
@@ -398,18 +403,18 @@ class CoordinatorApp(XMLSerializable):
 
     def __init__(
             self,
-            name,  # type: typing.Text
-            workflow_app_path,  # type: typing.Text
-            frequency,  # type: int
-            start,  # type: datetime.datetime
-            end=None,  # type: datetime.datetime
-            timezone=None,  # type: typing.Text
-            workflow_configuration=None,  # type: typing.Dict[typing.Text, typing.Text]
-            timeout=None,  # type: int
-            concurrency=None,  # type: int
-            execution_order=None,  # type: ExecutionOrder
-            throttle=None,  # type: int
-            parameters=None  # type: typing.Dict[typing.Text, typing.Text]
+            name,                         # type: typing.Text
+            workflow_app_path,            # type: typing.Text
+            frequency,                    # type: int
+            start,                        # type: datetime.datetime
+            end=None,                     # type: typing.Optional[datetime.datetime]
+            timezone=None,                # type: typing.Optional[typing.Text]
+            workflow_configuration=None,  # type: typing.Optional[typing.Dict[typing.Text, typing.Text]]
+            timeout=None,                 # type: typing.Optional[int]
+            concurrency=None,             # type: typing.Optional[int]
+            execution_order=None,         # type: typing.Optional[ExecutionOrder]
+            throttle=None,                # type: typing.Optional[int]
+            parameters=None               # type: typing.Optional[typing.Dict[typing.Text, typing.Text]]
     ):
         # type: (...) -> None
         super(CoordinatorApp, self).__init__(xml_tag='coordinator-app')
