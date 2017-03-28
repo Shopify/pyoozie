@@ -1,9 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
 <coordinator-app xmlns="uri:oozie:coordinator:0.4"
+                 name="coordinator-name"
+                 frequency="1440"
                  start="2015-01-01T10:56Z"
                  end="2115-01-01T10:56Z"
-                 name="coordinator-name"
-                 timezone="UTC"
-                 frequency="1440">
+                 timezone="UTC">
     <parameters>
         <property>
             <name>throttle</name>
