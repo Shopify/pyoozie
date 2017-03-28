@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 # pylint: disable=import-modules-only
 
-from pyoozie.xml import CoordinatorBuilder
 from pyoozie.xml import WorkflowBuilder
 
 from pyoozie.client import OozieClient
@@ -41,7 +40,6 @@ __version__ = '0.0.0'
 __all__ = (
     # builder
     'WorkflowBuilder',
-    'CoordinatorBuilder',
 
     # client
     'OozieClient',
