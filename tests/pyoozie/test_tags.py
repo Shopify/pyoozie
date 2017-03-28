@@ -65,20 +65,13 @@ def expected_property_values_xml():
 
 
 @pytest.fixture
-def expected_coordinator_options():
+def minimal_coordinator_options():
     return {
         'name': 'coordinator-name',
+        'workflow_app_path': '/user/oozie/workflows/descriptive-name',
         'frequency': 1440,
         'start': parse_datetime('2015-01-01T10:56Z'),
-        'end': parse_datetime('2115-01-01T10:56Z'),
-        'workflow_app_path': '/user/oozie/workflows/descriptive-name',
     }
-
-
-@pytest.fixture
-def coordinator_xml():
-    with open('tests/data/coordinator.xml', 'r') as fh:
-        return fh.read()
 
 
 def test_validate_xml_id():
@@ -387,55 +380,64 @@ def parse_datetime(string):
     return datetime.datetime.strptime(string, '%Y-%m-%dT%H:%MZ')
 
 
-def test_coordinator(coordinator_xml, expected_coordinator_options):
-    actual = tags.CoordinatorApp(**expected_coordinator_options).xml()
-    assert tests.utils.xml_to_dict_unordered(coordinator_xml) == tests.utils.xml_to_dict_unordered(actual)
+def test_minimal_coordinator(minimal_coordinator_options):
+    actual_xml = tags.CoordinatorApp(**minimal_coordinator_options).xml(indent=True)
+    actual_dict = tests.utils.xml_to_dict_unordered(actual_xml)
+
+    expected_xml = None
+    with open('tests/data/minimal_coordinator.xml', 'r') as fh:
+        expected_xml = fh.read()
+    expected_dict = tests.utils.xml_to_dict_unordered(expected_xml)
+
+    assert actual_dict == expected_dict
 
 
-def test_coordinator_end_default(coordinator_xml, expected_coordinator_options):
-    del expected_coordinator_options['end']
-    actual = tags.CoordinatorApp(**expected_coordinator_options).xml()
-    assert tests.utils.xml_to_dict_unordered(coordinator_xml) == tests.utils.xml_to_dict_unordered(actual)
+def test_full_coordinator(minimal_coordinator_options):
+    full_coordinator_options = minimal_coordinator_options
+    full_coordinator_options.update({
+        'end': parse_datetime('2115-01-01T10:56Z'),
+        'concurrency': 1,
+        'throttle': '${throttle}',
+        'timeout': 10,
+        'execution_order': tags.EXEC_LAST_ONLY,
+        'parameters': {
+            'throttle': 1,
+        },
+        'workflow_configuration': {
+            'mapred.job.queue.name': 'production',
+        },
+    })
+
+    actual_xml = tags.CoordinatorApp(**minimal_coordinator_options).xml(indent=True)
+    actual_dict = tests.utils.xml_to_dict_unordered(actual_xml)
+
+    expected_xml = None
+    with open('tests/data/full_coordinator.xml', 'r') as fh:
+        expected_xml = fh.read()
+    expected_dict = tests.utils.xml_to_dict_unordered(expected_xml)
+
+    assert actual_dict == expected_dict
 
 
-def test_coordinator_with_controls_and_more(coordinator_xml_with_controls, expected_coordinator_options):
-    actual = tags.CoordinatorApp(
-        timeout=10,
-        concurrency=1,
-        execution_order=tags.EXEC_LAST_ONLY,
-        throttle='${throttle}',
-        workflow_configuration=tags.Configuration({
-            'mapred.job.queue.name': 'production'
-        }),
-        parameters=tags.Parameters({
-            'throttle': 1
-        }),
-        **expected_coordinator_options
-    ).xml()
-    expected_dict = tests.utils.xml_to_dict_unordered(coordinator_xml_with_controls)
-    actual_dict = tests.utils.xml_to_dict_unordered(actual)
-    assert expected_dict == actual_dict
-
-
-def test_really_long_coordinator_name(expected_coordinator_options):
+def test_really_long_coordinator_name(minimal_coordinator_options):
     with pytest.raises(AssertionError) as assertion_info:
-        del expected_coordinator_options['name']
-        tags.CoordinatorApp(name='l' * (tags.MAX_NAME_LENGTH + 1), **expected_coordinator_options)
+        del minimal_coordinator_options['name']
+        tags.CoordinatorApp(name='l' * (tags.MAX_NAME_LENGTH + 1), **minimal_coordinator_options)
     assert "Name must be less than" in str(assertion_info.value)
 
 
-def test_coordinator_bad_frequency(expected_coordinator_options):
-    expected_coordinator_options['frequency'] = 0
+def test_coordinator_bad_frequency(minimal_coordinator_options):
+    minimal_coordinator_options['frequency'] = 0
     with pytest.raises(AssertionError) as assertion_info:
-        tags.CoordinatorApp(**expected_coordinator_options)
+        tags.CoordinatorApp(**minimal_coordinator_options)
     assert str(assertion_info.value) == \
         'Frequency (0 min) must be greater than or equal to 5 min'
 
 
-def test_coordinator_end_before_start(expected_coordinator_options):
-    expected_coordinator_options['end'] = expected_coordinator_options['start'] - datetime.timedelta(days=10)
+def test_coordinator_end_before_start(minimal_coordinator_options):
+    minimal_coordinator_options['end'] = minimal_coordinator_options['start'] - datetime.timedelta(days=10)
     with pytest.raises(AssertionError) as assertion_info:
-        tags.CoordinatorApp(**expected_coordinator_options)
+        tags.CoordinatorApp(**minimal_coordinator_options)
     assert str(assertion_info.value) == \
         'End time (2014-12-22T10:56Z) must be greater than the start time (2015-01-01T10:56Z)'
 

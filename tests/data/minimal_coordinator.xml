@@ -1,9 +1,9 @@
 <coordinator-app xmlns="uri:oozie:coordinator:0.4"
+                 start="2015-01-01T10:56Z"
                  end="2115-01-01T10:56Z"
                  name="coordinator-name"
-                 start="2015-01-01T10:56Z"
-                 frequency="1440"
-                 timezone="UTC">
+                 timezone="UTC"
+                 frequency="1440">
     <action>
         <workflow>
             <app-path>/user/oozie/workflows/descriptive-name</app-path>
