@@ -5,3 +5,4 @@ htmlcov
 .coverage
 .cache
 lib
+dist
