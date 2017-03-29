@@ -50,13 +50,10 @@ setuplib.setup(
             'pytest-randomly',
             'pytest>=2.7',
             'requests-mock',
-            'shopify_python==0.2.0',
+            'shopify_python==0.2.2',
             'xmltodict',
         ],
     },
-    dependency_links=[
-        'git+https://github.com/Shopify/shopify_python.git@v0.2.0#egg=shopify_python-0.2.0',
-    ],
     license="MIT",
     keywords=['oozie'],
     classifiers=[
