@@ -36,7 +36,7 @@ type:
 sourcelint:
 		@echo 'Linting...'
 		@pylint --rcfile=pylintrc setup.py pyoozie tests
-		@pep8
+		@pycodestyle
 
 lint: sourcelint type
 
