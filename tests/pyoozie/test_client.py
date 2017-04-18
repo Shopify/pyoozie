@@ -10,6 +10,7 @@ import requests_mock
 from pyoozie import exceptions
 from pyoozie import model
 from pyoozie import client
+from pyoozie import xml
 
 
 # TODO: share these with test_model.py?
@@ -1184,13 +1185,59 @@ class TestOozieClientJobWorkflowManage(object):
                 mock_put.reset_mock()
 
 
+class TestOozieClientJobUpdate(object):
+
+    def test_jobs_update_coordinator(self, api, sample_coordinator_running, sample_coordinator_killed):
+        with mock.patch.object(api, '_put') as mock_put:
+            with mock.patch.object(api, 'job_coordinator_info') as mock_info:
+                mock_info.return_value = sample_coordinator_running
+
+                mock_put.return_value = {'update': {'diff': "****Empty Diff****"}}
+
+                coord = api.jobs_update_coordinator(SAMPLE_COORD_ID, '/dummy/coord-path-minimal')
+
+                conf = xml._coordinator_submission_xml('oozie', '/dummy/coord-path-minimal')
+                mock_put.assert_called_with('job/' + SAMPLE_COORD_ID + "?action=update", conf)
+                mock_info.assert_called_with(coordinator_id=SAMPLE_COORD_ID)
+                assert coord is sample_coordinator_running
+
+                mock_put.reset_mock()
+                mock_info.reset_mock()
+
+                mock_info.return_value = sample_coordinator_running
+                mock_put.return_value = {'update': {'diff': "*****Diffs*****"}}
+
+                coord = api.jobs_update_coordinator(SAMPLE_COORD_ID, '/dummy/coord-path-full')
+
+                conf = xml._coordinator_submission_xml('oozie', '/dummy/coord-path-full')
+                mock_put.assert_called_with('job/' + SAMPLE_COORD_ID + "?action=update", conf)
+                mock_info.assert_called_with(coordinator_id=SAMPLE_COORD_ID)
+                assert coord is sample_coordinator_running
+
+                mock_put.reset_mock()
+                mock_info.reset_mock()
+
+                mock_info.return_value = sample_coordinator_killed
+
+                with pytest.raises(exceptions.OozieException) as err:
+                    api.jobs_update_coordinator(SAMPLE_COORD_ID, '/dummy/coord-path-full')
+
+                assert 'coordinator status must be active in order to update' in str(err)
+
+                mock_info.return_value = sample_coordinator_running
+                mock_put.return_value = {}
+                with pytest.raises(exceptions.OozieException) as err:
+                    api.jobs_update_coordinator(SAMPLE_COORD_ID, '/dummy/coord-path-full')
+
+                assert 'update coordinator' in str(err)
+
+
 class TestOozieClientJobSubmit(object):
 
     def test_jobs_submit_coordinator(self, api, sample_coordinator_running):
         with mock.patch.object(api, '_post') as mock_post:
             with mock.patch.object(api, 'job_coordinator_info') as mock_info:
                 mock_info.return_value = sample_coordinator_running
-
                 mock_post.return_value = None
                 with pytest.raises(exceptions.OozieException) as err:
                     api.jobs_submit_coordinator('/dummy/coord-path')
@@ -1213,6 +1260,7 @@ class TestOozieClientJobSubmit(object):
 
                 api.jobs_submit_coordinator('/dummy/coord-path')
                 conf = mock_post.call_args[0][1].decode('utf-8')
+
                 assert '<name>oozie.coord.application.path</name><value>/dummy/coord-path</value>' in conf
                 assert '<name>user.name</name><value>oozie</value>' in conf
                 mock_post.reset_mock()

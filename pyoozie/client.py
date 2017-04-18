@@ -146,8 +146,8 @@ class OozieClient(object):
     def _get(self, endpoint, content_type=None):
         return self._request('GET', endpoint, content_type)
 
-    def _put(self, endpoint, content_type='application/xml'):
-        return self._request('PUT', endpoint, content_type)
+    def _put(self, endpoint, content=None, content_type='application/xml'):
+        return self._request('PUT', endpoint, content_type, content)
 
     def _post(self, endpoint, content, content_type='application/xml'):
         return self._request('POST', endpoint, content_type, content)
@@ -545,7 +545,7 @@ class OozieClient(object):
         return False
 
     # ===========================================================================
-    # Job API - submit jobs
+    # Job API - submit and update jobs
     # ===========================================================================
 
     def jobs_submit_coordinator(self, xml_path, configuration=None):
@@ -560,6 +560,25 @@ class OozieClient(object):
             coord = self.job_coordinator_info(coordinator_id=reply['id'])
             return coord
         raise exceptions.OozieException.operation_failed('submit coordinator')
+
+    def jobs_update_coordinator(self, coordinator_id, xml_path, configuration=None):
+        user = self._user or 'oozie'
+        coord = self._fetch_coordinator_or_action(coordinator_id)
+        if coord.status.is_active():
+            conf = xml._coordinator_submission_xml(user, xml_path, configuration=configuration)
+            if self._verbose:
+                self.logger.info('Preparing to update coordinator %s:\n%s', xml_path, conf)
+            reply = self._put('job/{}?action=update'.format(coordinator_id), conf)
+
+            if 'update' not in reply:
+                raise exceptions.OozieException.operation_failed('update coordinator')
+
+            if self._verbose:
+                self.logger.info('Coordinator %s updated with diff %s', coordinator_id, reply['update']['diff'])
+
+            return self.job_coordinator_info(coordinator_id=coordinator_id)
+        else:
+            raise exceptions.OozieException.operation_failed('coordinator status must be active in order to update')
 
     def jobs_submit_workflow(self, xml_path, configuration=None, start=False):
         user = self._user or 'oozie'
