@@ -1238,6 +1238,7 @@ class TestOozieClientJobSubmit(object):
         with mock.patch.object(api, '_post') as mock_post:
             with mock.patch.object(api, 'job_coordinator_info') as mock_info:
                 mock_info.return_value = sample_coordinator_running
+
                 mock_post.return_value = None
                 with pytest.raises(exceptions.OozieException) as err:
                     api.jobs_submit_coordinator('/dummy/coord-path')
@@ -1260,7 +1261,6 @@ class TestOozieClientJobSubmit(object):
 
                 api.jobs_submit_coordinator('/dummy/coord-path')
                 conf = mock_post.call_args[0][1].decode('utf-8')
-
                 assert '<name>oozie.coord.application.path</name><value>/dummy/coord-path</value>' in conf
                 assert '<name>user.name</name><value>oozie</value>' in conf
                 mock_post.reset_mock()
