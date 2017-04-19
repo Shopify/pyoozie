@@ -570,7 +570,7 @@ class OozieClient(object):
                 self.logger.info('Preparing to update coordinator %s:\n%s', xml_path, conf)
             reply = self._put('job/{}?action=update'.format(coordinator_id), conf)
 
-            if 'update' not in reply:
+            if not reply or 'update' not in reply:
                 raise exceptions.OozieException.operation_failed('update coordinator')
 
             if self._verbose:
