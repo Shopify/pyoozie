@@ -471,14 +471,14 @@ def test_coordinator_status_predicates(status, active, running, suspendable, sus
     (model.CoordinatorActionStatus.FAILED, False, False, False, False),
     (model.CoordinatorActionStatus.IGNORED, False, False, False, False),
     (model.CoordinatorActionStatus.KILLED, False, False, False, False),
-    (model.CoordinatorActionStatus.READY, False, False, False, False),
+    (model.CoordinatorActionStatus.READY, True, False, False, False),
     (model.CoordinatorActionStatus.RUNNING, True, True, True, False),
     (model.CoordinatorActionStatus.SKIPPED, False, False, False, False),
     (model.CoordinatorActionStatus.SUBMITTED, True, False, False, False),
     (model.CoordinatorActionStatus.SUCCEEDED, False, False, False, False),
     (model.CoordinatorActionStatus.SUSPENDED, True, True, False, True),
     (model.CoordinatorActionStatus.TIMEDOUT, False, False, False, False),
-    (model.CoordinatorActionStatus.WAITING, False, False, False, False),
+    (model.CoordinatorActionStatus.WAITING, True, False, False, False),
 ])
 def test_coordinator_action_status_predicates(status, active, running, suspendable, suspended):
     assert status.is_active() == active
@@ -512,7 +512,7 @@ def test_workflow_status_predicates(status, active, running, suspendable, suspen
     (model.WorkflowActionStatus.FAILED, False, False, False, False),
     (model.WorkflowActionStatus.KILLED, False, False, False, False),
     (model.WorkflowActionStatus.OK, False, False, False, False),
-    (model.WorkflowActionStatus.PREP, False, False, False, False),
+    (model.WorkflowActionStatus.PREP, True, False, False, False),
     (model.WorkflowActionStatus.RUNNING, True, True, False, False),
     (model.WorkflowActionStatus.START_MANUAL, False, False, False, False),
     (model.WorkflowActionStatus.START_RETRY, False, False, False, False),

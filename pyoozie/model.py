@@ -209,14 +209,14 @@ class CoordinatorActionStatus(_StatusEnum):
     FAILED = _status(1)
     IGNORED = _status(2)
     KILLED = _status(3)
-    READY = _status(4)
+    READY = _status(4, is_active=True)
     RUNNING = _status(5, is_active=True, is_running=True, is_suspendable=True)
     SKIPPED = _status(6)
     SUBMITTED = _status(7, is_active=True)
     SUCCEEDED = _status(8)
     SUSPENDED = _status(9, is_active=True, is_running=True, is_suspended=True)
     TIMEDOUT = _status(10)
-    WAITING = _status(11)
+    WAITING = _status(11, is_active=True)
 
 
 class WorkflowStatus(_StatusEnum):
@@ -238,7 +238,7 @@ class WorkflowActionStatus(_StatusEnum):
     FAILED = _status(5)
     KILLED = _status(6)
     OK = _status(7)
-    PREP = _status(8)
+    PREP = _status(8, is_active=True)
     RUNNING = _status(9, is_active=True, is_running=True)
     START_MANUAL = _status(10)
     START_RETRY = _status(11)
