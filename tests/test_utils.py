@@ -39,11 +39,17 @@ def test_xml_to_dict_unordered():
   <tag />
   <tag key="value" />
   <tag>Text</tag>
+  <tag key="value">Text</tag>
 </root>
     """.strip())
     assert document_dict == {
         'root': {
-            'tag': [None, u'Text', {'@key': 'value'}]
+            'tag': [
+                None,
+                'Text',
+                {'#text': 'Text', '@key': 'value'},
+                {'@key': 'value'}
+            ]
         }
     }
 
