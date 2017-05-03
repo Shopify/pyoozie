@@ -27,6 +27,7 @@ NAMESPACE_ATTRIBUTE = re.compile(' xmlns="[^"]+"', flags=re.UNICODE)
 
 
 class ParsedXml(object):
+    """Parses an XML string and provides methods to make assertions about the resulting element tree."""
 
     def __init__(self, xml_string):
         if isinstance(xml_string, six.binary_type):

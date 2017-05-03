@@ -70,7 +70,7 @@ def test_assert_valid_workflow(valid_workflow):
         tests.utils.assert_valid_workflow(xml)
     assert str(assertion_info.value) == 'Name(s) reused: alpha'
 
-    # With valid XML, a missing a start tag should result in a schema violation assertion error
+    # With valid XML, a missing start tag should result in a schema violation assertion error
     with pytest.raises(AssertionError) as assertion_info:
         xml = """
 <workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
@@ -119,7 +119,7 @@ def test_parsed_xml_assert_node(valid_workflow):
     # Asserting that a node has a specific attribute should pass
     app.assert_node('/start', to='end')
 
-    # Asserting that a node has a specific attribute value that it doens't should raise an assertion error
+    # Asserting that a node has a specific attribute value that it doesn't should raise an assertion error
     with pytest.raises(AssertionError) as assertion_info:
         app.assert_node('/start', to=str('not_end'))
     assert str(assertion_info.value) == str("{'to': 'not_end'} != {'to': 'end'}")
