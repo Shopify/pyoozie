@@ -35,7 +35,7 @@ from pyoozie.tags import validate_xml_id
 from pyoozie.tags import validate_xml_name
 
 
-__version__ = '0.0.0'
+__version__ = '0.0.1'
 
 __all__ = (
     # builder
