@@ -91,11 +91,14 @@ def _parse_time(_, time_string):
 
 
 def _parse_configuration(_, conf_string):
-    if conf_string:
+    if conf_string is None:
+        return None
+    elif conf_string:
         xml = conf_string if sys.version_info >= (3, 0) else conf_string.encode('utf-8')
         conf = untangle.parse(xml).configuration
         return {prop.name.cdata: prop.value.cdata for prop in conf.property}
-    return {}
+    else:
+        return {}
 
 
 def _parse_workflow_actions(artifact, actions_list):
