@@ -23,7 +23,7 @@ def xml_to_dict_unordered(xml):
     return unorder(xmltodict.parse(xml))
 
 
-NAMESPACE_ATTRIBUTE = re.compile(' xmlns="[^"]+"', flags=re.UNICODE)
+NAMESPACE_ATTRIBUTE = re.compile(r' xmlns:?[a-z0-9]*="[^"]+"', flags=re.UNICODE)
 
 
 class ParsedXml(object):

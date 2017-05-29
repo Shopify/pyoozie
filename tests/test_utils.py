@@ -13,7 +13,7 @@ import tests.utils
 @pytest.fixture
 def valid_workflow():
     return """
-<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+<workflow-app xmlns="uri:oozie:workflow:0.5" xmlns:fake="fake:0.0" name="descriptive-name">
     <parameters>
         <property>
             <name>property_key</name>
