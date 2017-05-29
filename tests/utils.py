@@ -53,7 +53,7 @@ class ParsedXml(object):
         if args:
             assert len(args) == 1, 'Too many positional arguments specified'
             assert element.text == args[0], '%s != %s' % (element.text, args[0])
-            
+
 
 def assert_valid_workflow(xml):
     # Check for duplicate names (valid XML and valid schema, but logically invalid)

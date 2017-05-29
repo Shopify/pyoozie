@@ -87,10 +87,12 @@ def test_assert_valid_workflow(valid_workflow):
         tests.utils.assert_valid_workflow(xml)
     exception_message = str(assertion_info.value)
     assert 'An XML validation error occurred.' in exception_message
-    assert 'Error: Invalid app definition, org.xml.sax.SAXParseException; lineNumber: 6; columnNumber: 23;''' in exception_message
+    assert ('Error: Invalid app definition, org.xml.sax.SAXParseException; lineNumber: 6; columnNumber: 23;' in
+            exception_message)
     assert 'Invalid content was found starting with element \'end\'.' in exception_message
-    assert '\'{"uri:oozie:workflow:0.5":credentials, "uri:oozie:workflow:0.5":start}\' is expected.' in exception_message
-    assert  xml in exception_message
+    assert ('\'{"uri:oozie:workflow:0.5":credentials, "uri:oozie:workflow:0.5":start}\' is expected.' in
+            exception_message)
+    assert xml in exception_message
 
     # With invalid XML, a parsing error should occur
     with pytest.raises(et.ParseError) as assertion_info:
@@ -116,12 +118,12 @@ def test_parsed_xml_assert_node(valid_workflow):
     assert str(assertion_info.value) == str("Found more than one resolution of xpath '/parameters/property'")
 
     app.assert_node('/global/name-node', 'name-node-🙄')
-    
+
     # Asserting that a node has a specific text value when it doesn't should raise an error
     with pytest.raises(AssertionError) as assertion_info:
         app.assert_node('/global/name-node', 'name-node')
     assert six.text_type(assertion_info.value) == 'name-node-🙄 != name-node'
-    
+
     # Asserting that a node has a specific attribute should pass
     app.assert_node('/start', to='end')
 
