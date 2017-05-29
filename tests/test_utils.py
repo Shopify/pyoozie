@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 import xml.etree.ElementTree as et
 
 import pytest
+import six
 import tests.utils
 
 
@@ -25,7 +26,7 @@ def valid_workflow():
     </parameters>
     <global>
         <job-tracker>job-tracker</job-tracker>
-        <name-node>name-node</name-node>
+        <name-node>name-node-🙄</name-node>
     </global>
     <start to="end" />
     <end name="end" />
@@ -40,6 +41,7 @@ def test_xml_to_dict_unordered():
   <tag key="value" />
   <tag>Text</tag>
   <tag key="value">Text</tag>
+  <tag different-key="different-value"> Text </tag>
 </root>
     """.strip())
     assert document_dict == {
@@ -47,6 +49,7 @@ def test_xml_to_dict_unordered():
             'tag': [
                 None,
                 'Text',
+                {'#text': 'Text', '@different-key': 'different-value'},
                 {'#text': 'Text', '@key': 'value'},
                 {'@key': 'value'}
             ]
@@ -116,6 +119,13 @@ def test_parsed_xml_assert_node(valid_workflow):
         app.assert_node('/parameters/property')
     assert str(assertion_info.value) == str("Found more than one resolution of xpath '/parameters/property'")
 
+    app.assert_node('/global/name-node', 'name-node-🙄')
+    
+    # Asserting that a node has a specific text value when it doesn't should raise an error
+    with pytest.raises(AssertionError) as assertion_info:
+        app.assert_node('/global/name-node', 'name-node')
+    assert six.text_type(assertion_info.value) == 'name-node-🙄 != name-node'
+    
     # Asserting that a node has a specific attribute should pass
     app.assert_node('/start', to='end')
 

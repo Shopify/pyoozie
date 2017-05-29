@@ -46,11 +46,14 @@ class ParsedXml(object):
             "Found more than one resolution of xpath '%s'" % xpath
         return elements[0]
 
-    def assert_node(self, xpath, **kwargs):
+    def assert_node(self, xpath, *args, **kwargs):
         element = self.__get_element(xpath)
         if kwargs:
             assert set(kwargs.items()) <= set(element.attrib.items()), '%r != %r' % (kwargs, element.attrib)
-
+        if args:
+            assert len(args) == 1, 'Too many positional arguments specified'
+            assert element.text == args[0], '%s != %s' % (element.text, args[0])
+            
 
 def assert_valid_workflow(xml):
     # Check for duplicate names (valid XML and valid schema, but logically invalid)
