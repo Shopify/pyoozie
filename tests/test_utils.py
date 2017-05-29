@@ -129,10 +129,10 @@ def test_parsed_xml_assert_node(valid_workflow):
 
     # Asserting that a node has a specific attribute value that it doesn't should raise an assertion error
     with pytest.raises(AssertionError) as assertion_info:
-        app.assert_node('/start', to=str('not_end'))
+        app.assert_node('/start', to='not_end')
     assert str(assertion_info.value) == str("{'to': 'not_end'} != {'to': 'end'}")
 
     # Asserting that a node has a specific attribute that it's missing should raise an assertion error
     with pytest.raises(AssertionError) as assertion_info:
-        app.assert_node('/start', not_a_key=str('end'))
+        app.assert_node('/start', not_a_key='end')
     assert str(assertion_info.value) == str("{'not_a_key': 'end'} != {'to': 'end'}")
