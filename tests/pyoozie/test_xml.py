@@ -69,12 +69,12 @@ def test_workflow_submission_xml_with_configuration(username, workflow_app_path)
     assert tests.utils.xml_to_dict_unordered('''
     <configuration>
         <property>
-            <name>other.key</name>
-            <value>other value</value>
-        </property>
-        <property>
             <name>oozie.wf.application.path</name>
             <value>/user/oozie/workflows/descriptive-name</value>
+        </property>
+        <property>
+            <name>other.key</name>
+            <value>other value</value>
         </property>
         <property>
             <name>user.name</name>
