@@ -46,13 +46,13 @@ def test_xml_to_dict_unordered():
     """.strip())
     assert document_dict == {
         'root': {
-            'tag': [
+            'tag': (
                 None,
+                {'@key': 'value'},
                 'Text',
-                {'#text': 'Text', '@different-key': 'different-value'},
                 {'#text': 'Text', '@key': 'value'},
-                {'@key': 'value'}
-            ]
+                {'#text': 'Text', '@different-key': 'different-value'}
+            )
         }
     }
 
