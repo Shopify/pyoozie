@@ -16,8 +16,8 @@ def xml_to_dict_unordered(xml):
     def unorder(value):
         if hasattr(value, 'items'):
             return {k: unorder(v) for k, v in value.items()}
-        elif isinstance(value, list):
-            return tuple(unorder(v) for v in value)
+        elif isinstance(value, (tuple, set, list)):
+            return sorted([unorder(v) for v in value], key=lambda v: str(sorted(v) if v is not None else v))
         else:
             return value
     return unorder(xmltodict.parse(xml))
