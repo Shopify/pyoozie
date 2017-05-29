@@ -85,16 +85,12 @@ def test_assert_valid_workflow(valid_workflow):
 </workflow-app>""".strip()
         assert len(et.fromstring(xml)), 'Invalid test XML'
         tests.utils.assert_valid_workflow(xml)
-    assert str(assertion_info.value).strip() == str(
-        '''An XML validation error occurred.
-
-Error: Invalid app definition, org.xml.sax.SAXParseException; lineNumber: 6; columnNumber: 23; '''
-        '''cvc-complex-type.2.4.a: Invalid content was found starting with element 'end'. One of '''
-        ''''{"uri:oozie:workflow:0.5":credentials, "uri:oozie:workflow:0.5":start}' is expected.
-
-Parsing:
-
-''' + xml).strip()
+    exception_message = str(assertion_info.value)
+    assert 'An XML validation error occurred.' in exception_message
+    assert 'Error: Invalid app definition, org.xml.sax.SAXParseException; lineNumber: 6; columnNumber: 23;''' in exception_message
+    assert 'Invalid content was found starting with element \'end\'.' in exception_message
+    assert '\'{"uri:oozie:workflow:0.5":credentials, "uri:oozie:workflow:0.5":start}\' is expected.' in exception_message
+    assert  xml in exception_message
 
     # With invalid XML, a parsing error should occur
     with pytest.raises(et.ParseError) as assertion_info:
