@@ -43,7 +43,7 @@ def test_workflow_submission_xml(username, workflow_app_path):
         workflow_xml_path=workflow_app_path,
         indent=True,
     )
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <configuration>
         <property>
             <name>oozie.wf.application.path</name>
@@ -53,7 +53,7 @@ def test_workflow_submission_xml(username, workflow_app_path):
             <name>user.name</name>
             <value>test</value>
         </property>
-    </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
+    </configuration>''') == tests.utils.xml_to_comparable_dict(actual)
 
 
 def test_workflow_submission_xml_with_configuration(username, workflow_app_path):
@@ -66,7 +66,7 @@ def test_workflow_submission_xml_with_configuration(username, workflow_app_path)
         indent=True
     )
 
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <configuration>
         <property>
             <name>oozie.wf.application.path</name>
@@ -80,7 +80,7 @@ def test_workflow_submission_xml_with_configuration(username, workflow_app_path)
             <name>user.name</name>
             <value>test</value>
         </property>
-    </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
+    </configuration>''') == tests.utils.xml_to_comparable_dict(actual)
 
 
 def test_coordinator_submission_xml(username, coord_app_path):
@@ -89,7 +89,7 @@ def test_coordinator_submission_xml(username, coord_app_path):
         coord_xml_path=coord_app_path,
         indent=True
     )
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <configuration>
         <property>
             <name>oozie.coord.application.path</name>
@@ -99,7 +99,7 @@ def test_coordinator_submission_xml(username, coord_app_path):
             <name>user.name</name>
             <value>test</value>
         </property>
-    </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
+    </configuration>''') == tests.utils.xml_to_comparable_dict(actual)
 
 
 def test_coordinator_submission_xml_with_configuration(username, coord_app_path):
@@ -111,7 +111,7 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
         },
         indent=True
     )
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <configuration>
         <property>
             <name>oozie.coord.application.path</name>
@@ -125,7 +125,7 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
             <name>user.name</name>
             <value>test</value>
         </property>
-    </configuration>''') == tests.utils.xml_to_dict_unordered(actual)
+    </configuration>''') == tests.utils.xml_to_comparable_dict(actual)
 
 
 def test_workflow_builder(workflow_builder):
@@ -134,7 +134,7 @@ def test_workflow_builder(workflow_builder):
 
     # Is this XML expected
     actual_xml = workflow_builder.build()
-    assert tests.utils.xml_to_dict_unordered(expected_xml) == tests.utils.xml_to_dict_unordered(actual_xml)
+    assert tests.utils.xml_to_comparable_dict(expected_xml) == tests.utils.xml_to_comparable_dict(actual_xml)
 
     # Does it validate against the workflow XML schema?
     tests.utils.assert_valid_workflow(actual_xml)

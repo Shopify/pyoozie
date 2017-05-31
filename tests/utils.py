@@ -12,7 +12,7 @@ import six
 import xmltodict
 
 
-def xml_to_dict_unordered(xml):
+def xml_to_comparable_dict(xml):
     def unorder(value):
         if hasattr(value, 'items'):
             return {k: unorder(v) for k, v in value.items()}

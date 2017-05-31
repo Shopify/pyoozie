@@ -160,13 +160,13 @@ def test_xml_serializable():
 def test_parameters(expected_property_values, expected_property_values_xml):
     actual = tags.Parameters(expected_property_values).xml(indent=True)
     expected = '<parameters>{xml}</parameters>'.format(xml=expected_property_values_xml)
-    assert tests.utils.xml_to_dict_unordered(expected) == tests.utils.xml_to_dict_unordered(actual)
+    assert tests.utils.xml_to_comparable_dict(expected) == tests.utils.xml_to_comparable_dict(actual)
 
 
 def test_configuration(expected_property_values, expected_property_values_xml):
     actual = tags.Configuration(expected_property_values).xml(indent=True)
     expected = '<configuration>{xml}</configuration>'.format(xml=expected_property_values_xml)
-    assert tests.utils.xml_to_dict_unordered(expected) == tests.utils.xml_to_dict_unordered(actual)
+    assert tests.utils.xml_to_comparable_dict(expected) == tests.utils.xml_to_comparable_dict(actual)
 
 
 def test_credential(expected_property_values, expected_property_values_xml):
@@ -175,7 +175,7 @@ def test_credential(expected_property_values, expected_property_values_xml):
                              credential_type='hcat').xml(indent=True)
     expected = "<credential name='my-hcat-creds' type='hcat'>{xml}</credential>".format(
         xml=expected_property_values_xml)
-    assert tests.utils.xml_to_dict_unordered(expected) == tests.utils.xml_to_dict_unordered(actual)
+    assert tests.utils.xml_to_comparable_dict(expected) == tests.utils.xml_to_comparable_dict(actual)
 
 
 def test_shell():
@@ -197,7 +197,7 @@ def test_shell():
         archives=['/users/blabla/testarchive.jar#testarchive'],
         capture_output=True,
     ).xml(indent=True)
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <shell xmlns="uri:oozie:shell-action:0.3">
         <job-tracker>${jobTracker}</job-tracker>
         <name-node>${nameNode}</name-node>
@@ -216,7 +216,7 @@ def test_shell():
         <env-var>ENVIRONMENT=production</env-var>
         <env-var>RESOURCES=large</env-var>
         <capture-output />
-    </shell>''') == tests.utils.xml_to_dict_unordered(actual)
+    </shell>''') == tests.utils.xml_to_comparable_dict(actual)
 
     # Test using prepare fails
     with pytest.raises(NotImplementedError) as assertion_info:
@@ -235,23 +235,23 @@ def test_subworkflow():
         propagate_configuration=False,
         configuration=None,
     ).xml(indent=True)
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <sub-workflow>
         <app-path>/user/username/workflows/cool-flow</app-path>
     </sub-workflow>
-    ''') == tests.utils.xml_to_dict_unordered(actual)
+    ''') == tests.utils.xml_to_comparable_dict(actual)
 
     actual = tags.SubWorkflow(
         app_path=app_path,
         propagate_configuration=True,
         configuration=None,
     ).xml(indent=True)
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <sub-workflow>
         <app-path>/user/username/workflows/cool-flow</app-path>
         <propagate-configuration />
     </sub-workflow>
-    ''') == tests.utils.xml_to_dict_unordered(actual)
+    ''') == tests.utils.xml_to_comparable_dict(actual)
 
     actual = tags.SubWorkflow(
         app_path=app_path,
@@ -261,7 +261,7 @@ def test_subworkflow():
             'name_node': 'hdfs://localhost:50070',
         },
     ).xml(indent=True)
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <sub-workflow>
         <app-path>/user/username/workflows/cool-flow</app-path>
         <propagate-configuration />
@@ -276,7 +276,7 @@ def test_subworkflow():
             </property>
         </configuration>
     </sub-workflow>
-    ''') == tests.utils.xml_to_dict_unordered(actual)
+    ''') == tests.utils.xml_to_comparable_dict(actual)
 
 
 def test_global_configuration():
@@ -290,12 +290,12 @@ def test_global_configuration():
         job_xml_files=None,
         configuration=None,
     ).xml(indent=True)
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <global>
         <job-tracker>a_jobtracker</job-tracker>
         <name-node>hdfs://localhost:50070</name-node>
     </global>
-    ''') == tests.utils.xml_to_dict_unordered(actual)
+    ''') == tests.utils.xml_to_comparable_dict(actual)
 
     actual = tags.GlobalConfiguration(
         job_tracker='a_jobtracker',
@@ -303,7 +303,7 @@ def test_global_configuration():
         job_xml_files=['/user/${wf:user()}/job.xml'],
         configuration=configuration,
     ).xml(indent=True)
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <global>
         <job-tracker>a_jobtracker</job-tracker>
         <name-node>hdfs://localhost:50070</name-node>
@@ -315,7 +315,7 @@ def test_global_configuration():
             </property>
         </configuration>
     </global>
-    ''') == tests.utils.xml_to_dict_unordered(actual)
+    ''') == tests.utils.xml_to_comparable_dict(actual)
 
 
 def test_email():
@@ -324,13 +324,13 @@ def test_email():
         subject='Chains',
         body='Do you need more?',
     ).xml(indent=True)
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <email xmlns="uri:oozie:email-action:0.2">
         <to>mrt@example.com</to>
         <subject>Chains</subject>
         <body>Do you need more?</body>
     </email>
-    ''') == tests.utils.xml_to_dict_unordered(actual)
+    ''') == tests.utils.xml_to_comparable_dict(actual)
 
     actual = tags.Email(
         to='mrt@example.com',
@@ -341,7 +341,7 @@ def test_email():
         content_type='text/plain',
         attachments='/path/to/attachment/on/hdfs.txt',
     ).xml(indent=True)
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <email xmlns="uri:oozie:email-action:0.2">
         <to>mrt@example.com</to>
         <subject>Chains</subject>
@@ -351,7 +351,7 @@ def test_email():
         <content_type>text/plain</content_type>
         <attachment>/path/to/attachment/on/hdfs.txt</attachment>
     </email>
-    ''') == tests.utils.xml_to_dict_unordered(actual)
+    ''') == tests.utils.xml_to_comparable_dict(actual)
 
     actual = tags.Email(
         to=['mrt@example.com', 'b.a.baracus@example.com'],
@@ -363,7 +363,7 @@ def test_email():
         attachments=['/path/on/hdfs.txt',
                      '/another/path/on/hdfs.txt'],
     ).xml(indent=True)
-    assert tests.utils.xml_to_dict_unordered('''
+    assert tests.utils.xml_to_comparable_dict('''
     <email xmlns="uri:oozie:email-action:0.2">
         <to>b.a.baracus@example.com,mrt@example.com</to>
         <subject>Chains</subject>
@@ -373,7 +373,7 @@ def test_email():
         <content_type>text/plain</content_type>
         <attachment>/another/path/on/hdfs.txt,/path/on/hdfs.txt</attachment>
     </email>
-    ''') == tests.utils.xml_to_dict_unordered(actual)
+    ''') == tests.utils.xml_to_comparable_dict(actual)
 
 
 def parse_datetime(string):
@@ -382,12 +382,12 @@ def parse_datetime(string):
 
 def test_minimal_coordinator(minimal_coordinator_options):
     actual_xml = tags.CoordinatorApp(**minimal_coordinator_options).xml(indent=True)
-    actual_dict = tests.utils.xml_to_dict_unordered(actual_xml)
+    actual_dict = tests.utils.xml_to_comparable_dict(actual_xml)
 
     expected_xml = None
     with open('tests/data/minimal_coordinator.xml', 'r') as fh:
         expected_xml = fh.read()
-    expected_dict = tests.utils.xml_to_dict_unordered(expected_xml)
+    expected_dict = tests.utils.xml_to_comparable_dict(expected_xml)
 
     assert actual_dict == expected_dict
 
@@ -409,12 +409,12 @@ def test_full_coordinator(minimal_coordinator_options):
     })
 
     actual_xml = tags.CoordinatorApp(**minimal_coordinator_options).xml(indent=True)
-    actual_dict = tests.utils.xml_to_dict_unordered(actual_xml)
+    actual_dict = tests.utils.xml_to_comparable_dict(actual_xml)
 
     expected_xml = None
     with open('tests/data/full_coordinator.xml', 'r') as fh:
         expected_xml = fh.read()
-    expected_dict = tests.utils.xml_to_dict_unordered(expected_xml)
+    expected_dict = tests.utils.xml_to_comparable_dict(expected_xml)
 
     assert actual_dict == expected_dict
 
@@ -457,8 +457,8 @@ def test_workflow_app():
     )
 
     actual_xml = workflow_app.xml(indent=True)
-    actual_dict = tests.utils.xml_to_dict_unordered(actual_xml)
-    expected_dict = tests.utils.xml_to_dict_unordered("""
+    actual_dict = tests.utils.xml_to_comparable_dict(actual_xml)
+    expected_dict = tests.utils.xml_to_comparable_dict("""
 <workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
     <parameters>
         <property>

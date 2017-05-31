@@ -34,8 +34,8 @@ def valid_workflow():
 """.strip()
 
 
-def test_xml_to_dict_unordered():
-    document_dict = tests.utils.xml_to_dict_unordered("""
+def test_xml_to_comparable_dict():
+    document_dict = tests.utils.xml_to_comparable_dict("""
 <root>
   <tag />
   <tag key="value" />
