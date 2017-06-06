@@ -56,11 +56,11 @@ def test_xml_to_comparable_dict():
     assert document_dict == {
         'root': {
             'tag': [
+                'Text',
                 None,
                 {'#text': 'Text', '@different-key': 'different-value'},
                 {'#text': 'Text', '@key': 'value'},
-                {'@key': 'value'},
-                'Text'
+                {'@key': 'value'}
             ],
             'fork': {
                 '@name': 'fork-name',
