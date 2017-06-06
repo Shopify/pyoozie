@@ -13,16 +13,16 @@ import xmltodict
 
 
 def xml_to_comparable_dict(xml):
-    
+
     def _sort_key(value):
         """Recursively sort lists embedded within dicts."""
         if hasattr(value, 'items'):
-            return repr(sorted([(k, _sort_key(v)) for k, v in value.items()]))
+            return six.text_type(sorted([(k, _sort_key(v)) for k, v in value.items()]))
         elif isinstance(value, (tuple, set, list)):
-            return repr(sorted(value, key=_sort_key))
+            return six.text_type(sorted(value, key=_sort_key))
         else:
-            return repr(value)
-        
+            return six.text_type(value)
+
     def _unorder(value):
         """Convert from a `collections.OrderedDict` to a `dict` with predictably sorted lists."""
         if hasattr(value, 'items'):
@@ -31,6 +31,7 @@ def xml_to_comparable_dict(xml):
             return sorted(tuple(_unorder(v) for v in value), key=_sort_key)
         else:
             return value
+
     return _unorder(xmltodict.parse(xml))
 
 

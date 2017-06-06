@@ -41,7 +41,7 @@ def test_xml_to_comparable_dict():
   <!-- Various tag forms -->
   <tag />
   <tag key="value" />
-  <tag>Text</tag>
+  <tag>Text 🤣</tag>
   <tag key="value">Text</tag>
   <tag different-key="different-value"> Text </tag>
 
@@ -56,11 +56,11 @@ def test_xml_to_comparable_dict():
     assert document_dict == {
         'root': {
             'tag': [
-                'Text',
                 None,
+                'Text 🤣',
                 {'#text': 'Text', '@different-key': 'different-value'},
                 {'#text': 'Text', '@key': 'value'},
-                {'@key': 'value'}
+                {'@key': 'value'},
             ],
             'fork': {
                 '@name': 'fork-name',
