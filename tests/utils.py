@@ -13,14 +13,26 @@ import xmltodict
 
 
 def xml_to_comparable_dict(xml):
-    def unorder(value):
+
+    def _sort_key(value):
+        """Recursively sort lists embedded within dicts."""
         if hasattr(value, 'items'):
-            return {k: unorder(v) for k, v in value.items()}
+            return six.text_type(sorted([(k, _sort_key(v)) for k, v in value.items()]))
         elif isinstance(value, (tuple, set, list)):
-            return sorted([unorder(v) for v in value], key=lambda v: str(sorted(v) if v is not None else v))
+            return six.text_type(sorted(value, key=_sort_key))
+        else:
+            return six.text_type(value)
+
+    def _unorder(value):
+        """Convert from a `collections.OrderedDict` to a `dict` with predictably sorted lists."""
+        if hasattr(value, 'items'):
+            return {k: _unorder(v) for k, v in value.items()}
+        elif isinstance(value, (tuple, set, list)):
+            return sorted(tuple(_unorder(v) for v in value), key=_sort_key)
         else:
             return value
-    return unorder(xmltodict.parse(xml))
+
+    return _unorder(xmltodict.parse(xml))
 
 
 NAMESPACE_ATTRIBUTE = re.compile(r' xmlns:?[a-z0-9]*="[^"]+"', flags=re.UNICODE)

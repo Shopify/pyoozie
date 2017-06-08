@@ -37,22 +37,38 @@ def valid_workflow():
 def test_xml_to_comparable_dict():
     document_dict = tests.utils.xml_to_comparable_dict("""
 <root>
+
+  <!-- Various tag forms -->
   <tag />
   <tag key="value" />
-  <tag>Text</tag>
+  <tag>Text 🤣</tag>
   <tag key="value">Text</tag>
   <tag different-key="different-value"> Text </tag>
+
+  <!-- Nested dicts -->
+  <fork name="fork-name">
+    <path start="path-1" />
+    <path start="path-2" />
+  </fork>
+
 </root>
     """.strip())
     assert document_dict == {
         'root': {
             'tag': [
                 None,
+                'Text 🤣',
                 {'#text': 'Text', '@different-key': 'different-value'},
                 {'#text': 'Text', '@key': 'value'},
                 {'@key': 'value'},
-                'Text',
-            ]
+            ],
+            'fork': {
+                '@name': 'fork-name',
+                'path': [
+                    {'@start': 'path-1'},
+                    {'@start': 'path-2'}
+                ]
+            }
         }
     }
 
