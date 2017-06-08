@@ -66,6 +66,7 @@ __all__ = (
     'Configuration',
     'CoordinatorApp',
     'Credential',
+    'Decision',
     'Email',
     'ExecutionOrder',
     'EXEC_FIFO',
