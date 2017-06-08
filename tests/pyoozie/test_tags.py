@@ -2,6 +2,7 @@
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
+from __future__ import print_function
 
 import datetime
 import decimal
@@ -11,6 +12,9 @@ import six
 import tests.utils
 
 from pyoozie import tags
+
+
+pytestmark = pytest.mark.usefixtures("fake_uuid4")  # pylint: disable=global-variable
 
 
 @pytest.fixture
@@ -442,7 +446,23 @@ def test_coordinator_end_before_start(minimal_coordinator_options):
         'End time (2014-12-22T10:56Z) must be greater than the start time (2015-01-01T10:56Z)'
 
 
-def test_workflow_app():
+def assert_workflow(request, workflow_app, expected_xml=None):
+    # What does this doc look like?
+    actual_xml = workflow_app.xml(indent=True)
+    if request.config.getoption('verbose') > 2:
+        print(actual_xml.decode('utf-8'))
+
+    # Is this a valid XML doc?
+    tests.utils.assert_valid_workflow(actual_xml)
+
+    # Is this the doc that we expect?
+    if expected_xml:
+        actual_dict = tests.utils.xml_to_comparable_dict(actual_xml)
+        expected_dict = tests.utils.xml_to_comparable_dict(expected_xml)
+        assert expected_dict == actual_dict
+
+
+def test_workflow_app(request):
     workflow_app = tags.WorkflowApp(
         name='descriptive-name',
         parameters={'property_key': 'property_value'},
@@ -455,10 +475,7 @@ def test_workflow_app():
         name_node='name-node',
         job_xml_files=['/user/${wf:user()}/job.xml'],
     )
-
-    actual_xml = workflow_app.xml(indent=True)
-    actual_dict = tests.utils.xml_to_comparable_dict(actual_xml)
-    expected_dict = tests.utils.xml_to_comparable_dict("""
+    assert_workflow(request, workflow_app, """
 <workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
     <parameters>
         <property>
@@ -489,5 +506,413 @@ def test_workflow_app():
     <end name="end" />
 </workflow-app>
 """)
-    assert expected_dict == actual_dict
-    tests.utils.assert_valid_workflow(actual_xml)
+
+
+def test_workflow_action(request):
+    actions = tags.Action(
+        name='action-name',
+        action=tags.Shell(exec_command='echo', arguments=['build']),
+        credential='my-hcat-creds',
+        retry_max=10,
+        retry_interval=20,
+        on_error=tags.Kill(name='error', message='A bad thing happened'),
+    )
+    assert len(set(actions)) == 2
+
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        credentials=[tags.Credential(
+            {'cred_name': 'cred_value'},
+            credential_name='my-hcat-creds',
+            credential_type='hcat')],
+        actions=actions
+    )
+    assert_workflow(request, workflow_app, """
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+    <global>
+        <job-tracker>job-tracker</job-tracker>
+        <name-node>name-node</name-node>
+    </global>
+    <credentials>
+        <credential type="hcat" name="my-hcat-creds">
+            <property>
+                <name>cred_name</name>
+                <value>cred_value</value>
+            </property>
+        </credential>
+    </credentials>
+    <start to="action-action-name" />
+    <action retry-max="10" cred="my-hcat-creds" name="action-action-name" retry-interval="20">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>build</argument>
+        </shell>
+        <ok to="end" />
+        <error to="kill-error" />
+    </action>
+    <kill name="kill-error">
+        <message>A bad thing happened</message>
+    </kill>
+    <end name="end" />
+</workflow-app>
+""")
+
+
+def test_workflow_action_without_credential():
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.WorkflowApp(
+            name='descriptive-name',
+            job_tracker='job-tracker',
+            name_node='name-node',
+            actions=tags.Action(
+                name='action-name',
+                action=tags.Shell(exec_command='echo', arguments=['build']),
+                credential='my-hcat-creds',
+                retry_max=10,
+                retry_interval=20,
+            )
+        )
+    assert str(assertion_info.value) == str('Missing credentials: my-hcat-creds')
+
+
+def test_workflow_with_reused_identifier():
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.WorkflowApp(
+            name='descriptive-name',
+            job_tracker='job-tracker',
+            name_node='name-node',
+            actions=tags.Serial(
+                tags.Action(name='build', action=tags.Shell(exec_command='echo', arguments=['build'])),
+                tags.Action(name='resolve', action=tags.Shell(exec_command='echo', arguments=['resolve'])),
+                on_error=tags.Serial(
+                    tags.Action(name='build', action=tags.Shell(exec_command='echo', arguments=['error'])),
+                    tags.Kill('A bad thing happened')
+                )
+            )
+        )
+    assert str(assertion_info.value) == 'Name(s) reused: action-build'
+
+
+def test_workflow_app_serial_actions(request):
+    actions = tags.Serial(
+        tags.Action(tags.Shell(exec_command='echo', arguments=['build'])),
+        tags.Action(tags.Shell(exec_command='echo', arguments=['resolve'])),
+        on_error=tags.Serial(
+            tags.Action(tags.Shell(exec_command='echo', arguments=['error'])),
+            tags.Kill('A bad thing happened')
+        )
+    )
+    assert len(set(actions)) == 6
+
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        actions=actions
+    )
+    assert_workflow(request, workflow_app, """
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+    <global>
+        <job-tracker>job-tracker</job-tracker>
+        <name-node>name-node</name-node>
+    </global>
+    <start to="action-00000000" />
+    <action name="action-00000002">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>error</argument>
+        </shell>
+        <ok to="kill-00000003" />
+        <error to="end" />
+    </action>
+    <kill name="kill-00000003">
+        <message>A bad thing happened</message>
+    </kill>
+    <action name="action-00000000">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>build</argument>
+        </shell>
+        <ok to="action-00000001" />
+        <error to="action-00000002" />
+    </action>
+    <action name="action-00000001">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>resolve</argument>
+        </shell>
+        <ok to="end" />
+        <error to="action-00000002" />
+    </action>
+    <end name="end" />
+</workflow-app>
+""")
+
+
+def test_workflow_app_parallel_actions(request):
+    actions = tags.Parallel(
+        tags.Action(tags.Shell(exec_command='echo', arguments=['build'])),
+        tags.Action(tags.Shell(exec_command='echo', arguments=['resolve'])),
+        on_error=tags.Serial(
+            tags.Action(tags.Shell(exec_command='echo', arguments=['error'])),
+            tags.Kill('A bad thing happened')
+        )
+    )
+    assert len(set(actions)) == 6
+
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        actions=actions
+    )
+    assert_workflow(request, workflow_app, """
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+    <global>
+        <job-tracker>job-tracker</job-tracker>
+        <name-node>name-node</name-node>
+    </global>
+    <start to="fork-00000005" />
+    <action name="action-00000002">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>error</argument>
+        </shell>
+        <ok to="kill-00000003" />
+        <error to="end" />
+    </action>
+    <kill name="kill-00000003">
+        <message>A bad thing happened</message>
+    </kill>
+    <fork name="fork-00000005">
+        <path start="action-00000000" />
+        <path start="action-00000001" />
+    </fork>
+    <action name="action-00000000">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>build</argument>
+        </shell>
+        <ok to="join-00000005" />
+        <error to="action-00000002" />
+    </action>
+    <action name="action-00000001">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>resolve</argument>
+        </shell>
+        <ok to="join-00000005" />
+        <error to="action-00000002" />
+    </action>
+    <join name="join-00000005" to="end" />
+    <end name="end" />
+</workflow-app>
+""")
+
+
+def test_workflow_app_decision_actions(request):
+    actions = tags.Decision(
+        default=tags.Action(tags.Shell(exec_command='echo', arguments=['default'])),
+        choices={
+            '${wf:lastErrorNode() eq null}': tags.Action(
+                tags.Shell(exec_command='echo', arguments=['"No last error node"'])),
+        },
+        on_error=tags.Serial(
+            tags.Action(tags.Shell(exec_command='echo', arguments=['error'])),
+            tags.Kill('A bad thing happened')
+        )
+    )
+    assert len(set(actions)) == 6
+
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        actions=actions
+    )
+    assert_workflow(request, workflow_app, """
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+    <global>
+        <job-tracker>job-tracker</job-tracker>
+        <name-node>name-node</name-node>
+    </global>
+    <start to="decision-00000005" />
+    <action name="action-00000002">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>error</argument>
+        </shell>
+        <ok to="kill-00000003" />
+        <error to="end" />
+    </action>
+    <kill name="kill-00000003">
+        <message>A bad thing happened</message>
+    </kill>
+    <decision name="decision-00000005">
+        <switch>
+            <case to="action-00000001">${wf:lastErrorNode() eq null}</case>
+            <default to="action-00000000" />
+        </switch>
+    </decision>
+    <action name="action-00000000">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>default</argument>
+        </shell>
+        <ok to="end" />
+        <error to="action-00000002" />
+    </action>
+    <action name="action-00000001">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>"No last error node"</argument>
+        </shell>
+        <ok to="end" />
+        <error to="action-00000002" />
+    </action>
+    <end name="end" />
+</workflow-app>
+""")
+
+
+def test_workflow_app_inherit_parent_error(request):
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        actions=tags.Serial(
+            tags.Parallel(
+                tags.Action(name='build_a', action=tags.Shell(exec_command='echo', arguments=['build_a'])),
+                tags.Action(name='build_b', action=tags.Shell(exec_command='echo', arguments=['build_b'])),
+                name='builders'
+            ),
+            tags.Parallel(
+                tags.Action(name='resolve_a', action=tags.Shell(exec_command='echo', arguments=['resolve_a'])),
+                tags.Action(name='resolve_b', action=tags.Shell(exec_command='echo', arguments=['resolve_b'])),
+                name='resolvers'
+            ),
+            on_error=tags.Serial(
+                tags.Action(name='error', action=tags.Shell(exec_command='echo', arguments=['error'])),
+                tags.Kill(name='error', message='A bad thing happened')
+            )
+        )
+    )
+
+    assert_workflow(request, workflow_app)
+
+    app = tests.utils.ParsedXml(workflow_app.xml())
+    app.assert_node("/action[@name='action-build_a']/error", to='action-error')
+    app.assert_node("/action[@name='action-build_b']/error", to='action-error')
+    app.assert_node("/action[@name='action-resolve_a']/error", to='action-error')
+    app.assert_node("/action[@name='action-resolve_a']/error", to='action-error')
+    app.assert_node("/action[@name='action-error']/error", to='end')
+    app.assert_node("/action[@name='action-error']/ok", to='kill-error')
+
+
+def test_workflow_app_checkpointing(request):
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        actions=tags.Serial(
+            tags.Parallel(
+                tags.Action(
+                    name='subworkflow',
+                    action=tags.SubWorkflow(
+                        app_path='/user/oozie/workflows/other-descriptive-flow-name/workflow.xml',
+                        propagate_configuration=True,
+                    ),
+                    on_error=tags.Action(
+                        name='subworkflow-error',
+                        action=tags.Shell(exec_command='echo', arguments=['"subworkflow error"']),
+                        on_error=tags.Kill(name='subworkflow-error', message='Error notification failed')
+                    ),
+                ),
+                tags.Serial(
+                    tags.Action(name='build', action=tags.Shell(exec_command='echo', arguments=['build'])),
+                    tags.Action(
+                        name='load-build',
+                        action=tags.Shell(exec_command='echo', arguments=['load-build'])),
+                    on_error=tags.Action(
+                        name='build-error',
+                        action=tags.Shell(exec_command='echo', arguments=['"build error"']),
+                        on_error=tags.Kill(name='build-error', message='Error notification failed')
+                    ),
+                ),
+                name='action'
+            ),
+            tags.Decision(
+                default=tags.Serial(
+                    tags.Action(
+                        name='parallel-error',
+                        action=tags.Shell(exec_command='echo', arguments=['"parallel error"']),
+                    ),
+                    tags.Kill(name='parallel-error', message='"A parallel action failed, not continuing"'),
+                    on_error=tags.Kill(name='parallel-error-error', message='"Notifaction failed"')
+                ),
+                choices={
+                    '${wf:lastErrorNode() eq null}': tags.Serial(
+                        tags.Action(name='resolve', action=tags.Shell(exec_command='echo', arguments=['resolve'])),
+                        tags.Action(
+                            name='load-resolve',
+                            action=tags.Shell(exec_command='echo', arguments=['load-resolve']),
+                        ),
+                        on_error=tags.Serial(
+                            tags.Action(
+                                name='resolve-error',
+                                action=tags.Shell(exec_command='echo', arguments=['"resolve error"'])
+                            ),
+                            tags.Kill(name='resolve-error', message='Resolve failed'),
+                            on_error=tags.Kill(name='resolve-error-error', message='"Notifaction failed"')
+                        )
+                    )
+                },
+                name='success-test'
+            )
+        )
+    )
+
+    # Is this a valid workflow?
+    assert_workflow(request, workflow_app)
+
+    app = tests.utils.ParsedXml(workflow_app.xml())
+
+    # Start with a fork
+    app.assert_node("/start", to='fork-action')
+    app.assert_node("/fork[@name='fork-action']/path[@start='action-subworkflow']")
+    app.assert_node("/fork[@name='fork-action']/path[@start='action-build']")
+
+    # Within the fork, on an error we should notify and then end at a join (unless notification fails)
+    app.assert_node("/action[@name='action-subworkflow']/error", to='action-subworkflow-error')
+    app.assert_node("/action[@name='action-subworkflow-error']/ok", to='join-action')
+    app.assert_node("/action[@name='action-subworkflow-error']/error", to='kill-subworkflow-error')
+
+    app.assert_node("/action[@name='action-build']/error", to='action-build-error')
+    app.assert_node("/action[@name='action-load-build']/error", to='action-build-error')
+    app.assert_node("/action[@name='action-build-error']/ok", to='join-action')
+    app.assert_node("/action[@name='action-build-error']/error", to='kill-build-error')
+
+    # If everything is OK, continue to the join
+    app.assert_node("/action[@name='action-subworkflow']/ok", to='join-action')
+    app.assert_node("/action[@name='action-build']/ok", to='action-load-build')
+    app.assert_node("/action[@name='action-load-build']/ok", to='join-action')
+
+    # After the join, we have a decision to make...
+    app.assert_node("/join[@name='join-action']", to='decision-success-test')
+
+    # Decide whether a previous action failed or not (if so, kill the flow)
+    app.assert_node("/decision[@name='decision-success-test']/switch/case", to='action-resolve')
+    app.assert_node("/decision[@name='decision-success-test']/switch/default", to='action-parallel-error')
+    app.assert_node("/action[@name='action-parallel-error']/ok", to='kill-parallel-error')
+    app.assert_node("/action[@name='action-parallel-error']/error", to='kill-parallel-error-error')
+
+    # Resolve
+    app.assert_node("/action[@name='action-resolve']/ok", to='action-load-resolve')
+    app.assert_node("/action[@name='action-load-resolve']/ok", to='end')
+
+    # If the resolve has a problem, abort
+    app.assert_node("/action[@name='action-resolve']/error", to='action-resolve-error')
+    app.assert_node("/action[@name='action-resolve-error']/ok", to='kill-resolve-error')
+    app.assert_node("/action[@name='action-resolve-error']/error", to='kill-resolve-error-error')
