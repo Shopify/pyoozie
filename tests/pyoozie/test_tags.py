@@ -509,12 +509,45 @@ def test_workflow_action(request):
     actions = tags.Action(
         name='action-name',
         action=tags.Shell(exec_command='echo', arguments=['build']),
+    )
+    assert len(set(actions)) == 1
+    assert bool(actions)
+
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        actions=actions
+    )
+    assert_workflow(request, workflow_app, """
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+    <global>
+        <job-tracker>job-tracker</job-tracker>
+        <name-node>name-node</name-node>
+    </global>
+    <start to="action-action-name" />
+    <action name="action-action-name">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>build</argument>
+        </shell>
+        <ok to="end" />
+        <error to="end" />
+    </action>
+    <end name="end" />
+</workflow-app>
+""")
+
+    actions = tags.Action(
+        name='action-name',
+        action=tags.Shell(exec_command='echo', arguments=['build']),
         credential='my-hcat-creds',
         retry_max=10,
         retry_interval=20,
         on_error=tags.Kill(name='error', message='A bad thing happened'),
     )
     assert len(set(actions)) == 2
+    assert bool(actions)
 
     workflow_app = tags.WorkflowApp(
         name='descriptive-name',

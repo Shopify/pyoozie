@@ -547,6 +547,12 @@ class _WorkflowEntity(typing.Iterable):
             for action in self.__on_error:
                 yield action
 
+    def __bool__(self):  # type: () -> bool
+        return bool(list(self))
+
+    def __nonzero__(self):  # type: () -> bool
+        return self.__bool__()
+
     def __repr__(self):
         # type: () -> str
         return str('{_class}({identifier})'.format(_class=type(self).__name__, identifier=self.identifier()))
