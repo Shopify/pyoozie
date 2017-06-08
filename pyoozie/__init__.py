@@ -60,6 +60,7 @@ __all__ = (
     'parse_workflow_id',
 
     # tags
+    'Action',
     'Configuration',
     'CoordinatorApp',
     'Credential',
@@ -70,9 +71,11 @@ __all__ = (
     'EXEC_LIFO',
     'EXEC_NONE',
     'GlobalConfiguration',
+    'Kill',
     'Parameters',
     'Shell',
     'SubWorkflow',
     'validate_xml_id',
     'validate_xml_name',
+    'WorkflowApp'
 )
