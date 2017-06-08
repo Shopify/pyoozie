@@ -528,6 +528,7 @@ class _WorkflowEntity(typing.Iterable):
         return self.__identifier
 
     def _xml_and_get_on_error(self, doc, tag, text, on_next, on_error):
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
         if self.__on_error:
             self.__on_error._xml(doc, tag, text, on_next, on_error)
         return self.__on_error.identifier() if self.__on_error else (
@@ -540,13 +541,15 @@ class _WorkflowEntity(typing.Iterable):
         raise NotImplementedError()
 
     def __iter__(self):
+        # type: () -> typing.Generator[_WorkflowEntity, None, None]
         yield self
         if self.__on_error:
             for action in self.__on_error:
                 yield action
 
     def __repr__(self):
-        return '{_class}({identifier})'.format(_class=type(self).__name__, identifier=self.identifier())
+        # type: () -> str
+        return str('{_class}({identifier})'.format(_class=type(self).__name__, identifier=self.identifier()))
 
 
 class Kill(_WorkflowEntity):
@@ -590,6 +593,7 @@ class Action(_WorkflowEntity):
         self.__retry_interval = retry_interval
 
     def credential(self):
+        # type: () -> typing.Optional[typing.Text]
         return self.__credential
 
     def _xml(self, doc, tag, text, on_next, on_error):
@@ -642,8 +646,7 @@ class WorkflowApp(XMLSerializable):
         self.__actions = actions
         self.__validate()
 
-    def __validate(self):
-        # Parse actions for attributes
+    def __validate(self):  # type () -> None
         action_identifiers = []
         credentials_needed = set()
 
@@ -654,6 +657,7 @@ class WorkflowApp(XMLSerializable):
                 if credential:
                     credentials_needed.add(credential)
 
+        # Parse actions for attributes
         if self.__actions:
             for action in set(self.__actions):
                 _parse_action(action)
@@ -670,6 +674,7 @@ class WorkflowApp(XMLSerializable):
         assert not duplicate_identifiers, 'Name(s) reused: %s' % ', '.join(sorted(duplicate_identifiers))
 
     def _xml(self, doc, tag, text):
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text) -> yattag.doc.Doc
         with tag(self.xml_tag, name=self.__name, xmlns="uri:oozie:workflow:0.5"):
 
             # Preamble
