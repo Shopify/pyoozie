@@ -647,7 +647,7 @@ class Serial(_WorkflowEntity):
         for action in self.__actions:
             yield action
         for action in super(Serial, self).__iter__():
-            if action is not self:
+            if action is not self:  # Don't return self because this collection doesn't result in a node
                 yield action
 
 
@@ -689,8 +689,7 @@ class Parallel(_WorkflowEntity):
         for action in self.__actions:
             yield action
         for action in super(Parallel, self).__iter__():
-            if action is not self:
-                yield action
+            yield action
 
 
 class WorkflowApp(XMLSerializable):

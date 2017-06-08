@@ -748,7 +748,7 @@ def test_workflow_app_parallel_actions(request):
             tags.Kill('A bad thing happened')
         )
     )
-    assert len(set(actions)) == 4
+    assert len(set(actions)) == 5
     assert bool(actions)
 
     workflow_app = tags.WorkflowApp(
