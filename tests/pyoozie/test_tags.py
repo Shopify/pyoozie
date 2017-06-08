@@ -667,7 +667,15 @@ def test_workflow_with_reused_identifier():
     assert str(assertion_info.value) == 'Name(s) reused: action-build'
 
 
+
+def test_workflow_app_empty_serial_actions():
+    # Empty collections should act empty
+    assert len(set(tags.Serial())) == 0
+    assert not bool(tags.Serial())
+
+
 def test_workflow_app_serial_actions(request):
+    # Create a serial collection of actions with a serial collection as an error condition
     actions = tags.Serial(
         tags.Action(tags.Shell(exec_command='echo', arguments=['build'])),
         tags.Action(tags.Shell(exec_command='echo', arguments=['resolve'])),
@@ -676,7 +684,8 @@ def test_workflow_app_serial_actions(request):
             tags.Kill('A bad thing happened')
         )
     )
-    assert len(set(actions)) == 6
+    assert len(set(actions)) == 4
+    assert bool(actions)
 
     workflow_app = tags.WorkflowApp(
         name='descriptive-name',
@@ -723,7 +732,15 @@ def test_workflow_app_serial_actions(request):
 """)
 
 
+def test_workflow_app_empty_parallel_actions(request):
+    # Cannot create an empty parallel collection
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.Parallel()
+    assert str(assertion_info.value) == 'At least 1 action required'
+
+
 def test_workflow_app_parallel_actions(request):
+    # Create a simple parallel collection
     actions = tags.Parallel(
         tags.Action(tags.Shell(exec_command='echo', arguments=['build'])),
         tags.Action(tags.Shell(exec_command='echo', arguments=['resolve'])),
@@ -732,7 +749,8 @@ def test_workflow_app_parallel_actions(request):
             tags.Kill('A bad thing happened')
         )
     )
-    assert len(set(actions)) == 6
+    assert len(set(actions)) == 4
+    assert bool(actions)
 
     workflow_app = tags.WorkflowApp(
         name='descriptive-name',

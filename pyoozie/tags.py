@@ -647,13 +647,8 @@ class Serial(_WorkflowEntity):
         for action in self.__actions:
             yield action
         for action in super(Serial, self).__iter__():
-            yield action
-
-    def __bool__(self):  # type: () -> bool
-        return bool(self.__actions)
-
-    def __nonzero__(self):  # type: () -> bool
-        return self.__bool__()
+            if action is not self:
+                yield action
 
 
 class Parallel(_WorkflowEntity):
@@ -694,13 +689,8 @@ class Parallel(_WorkflowEntity):
         for action in self.__actions:
             yield action
         for action in super(Parallel, self).__iter__():
-            yield action
-
-    def __bool__(self):  # type: () -> bool
-        return bool(self.__actions)
-
-    def __nonzero__(self):  # type: () -> bool
-        return self.__bool__()
+            if action is not self:
+                yield action
 
 
 class WorkflowApp(XMLSerializable):
