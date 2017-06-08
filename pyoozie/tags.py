@@ -628,7 +628,7 @@ class Serial(_WorkflowEntity):
         super(Serial, self).__init__(xml_tag=None, on_error=kwargs.get(str('on_error')))
         self.__actions = tuple(copy.deepcopy(actions))  # type: typing.Tuple[_WorkflowEntity, ...]
 
-    def identifier(self):
+    def identifier(self):  # type: () -> typing.Text
         return self.__actions[0].identifier() if self.__actions else None
 
     def _xml(self, doc, tag, text, on_next, on_error):
@@ -643,15 +643,16 @@ class Serial(_WorkflowEntity):
         return doc
 
     def __iter__(self):
+        # type: () -> typing.Generator[_WorkflowEntity, None, None]
         for action in self.__actions:
             yield action
         for action in super(Serial, self).__iter__():
             yield action
 
-    def __bool__(self):
+    def __bool__(self):  # type: () -> bool
         return bool(self.__actions)
 
-    def __nonzero__(self):
+    def __nonzero__(self):  # type: () -> bool
         return self.__bool__()
 
 
@@ -674,7 +675,7 @@ class Parallel(_WorkflowEntity):
         self.__fork_identifier = self.create_identifier('fork')
         self.__join_identifier = self.create_identifier('join')
 
-    def identifier(self):
+    def identifier(self):  # type: () -> typing.Text
         return self.__fork_identifier
 
     def _xml(self, doc, tag, text, on_next, on_error):
@@ -689,15 +690,16 @@ class Parallel(_WorkflowEntity):
         return doc
 
     def __iter__(self):
+        # type: () -> typing.Generator[_WorkflowEntity, None, None]
         for action in self.__actions:
             yield action
         for action in super(Parallel, self).__iter__():
             yield action
 
-    def __bool__(self):
+    def __bool__(self):  # type: () -> bool
         return bool(self.__actions)
 
-    def __nonzero__(self):
+    def __nonzero__(self):  # type: () -> bool
         return self.__bool__()
 
 
