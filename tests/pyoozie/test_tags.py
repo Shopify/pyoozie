@@ -833,3 +833,94 @@ def test_workflow_app_inherit_parent_error(request):
     app.assert_node("/action[@name='action-resolve_a']/error", to='action-error')
     app.assert_node("/action[@name='action-error']/error", to='end')
     app.assert_node("/action[@name='action-error']/ok", to='kill-error')
+
+
+def test_workflow_app_empty_decision_actions():
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.Decision(
+            default=None,
+            choices={
+                '${wf:lastErrorNode() eq null}': tags.Action(
+                    tags.Shell(exec_command='echo', arguments=['"arg"'])
+                ),
+            })
+    assert str(assertion_info.value) == 'A default must be supplied'
+
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.Decision(
+            default=tags.Shell(exec_command='echo', arguments=['"arg"']),
+            choices=None
+        )
+    assert str(assertion_info.value) == 'At least one choice required'
+
+    with pytest.raises(AssertionError) as assertion_info:
+        tags.Decision(
+            default=tags.Shell(exec_command='echo', arguments=['"arg"']),
+            choices={}
+        )
+    assert str(assertion_info.value) == 'At least one choice required'
+
+
+def test_workflow_app_decision_actions(request):
+    actions = tags.Decision(
+        default=tags.Action(tags.Shell(exec_command='echo', arguments=['default'])),
+        choices={
+            '${wf:lastErrorNode() eq null}': tags.Action(
+                tags.Shell(exec_command='echo', arguments=['"No last error node"'])),
+        },
+        on_error=tags.Serial(
+            tags.Action(tags.Shell(exec_command='echo', arguments=['error'])),
+            tags.Kill('A bad thing happened')
+        )
+    )
+    assert len(set(actions)) == 5
+
+    workflow_app = tags.WorkflowApp(
+        name='descriptive-name',
+        job_tracker='job-tracker',
+        name_node='name-node',
+        actions=actions
+    )
+    assert_workflow(request, workflow_app, """
+<workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
+    <global>
+        <job-tracker>job-tracker</job-tracker>
+        <name-node>name-node</name-node>
+    </global>
+    <start to="decision-00000005" />
+    <action name="action-00000002">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>error</argument>
+        </shell>
+        <ok to="kill-00000003" />
+        <error to="end" />
+    </action>
+    <kill name="kill-00000003">
+        <message>A bad thing happened</message>
+    </kill>
+    <decision name="decision-00000005">
+        <switch>
+            <case to="action-00000001">${wf:lastErrorNode() eq null}</case>
+            <default to="action-00000000" />
+        </switch>
+    </decision>
+    <action name="action-00000000">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>default</argument>
+        </shell>
+        <ok to="end" />
+        <error to="action-00000002" />
+    </action>
+    <action name="action-00000001">
+        <shell xmlns="uri:oozie:shell-action:0.3">
+            <exec>echo</exec>
+            <argument>"No last error node"</argument>
+        </shell>
+        <ok to="end" />
+        <error to="action-00000002" />
+    </action>
+    <end name="end" />
+</workflow-app>
+""")
