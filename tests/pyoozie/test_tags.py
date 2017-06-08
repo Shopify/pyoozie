@@ -667,7 +667,6 @@ def test_workflow_with_reused_identifier():
     assert str(assertion_info.value) == 'Name(s) reused: action-build'
 
 
-
 def test_workflow_app_empty_serial_actions():
     # Empty collections should act empty
     assert len(set(tags.Serial())) == 0
@@ -732,7 +731,7 @@ def test_workflow_app_serial_actions(request):
 """)
 
 
-def test_workflow_app_empty_parallel_actions(request):
+def test_workflow_app_empty_parallel_actions():
     # Cannot create an empty parallel collection
     with pytest.raises(AssertionError) as assertion_info:
         tags.Parallel()
