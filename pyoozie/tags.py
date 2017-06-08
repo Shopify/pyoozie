@@ -553,8 +553,7 @@ class _WorkflowEntity(typing.Iterable):
     def __nonzero__(self):  # type: () -> bool
         return self.__bool__()
 
-    def __repr__(self):
-        # type: () -> str
+    def __repr__(self):  # type: () -> str
         return str('{_class}({identifier})'.format(_class=type(self).__name__, identifier=self.identifier()))
 
 
