@@ -3,6 +3,7 @@
 from __future__ import unicode_literals
 import abc
 import collections
+import copy
 import datetime
 import re
 import string  # pylint: disable=deprecated-module
@@ -510,7 +511,7 @@ class _WorkflowEntity(typing.Iterable):
         # type: (...) -> None
         self.xml_tag = xml_tag
         self.__name = name
-        self.__on_error = on_error
+        self.__on_error = copy.deepcopy(on_error)
         self.__uid = uuid.uuid4().hex[:8]
         self.__identifier = self.create_identifier(xml_tag)
 
@@ -648,7 +649,7 @@ class WorkflowApp(XMLSerializable):
             configuration=configuration
         )
         self.__credentials = credentials or []
-        self.__actions = actions
+        self.__actions = copy.deepcopy(actions)
         self.__validate()
 
     def __validate(self):  # type () -> None
