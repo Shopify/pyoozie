@@ -636,8 +636,8 @@ class Decision(_AbstractWorkflowEntity):
         super(Decision, self).__init__(xml_tag='decision', name=name, on_error=on_error)
         assert default, 'A default must be supplied'
         assert choices, 'At least one choice required'
-        self.__default = default
-        self.__choices = choices
+        self.__default = copy.deepcopy(default)
+        self.__choices = copy.deepcopy(choices)
 
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
