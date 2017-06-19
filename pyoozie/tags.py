@@ -510,19 +510,11 @@ class _WorkflowEntity(typing.Iterable):
     ):
         # type: (...) -> None
         self.xml_tag = xml_tag
-        self.__name = name
         self.__on_error = copy.deepcopy(on_error)
-        self.__uid = uuid.uuid4().hex[:8]
-        self.__identifier = self.create_identifier(xml_tag)
-
-    def create_identifier(self, xml_tag):
-        # type: (typing.Text) -> typing.Text
-        identifier = None
-        if self.__name:
-            identifier = '{tag}-{name}'.format(tag=xml_tag, name=self.__name)
+        if name:
+            self.__identifier = '{tag}-{name}'.format(tag=xml_tag, name=name)
         else:
-            identifier = '{tag}-{uid}'.format(tag=xml_tag, uid=self.__uid)
-        return validate_xml_id(identifier)
+            self.__identifier = '{tag}-{uid}'.format(tag=xml_tag, uid=uuid.uuid4().hex[:8])
 
     def identifier(self):
         # type: () -> typing.Text
