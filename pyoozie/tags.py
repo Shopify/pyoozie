@@ -640,8 +640,8 @@ class WorkflowApp(XMLSerializable):
             job_xml_files=job_xml_files,
             configuration=configuration
         )
-        self.__credentials = credentials or []
-        self.__actions = copy.deepcopy(actions)
+        self.__credentials = copy.deepcopy(credentials) or []
+        self.__actions = copy.deepcopy(actions) or []
         self.__validate()
 
     def __validate(self):  # type () -> None
