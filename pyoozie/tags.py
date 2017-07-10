@@ -496,7 +496,7 @@ class CoordinatorApp(XMLSerializable):
         return doc
 
 
-class _WorkflowEntity(typing.Iterable):
+class _AbstractWorkflowEntity(typing.Iterable):
     """An abstract object representing an Oozie workflow action that can be serialized to XML."""
     # pylint: disable=abstract-method
 
@@ -506,7 +506,7 @@ class _WorkflowEntity(typing.Iterable):
             self,
             xml_tag,       # typing.Text
             name=None,     # type: typing.Optional[typing.Text]
-            on_error=None  # type: typing.Optional[_WorkflowEntity]
+            on_error=None  # type: typing.Optional[_AbstractWorkflowEntity]
     ):
         # type: (...) -> None
         self.__xml_tag = xml_tag
@@ -538,7 +538,7 @@ class _WorkflowEntity(typing.Iterable):
         raise NotImplementedError()
 
     def __iter__(self):
-        # type: () -> typing.Generator[_WorkflowEntity, None, None]
+        # type: () -> typing.Generator[_AbstractWorkflowEntity, None, None]
         yield self
         if self.__on_error:
             for action in self.__on_error:
@@ -554,7 +554,7 @@ class _WorkflowEntity(typing.Iterable):
         return str('<{_class}({identifier})>'.format(_class=type(self).__name__, identifier=self.identifier()))
 
 
-class Kill(_WorkflowEntity):
+class Kill(_AbstractWorkflowEntity):
     """Workflow graph terminal node(s) to end upon to indicate failure."""
 
     def __init__(self, message, name=None):
@@ -573,7 +573,7 @@ class Kill(_WorkflowEntity):
 ConcreteAction = typing.Union[Shell, SubWorkflow, Email]
 
 
-class Action(_WorkflowEntity):
+class Action(_AbstractWorkflowEntity):
     """Workflow action nodes carrying concrete actions that perform an action."""
 
     def __init__(
@@ -583,7 +583,7 @@ class Action(_WorkflowEntity):
             credential=None,      # type: typing.Optional[typing.Text]
             retry_max=None,       # type: typing.Optional[int]
             retry_interval=None,  # type: typing.Optional[int]
-            on_error=None         # type: typing.Optional[_WorkflowEntity]
+            on_error=None         # type: typing.Optional[_AbstractWorkflowEntity]
     ):
         # type: (...) -> None
         super(Action, self).__init__(xml_tag='action', name=name, on_error=on_error)
@@ -630,7 +630,7 @@ class WorkflowApp(XMLSerializable):
             job_tracker=None,             # type: typing.Optional[typing.Text]
             name_node=None,               # type: typing.Optional[typing.Text]
             job_xml_files=None,           # type: typing.Optional[JobXmlFilesType]
-            entities=None,                # type: typing.Optional[_WorkflowEntity]
+            entities=None,                # type: typing.Optional[_AbstractWorkflowEntity]
     ):
         # type: (...) -> None
         XMLSerializable.__init__(self, 'workflow-app')
