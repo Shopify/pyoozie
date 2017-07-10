@@ -506,18 +506,18 @@ def test_workflow_app(request):
 
 
 def test_workflow_action(request):
-    actions = tags.Action(
+    entities = tags.Action(
         name='action-name',
         action=tags.Shell(exec_command='echo', arguments=['build']),
     )
-    assert len(set(actions)) == 1
-    assert bool(actions)
+    assert len(set(entities)) == 1
+    assert bool(entities)
 
     workflow_app = tags.WorkflowApp(
         name='descriptive-name',
         job_tracker='job-tracker',
         name_node='name-node',
-        actions=actions
+        entities=entities
     )
     assert_workflow(request, workflow_app, """
 <workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
@@ -538,7 +538,7 @@ def test_workflow_action(request):
 </workflow-app>
 """)
 
-    actions = tags.Action(
+    entities = tags.Action(
         name='action-name',
         action=tags.Shell(exec_command='echo', arguments=['build']),
         credential='my-hcat-creds',
@@ -546,8 +546,8 @@ def test_workflow_action(request):
         retry_interval=20,
         on_error=tags.Kill(name='error', message='A bad thing happened'),
     )
-    assert len(set(actions)) == 2
-    assert bool(actions)
+    assert len(set(entities)) == 2
+    assert bool(entities)
 
     workflow_app = tags.WorkflowApp(
         name='descriptive-name',
@@ -557,7 +557,7 @@ def test_workflow_action(request):
             {'cred_name': 'cred_value'},
             credential_name='my-hcat-creds',
             credential_type='hcat')],
-        actions=actions
+        entities=entities
     )
     assert_workflow(request, workflow_app, """
 <workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
@@ -596,7 +596,7 @@ def test_workflow_action_without_credential():
             name='descriptive-name',
             job_tracker='job-tracker',
             name_node='name-node',
-            actions=tags.Action(
+            entities=tags.Action(
                 name='action-name',
                 action=tags.Shell(exec_command='echo', arguments=['build']),
                 credential='my-hcat-creds',
@@ -613,7 +613,7 @@ def test_workflow_with_reused_identifier():
             name='descriptive-name',
             job_tracker='job-tracker',
             name_node='name-node',
-            actions=tags.Action(
+            entities=tags.Action(
                 name='build', action=tags.Shell(exec_command='echo', arguments=['build']),
                 on_error=tags.Action(name='build', action=tags.Shell(exec_command='echo', arguments=['error']))
             )

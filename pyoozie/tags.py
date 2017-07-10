@@ -630,7 +630,7 @@ class WorkflowApp(XMLSerializable):
             job_tracker=None,             # type: typing.Optional[typing.Text]
             name_node=None,               # type: typing.Optional[typing.Text]
             job_xml_files=None,           # type: typing.Optional[JobXmlFilesType]
-            actions=None,                 # type: typing.Optional[_WorkflowEntity]
+            entities=None,                # type: typing.Optional[_WorkflowEntity]
     ):
         # type: (...) -> None
         XMLSerializable.__init__(self, 'workflow-app')
@@ -645,24 +645,26 @@ class WorkflowApp(XMLSerializable):
             configuration=configuration
         )
         self.__credentials = copy.deepcopy(credentials) or []
-        self.__actions = copy.deepcopy(actions) or []
+        self.__entities = copy.deepcopy(entities) or []
         self.__validate()
 
     def __validate(self):  # type () -> None
-        action_identifiers = []
+        entity_identifiers = []
         credentials_needed = set()
 
-        def _parse_action(action):
-            action_identifiers.append(action.identifier())
-            if hasattr(action, 'credential'):
-                credential = action.credential()
+        def _parse_entity(entity):
+            # Each entity's identifier should be unique
+            entity_identifiers.append(entity.identifier())
+            # If the entity refers to a credential by name, it should be defined upon instantiation
+            if hasattr(entity, 'credential'):
+                credential = entity.credential()
                 if credential:
                     credentials_needed.add(credential)
 
-        # Parse actions for attributes
-        if self.__actions:
-            for action in set(self.__actions):
-                _parse_action(action)
+        # Parse entitys for attributes
+        if self.__entities:
+            for entity in set(self.__entities):
+                _parse_entity(entity)
 
         # Verify that all needed credentials are defined
         credentials_provided = frozenset([cred.name for cred in self.__credentials])
@@ -672,7 +674,7 @@ class WorkflowApp(XMLSerializable):
 
         # Verify that no duplicate identifiers are used
         duplicate_identifiers = tuple(
-            item for item, count in collections.Counter(action_identifiers).items() if count > 1)
+            item for item, count in collections.Counter(entity_identifiers).items() if count > 1)
         assert not duplicate_identifiers, 'Name(s) reused: %s' % ', '.join(sorted(duplicate_identifiers))
 
     def _xml(self, doc, tag, text):
@@ -689,10 +691,10 @@ class WorkflowApp(XMLSerializable):
                     for credential in self.__credentials:
                         credential._xml(doc, tag, text)
 
-            # Create a serial collection of workflow entities to hold actions
-            doc.stag('start', to=self.__actions.identifier() if self.__actions else 'end')
-            if self.__actions:
-                self.__actions._xml(doc, tag, text, on_next='end', on_error=None)
+            # Parse a collection of entities and write them as XML
+            doc.stag('start', to=self.__entities.identifier() if self.__entities else 'end')
+            if self.__entities:
+                self.__entities._xml(doc, tag, text, on_next='end', on_error=None)
             doc.stag('end', name='end')
 
         return doc
