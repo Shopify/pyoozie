@@ -509,7 +509,7 @@ class _WorkflowEntity(typing.Iterable):
             on_error=None  # type: typing.Optional[_WorkflowEntity]
     ):
         # type: (...) -> None
-        self.xml_tag = xml_tag
+        self.__xml_tag = xml_tag
         self.__on_error = copy.deepcopy(on_error)
         if name:
             self.__identifier = '{tag}-{name}'.format(tag=xml_tag, name=name)
@@ -519,6 +519,10 @@ class _WorkflowEntity(typing.Iterable):
     def identifier(self):
         # type: () -> typing.Text
         return self.__identifier
+
+    def xml_tag(self):
+        # type: () -> typing.Text
+        return self.__xml_tag
 
     def _xml_and_get_on_error(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
@@ -560,7 +564,7 @@ class Kill(_WorkflowEntity):
 
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
-        with tag(self.xml_tag, name=self.identifier()):
+        with tag(self.xml_tag(), name=self.identifier()):
             with tag('message'):
                 doc.text(self.message)
         return doc
@@ -607,7 +611,7 @@ class Action(_WorkflowEntity):
             attributes['retry-max'] = str(self.__retry_max)
         if self.__retry_interval:
             attributes['retry-interval'] = str(self.__retry_interval)
-        with tag(self.xml_tag, **attributes):
+        with tag(self.xml_tag(), **attributes):
             self.__action._xml(doc, tag, text)
             doc.stag('ok', to=on_next)
             doc.stag('error', to=_on_error)
