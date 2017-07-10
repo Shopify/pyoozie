@@ -645,7 +645,7 @@ class WorkflowApp(XMLSerializable):
             configuration=configuration
         )
         self.__credentials = copy.deepcopy(credentials) or []
-        self.__entities = copy.deepcopy(entities) or []
+        self.__entities = copy.deepcopy(entities) or None
         self.__validate()
 
     def __validate(self):  # type () -> None
