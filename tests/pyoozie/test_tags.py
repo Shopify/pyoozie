@@ -590,6 +590,33 @@ def test_workflow_action(request):
 """)
 
 
+def test_workflow_action_retries(request):
+    def workflow_app_xml(**kwargs):
+        workflow_app = tags.WorkflowApp(
+            name='descriptive-name',
+            job_tracker='job-tracker',
+            name_node='name-node',
+            entities=tags.Action(
+                name='name',
+                action=tags.Shell(exec_command='echo', arguments=['build']),
+                **kwargs
+            )
+        )
+        assert_workflow(request, workflow_app)
+        return tests.utils.ParsedXml(workflow_app.xml())
+
+    # Test that no retry is specified (default is used)
+    workflow_app_xml().assert_node('/action', name='action-name')
+
+    # Test that 0 can be set for retry parameters
+    workflow_app_xml(retry_max=0, retry_interval=0).assert_node(
+        '/action', **{'name': 'action-name', 'retry-max': '0', 'retry-interval': '0'})
+
+    # Test that no retry is specified (default is used)
+    workflow_app_xml(retry_max=1, retry_interval=2).assert_node(
+        '/action', **{'name': 'action-name', 'retry-max': '1', 'retry-interval': '2'})
+
+
 def test_workflow_action_without_credential():
     with pytest.raises(AssertionError) as assertion_info:
         tags.WorkflowApp(

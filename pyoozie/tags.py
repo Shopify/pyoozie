@@ -607,9 +607,9 @@ class Action(_WorkflowEntity):
         }
         if self.__credential:
             attributes['cred'] = self.__credential
-        if self.__retry_max:
+        if self.__retry_max is not None:
             attributes['retry-max'] = str(self.__retry_max)
-        if self.__retry_interval:
+        if self.__retry_interval is not None:
             attributes['retry-interval'] = str(self.__retry_interval)
         with tag(self.xml_tag(), **attributes):
             self.__action._xml(doc, tag, text)
