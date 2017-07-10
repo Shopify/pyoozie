@@ -551,7 +551,7 @@ class _WorkflowEntity(typing.Iterable):
         return self.__bool__()
 
     def __repr__(self):  # type: () -> str
-        return str('{_class}({identifier})'.format(_class=type(self).__name__, identifier=self.identifier()))
+        return str('<{_class}({identifier})>'.format(_class=type(self).__name__, identifier=self.identifier()))
 
 
 class Kill(_WorkflowEntity):
