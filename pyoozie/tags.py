@@ -620,53 +620,53 @@ class Action(_AbstractWorkflowEntity):
         return doc
 
 
-class Serial(_WorkflowEntity):
-    """Sequence of actions to execute (implemented by chaining actions and 'OK' transitions)"""
+class Serial(_AbstractWorkflowEntity):
+    """Sequence of entities to execute (implemented by chaining entities and 'OK' transitions)"""
 
-    def __init__(self, *actions, **kwargs):
-        # type: (*_WorkflowEntity, **_WorkflowEntity) -> None
+    def __init__(self, *entities, **kwargs):
+        # type: (*_AbstractWorkflowEntity, **_AbstractWorkflowEntity) -> None
         super(Serial, self).__init__(xml_tag=None, on_error=kwargs.get(str('on_error')))
-        self.__actions = tuple(copy.deepcopy(actions))  # type: typing.Tuple[_WorkflowEntity, ...]
+        self.__entities = tuple(copy.deepcopy(entities))  # type: typing.Tuple[_AbstractWorkflowEntity, ...]
 
     def identifier(self):  # type: () -> typing.Text
-        return self.__actions[0].identifier() if self.__actions else None
+        return self.__entities[0].identifier() if self.__entities else None
 
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
         _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
-        action_nextidentifier = zip(self.__actions, itertools.chain(
-            (a.identifier() for a in self.__actions[1:]),
+        entity_nextidentifier = zip(self.__entities, itertools.chain(
+            (a.identifier() for a in self.__entities[1:]),
             (on_next,)
         ))
-        for action, next_identifier in action_nextidentifier:
-            action._xml(doc, tag, text, on_next=next_identifier, on_error=_on_error)
+        for entity, next_identifier in entity_nextidentifier:
+            entity._xml(doc, tag, text, on_next=next_identifier, on_error=_on_error)
         return doc
 
     def __iter__(self):
-        # type: () -> typing.Generator[_WorkflowEntity, None, None]
-        for action in self.__actions:
-            yield action
-        for action in super(Serial, self).__iter__():
-            if action is not self:  # Don't return self because this collection doesn't result in a node
-                yield action
+        # type: () -> typing.Generator[_AbstractWorkflowEntity, None, None]
+        for entity in self.__entities:
+            yield entity
+        for entity in super(Serial, self).__iter__():
+            if entity is not self:  # Don't return self because this collection doesn't result in a node
+                yield entity
 
 
-class Parallel(_WorkflowEntity):
-    """Set of actions to execute in parallel (implemented as fork/join tag pair)"""
+class Parallel(_AbstractWorkflowEntity):
+    """Set of entities to execute in parallel (implemented as fork/join tag pair)"""
 
-    def __init__(self, *actions, **kwargs):
-        # type: (*_WorkflowEntity, **typing.Union[_WorkflowEntity, typing.Text]) -> None
+    def __init__(self, *entities, **kwargs):
+        # type: (*_AbstractWorkflowEntity, **typing.Union[_AbstractWorkflowEntity, typing.Text]) -> None
         name = kwargs.get(str('name'))
         name = name if isinstance(name, six.string_types) else None
         on_error = kwargs.get(str('on_error'))
-        on_error = on_error if isinstance(on_error, _WorkflowEntity) else None
+        on_error = on_error if isinstance(on_error, _AbstractWorkflowEntity) else None
         super(Parallel, self).__init__(
             xml_tag=None,
             name=name,
             on_error=on_error
         )
-        assert actions, 'At least 1 action required'
-        self.__actions = frozenset(copy.deepcopy(actions))  # type: typing.FrozenSet[_WorkflowEntity]
+        assert entities, 'At least 1 entity required'
+        self.__entities = frozenset(copy.deepcopy(entities))  # type: typing.FrozenSet[_AbstractWorkflowEntity]
         self.__fork_identifier = self.create_identifier('fork')
         self.__join_identifier = self.create_identifier('join')
 
@@ -677,19 +677,19 @@ class Parallel(_WorkflowEntity):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
         _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
         with tag('fork', name=self.__fork_identifier):
-            for action in self.__actions:
-                doc.stag('path', start=action.identifier())
-        for action in self.__actions:
-            action._xml(doc, tag, text, on_next=self.__join_identifier, on_error=_on_error)
+            for entity in self.__entities:
+                doc.stag('path', start=entity.identifier())
+        for entity in self.__entities:
+            entity._xml(doc, tag, text, on_next=self.__join_identifier, on_error=_on_error)
         doc.stag('join', name=self.__join_identifier, to=on_next)
         return doc
 
     def __iter__(self):
-        # type: () -> typing.Generator[_WorkflowEntity, None, None]
-        for action in self.__actions:
-            yield action
-        for action in super(Parallel, self).__iter__():
-            yield action
+        # type: () -> typing.Generator[_AbstractWorkflowEntity, None, None]
+        for entity in self.__entities:
+            yield entity
+        for entity in super(Parallel, self).__iter__():
+            yield entity
 
 
 class WorkflowApp(XMLSerializable):
@@ -764,7 +764,7 @@ class WorkflowApp(XMLSerializable):
                     for credential in self.__credentials:
                         credential._xml(doc, tag, text)
 
-            # Create a serial collection of workflow entities to hold actions
+            # Create a serial collection of workflow entities to hold entities
             doc.stag('start', to=self.__entities.identifier() if self.__entities else 'end')
             self.__entities._xml(doc, tag, text, on_next='end', on_error=None)
             doc.stag('end', name='end')
