@@ -52,6 +52,7 @@ setuplib.setup(
             'requests-mock',
             'shopify_python==0.2.2',
             'xmltodict',
+            'pywebhdfs>=0.4.1',
         ],
     },
     license="MIT",

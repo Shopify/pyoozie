@@ -2,10 +2,12 @@
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
 import abc
+import collections
+import copy
 import datetime
 import re
 import string  # pylint: disable=deprecated-module
-import warnings
+import uuid
 
 import enum
 import typing  # pylint: disable=unused-import
@@ -494,6 +496,129 @@ class CoordinatorApp(XMLSerializable):
         return doc
 
 
+class _AbstractWorkflowEntity(typing.Iterable):
+    """An abstract object representing an Oozie workflow action that can be serialized to XML."""
+    # pylint: disable=abstract-method
+
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(
+            self,
+            xml_tag,       # typing.Text
+            name=None,     # type: typing.Optional[typing.Text]
+            on_error=None  # type: typing.Optional[_AbstractWorkflowEntity]
+    ):
+        # type: (...) -> None
+        self.__xml_tag = xml_tag
+        self.__on_error = copy.deepcopy(on_error)
+        if name:
+            self.__identifier = '{tag}-{name}'.format(tag=xml_tag, name=name)
+        else:
+            self.__identifier = '{tag}-{uid}'.format(tag=xml_tag, uid=uuid.uuid4().hex[:8])
+
+    def identifier(self):
+        # type: () -> typing.Text
+        return self.__identifier
+
+    def xml_tag(self):
+        # type: () -> typing.Text
+        return self.__xml_tag
+
+    def _xml_and_get_on_error(self, doc, tag, text, on_next, on_error):
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+        if self.__on_error:
+            self.__on_error._xml(doc, tag, text, on_next, on_error)
+        return self.__on_error.identifier() if self.__on_error else (
+            on_error if on_error else on_next
+        )
+
+    @abc.abstractmethod
+    def _xml(self, doc, tag, text, on_next, on_error):
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+        raise NotImplementedError()
+
+    def __iter__(self):
+        # type: () -> typing.Generator[_AbstractWorkflowEntity, None, None]
+        yield self
+        if self.__on_error:
+            for action in self.__on_error:
+                yield action
+
+    def __bool__(self):  # type: () -> bool
+        return bool(list(self))
+
+    def __nonzero__(self):  # type: () -> bool
+        return self.__bool__()
+
+    def __repr__(self):  # type: () -> str
+        return str('<{_class}({identifier})>'.format(_class=type(self).__name__, identifier=self.identifier()))
+
+
+class Kill(_AbstractWorkflowEntity):
+    """Workflow graph terminal node(s) to end upon to indicate failure."""
+
+    def __init__(self, message, name=None):
+        # type: (typing.Text, typing.Optional[typing.Text]) -> None
+        super(Kill, self).__init__(xml_tag='kill', name=name)
+        self.message = message
+
+    def _xml(self, doc, tag, text, on_next, on_error):
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+        with tag(self.xml_tag(), name=self.identifier()):
+            with tag('message'):
+                doc.text(self.message)
+        return doc
+
+
+ConcreteAction = typing.Union[Shell, SubWorkflow, Email]
+
+
+class Action(_AbstractWorkflowEntity):
+    """Workflow action nodes carrying concrete actions that perform an action."""
+
+    def __init__(
+            self,
+            action,               # type: ConcreteAction
+            name=None,            # type: typing.Optional[typing.Text]
+            credential=None,      # type: typing.Optional[typing.Text]
+            retry_max=None,       # type: typing.Optional[int]
+            retry_interval=None,  # type: typing.Optional[int]
+            on_error=None         # type: typing.Optional[_AbstractWorkflowEntity]
+    ):
+        # type: (...) -> None
+        super(Action, self).__init__(xml_tag='action', name=name, on_error=on_error)
+
+        # XML-document-related values
+        self.__action = action
+        self.__credential = credential
+        self.__retry_max = retry_max
+        self.__retry_interval = retry_interval
+
+    def credential(self):
+        # type: () -> typing.Optional[typing.Text]
+        return self.__credential
+
+    def _xml(self, doc, tag, text, on_next, on_error):
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+        _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
+
+        attributes = {
+            'name': self.identifier(),
+        }
+        if self.__credential:
+            attributes['cred'] = self.__credential
+        if self.__retry_max is not None:
+            attributes['retry-max'] = str(self.__retry_max)
+        if self.__retry_interval is not None:
+            attributes['retry-interval'] = str(self.__retry_interval)
+        with tag(self.xml_tag(), **attributes):
+            self.__action._xml(doc, tag, text)
+            doc.stag('ok', to=on_next)
+            doc.stag('error', to=_on_error)
+
+        return doc
+
+
 class WorkflowApp(XMLSerializable):
 
     def __init__(
@@ -505,35 +630,71 @@ class WorkflowApp(XMLSerializable):
             job_tracker=None,             # type: typing.Optional[typing.Text]
             name_node=None,               # type: typing.Optional[typing.Text]
             job_xml_files=None,           # type: typing.Optional[JobXmlFilesType]
+            entities=None,                # type: typing.Optional[_AbstractWorkflowEntity]
     ):
         # type: (...) -> None
         XMLSerializable.__init__(self, 'workflow-app')
-        self.name = validate_xml_name(name)
 
-        self.parameters = Parameters(parameters)
-        self.global_configuration = GlobalConfiguration(
+        # XML-document-related values
+        self.__name = validate_xml_name(name)
+        self.__parameters = Parameters(parameters)
+        self.__global_configuration = GlobalConfiguration(
             job_tracker=job_tracker,
             name_node=name_node,
             job_xml_files=job_xml_files,
             configuration=configuration
         )
-        self.credentials = credentials
+        self.__credentials = copy.deepcopy(credentials) or []
+        self.__entities = copy.deepcopy(entities) or None
+        self.__validate()
+
+    def __validate(self):  # type () -> None
+        entity_identifiers = []
+        credentials_needed = set()
+
+        def _parse_entity(entity):
+            # Each entity's identifier should be unique
+            entity_identifiers.append(entity.identifier())
+            # If the entity refers to a credential by name, it should be defined upon instantiation
+            if hasattr(entity, 'credential'):
+                credential = entity.credential()
+                if credential:
+                    credentials_needed.add(credential)
+
+        # Parse entitys for attributes
+        if self.__entities:
+            for entity in set(self.__entities):
+                _parse_entity(entity)
+
+        # Verify that all needed credentials are defined
+        credentials_provided = frozenset([cred.name for cred in self.__credentials])
+        assert credentials_needed <= credentials_provided, (
+            'Missing credentials: %s' % ', '.join(credentials_needed - credentials_provided)
+        )
+
+        # Verify that no duplicate identifiers are used
+        duplicate_identifiers = tuple(
+            item for item, count in collections.Counter(entity_identifiers).items() if count > 1)
+        assert not duplicate_identifiers, 'Name(s) reused: %s' % ', '.join(sorted(duplicate_identifiers))
 
     def _xml(self, doc, tag, text):
-        with tag(self.xml_tag, name=self.name, xmlns="uri:oozie:workflow:0.5"):
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text) -> yattag.doc.Doc
+        with tag(self.xml_tag, name=self.__name, xmlns="uri:oozie:workflow:0.5"):
 
             # Preamble
-            if self.parameters:
-                self.parameters._xml(doc, tag, text)
-            if self.global_configuration:
-                self.global_configuration._xml(doc, tag, text)
-            if self.credentials:
+            if self.__parameters:
+                self.__parameters._xml(doc, tag, text)
+            if self.__global_configuration:
+                self.__global_configuration._xml(doc, tag, text)
+            if self.__credentials:
                 with tag('credentials'):
-                    for credential in self.credentials:
+                    for credential in self.__credentials:
                         credential._xml(doc, tag, text)
 
-            doc.stag('start', to='end')
-            warnings.warn("This will contain more than just a start and end tag in the future", FutureWarning)
+            # Parse a collection of entities and write them as XML
+            doc.stag('start', to=self.__entities.identifier() if self.__entities else 'end')
+            if self.__entities:
+                self.__entities._xml(doc, tag, text, on_next='end', on_error=None)
             doc.stag('end', name='end')
 
         return doc

@@ -18,6 +18,7 @@ from pyoozie.model import WorkflowStatus
 from pyoozie.model import parse_coordinator_id
 from pyoozie.model import parse_workflow_id
 
+from pyoozie.tags import Action
 from pyoozie.tags import Configuration
 from pyoozie.tags import CoordinatorApp
 from pyoozie.tags import Credential
@@ -28,11 +29,13 @@ from pyoozie.tags import EXEC_LAST_ONLY
 from pyoozie.tags import EXEC_LIFO
 from pyoozie.tags import EXEC_NONE
 from pyoozie.tags import GlobalConfiguration
+from pyoozie.tags import Kill
 from pyoozie.tags import Parameters
 from pyoozie.tags import Shell
 from pyoozie.tags import SubWorkflow
 from pyoozie.tags import validate_xml_id
 from pyoozie.tags import validate_xml_name
+from pyoozie.tags import WorkflowApp
 
 
 __version__ = '0.0.0'
@@ -57,6 +60,7 @@ __all__ = (
     'parse_workflow_id',
 
     # tags
+    'Action',
     'Configuration',
     'CoordinatorApp',
     'Credential',
@@ -67,9 +71,11 @@ __all__ = (
     'EXEC_LIFO',
     'EXEC_NONE',
     'GlobalConfiguration',
+    'Kill',
     'Parameters',
     'Shell',
     'SubWorkflow',
     'validate_xml_id',
     'validate_xml_name',
+    'WorkflowApp'
 )
