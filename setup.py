@@ -37,7 +37,7 @@ setuplib.setup(
     ],
     extras_require={
         'deploy': [
-            'setuptools>=0.9'
+            'setuptools>=0.9,<36.0.0'
         ],
         'test': [
             'autopep8',
