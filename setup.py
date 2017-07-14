@@ -49,7 +49,7 @@ setuplib.setup(
             'pytest-randomly',
             'pytest>=2.7',
             'requests-mock',
-            'shopify_python==0.2.2',
+            'shopify_python==0.4.1',
             'xmltodict',
             'pywebhdfs>=0.4.1',
         ],
