@@ -10,7 +10,7 @@ clean:
 		rm -fr *.egg-info
 
 install:
-		pip install -e ".[test,testpy3]"
+		pip install -e ".[test]"
 		test -d lib || mkdir lib
 		test -f lib/oozie-client-4.1.0.jar || \
 			curl http://central.maven.org/maven2/org/apache/oozie/oozie-client/4.1.0/oozie-client-4.1.0.jar -o lib/oozie-client-4.1.0.jar

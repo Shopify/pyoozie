@@ -53,7 +53,7 @@ setuplib.setup(
             'xmltodict',
             'pywebhdfs>=0.4.1',
         ],
-        'testpy3: python_version >= "3.3"': [
+        'test: python_version >= "3.3"': [
             'mypy',
         ]
     },
