@@ -49,7 +49,8 @@ load-plugins=shopify_python
 # fixme; we're in-development, so we need some of these
 disable=missing-docstring,too-few-public-methods,too-many-instance-attributes,too-many-arguments,
  protected-access,invalid-name,redefined-outer-name,no-self-use,too-many-public-methods,too-many-lines,
- duplicate-code,fixme
+ duplicate-code,fixme,no-else-return,not-callable,len-as-condition,cond-expr,useless-super-delegation,
+ super-init-not-called
 
 # Increase max except nodes because we often have a pattern of
 # record stats, log, and then re-raise when handling HTTP exceptions
