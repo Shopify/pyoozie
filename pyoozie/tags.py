@@ -505,31 +505,16 @@ class _AbstractWorkflowEntity(typing.Iterable):
 
     def __init__(
             self,
-            xml_tags,      # type: typing.Iterable[typing.Text]
             name=None,     # type: typing.Optional[typing.Text]
             on_error=None  # type: typing.Optional[_AbstractWorkflowEntity]
     ):
         # type: (...) -> None
-        self.__xml_tag_identifiers = {
-            xml_tag: '{tag}-{specifier}'.format(
-                tag=xml_tag,
-                specifier=name if name else uuid.uuid4().hex[:8]
-            )
-            for xml_tag in set(xml_tags)
-        }
+        self.__name = name if name else uuid.uuid4().hex[:8]
         self.__on_error = copy.deepcopy(on_error)
 
-    def identifier(self, xml_tag=None):
-        # type: (typing.Optional[typing.Text]) -> typing.Text
-        if not xml_tag:
-            assert len(self.__xml_tag_identifiers) == 1, 'Must specify one xml tag'
-            return (_ for _ in self.__xml_tag_identifiers.values()).next()
-        return self.__xml_tag_identifiers[xml_tag]
-
-    def xml_tag(self):
+    def _create_identifier(xml_tag):
         # type: () -> typing.Text
-        assert len(self.__xml_tag_identifiers) == 1, 'Must specify one xml tag'
-        return (_ for _ in self.__xml_tag_identifiers.keys()).next()
+        return  '{tag}-{name}'.format(tag=xml_tag, name=self.__name)
     
     def _xml_and_get_on_error(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
@@ -539,6 +524,11 @@ class _AbstractWorkflowEntity(typing.Iterable):
             on_error if on_error else on_next
         )
 
+    @abc.abstractmethod
+    def identifier():
+        # type: () -> typing.Text
+        raise NotImplementedError()
+    
     @abc.abstractmethod
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
@@ -569,15 +559,18 @@ class Kill(_AbstractWorkflowEntity):
 
     def __init__(self, message, name=None):
         # type: (typing.Text, typing.Optional[typing.Text]) -> None
-        super(Kill, self).__init__(xml_tags=('kill',), name=name)
+        super(Kill, self).__init__(name=name)
         self.message = message
 
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
-        with tag(self.xml_tag(), name=self.identifier()):
+        with tag('kill', name=self.identifier()):
             with tag('message'):
                 doc.text(self.message)
         return doc
+
+    def identifier():
+        super(Kill, self)._create_identifier('kill')
 
 
 ConcreteAction = typing.Union[Shell, SubWorkflow, Email]
