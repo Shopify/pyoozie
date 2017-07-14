@@ -37,13 +37,13 @@ setuplib.setup(
     ],
     extras_require={
         'deploy': [
-            'setuptools>=0.9,<36.0.0'
+            'setuptools>=0.9'
         ],
         'test': [
             'autopep8',
             'flake8',
             'mock',
-            'mypy; python_version >= "3.3"',
+            'mypy;python_version>="3.3"',
             'pycodestyle == 2.2.0',
             'pylint>=1.6.5,<1.7',
             'pytest-cov',
