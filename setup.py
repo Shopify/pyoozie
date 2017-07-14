@@ -44,7 +44,7 @@ setuplib.setup(
             'flake8',
             'mock',
             'pycodestyle == 2.2.0',
-            'pylint>=1.6.5,<1.7',
+            'pylint>=1.7.1,<1.8',
             'pytest-cov',
             'pytest-randomly',
             'pytest>=2.7',
