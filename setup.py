@@ -43,7 +43,6 @@ setuplib.setup(
             'autopep8',
             'flake8',
             'mock',
-            'mypy; python_version >= "3.3"',
             'pycodestyle == 2.2.0',
             'pylint>=1.6.5,<1.7',
             'pytest-cov',
@@ -54,6 +53,9 @@ setuplib.setup(
             'xmltodict',
             'pywebhdfs>=0.4.1',
         ],
+        'testpy3: python_version >= "3.3"': [
+            'mypy',
+        ]
     },
     license="MIT",
     keywords=['oozie'],
