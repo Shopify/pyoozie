@@ -5,7 +5,7 @@ python:
    - "3.4"
    - "3.5"
 before_install:
-  - pip install -U pip setuptools
+  - pip install -U pip setuptools==34.3.0
 install:
   - make install
 script:
