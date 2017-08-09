@@ -38,7 +38,7 @@ from pyoozie.tags import validate_xml_name
 from pyoozie.tags import WorkflowApp
 
 
-__version__ = '0.0.0'
+__version__ = '0.0.1'
 
 __all__ = (
     # builder
