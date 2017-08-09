@@ -41,3 +41,13 @@ sourcelint:
 lint: sourcelint type
 
 autolint: autopep8 lint
+
+release:
+		rm -rf build dist
+		@python setup.py sdist bdist_wheel
+
+upload_test: release
+		@twine upload dist/* -r testpypi
+
+upload_pypi: release
+		@twine upload dist/* -r pypi
