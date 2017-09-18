@@ -23,10 +23,10 @@ To release a new version of [`pyoozie`](https://pypi.python.org/pypi/pyoozie):
     password = <your password goes here>
     ```
 
-4. Create a PR to increment [`__version__`](https://github.com/Shopify/pyoozie/blob/6956a38f9677eec8b6ccbfaa5280dbee0503eb20/pyoozie/__init__.py#L41) according to our [versioning standards](https://github.com/Shopify/shopify_python#versioning) that lists the features associated with this release (e.g. [this release PR](https://github.com/Shopify/pyoozie/pull/55))
+4. Merge a PR that increments [`__version__`](https://github.com/Shopify/pyoozie/blob/6956a38f9677eec8b6ccbfaa5280dbee0503eb20/pyoozie/__init__.py#L41) according to our [versioning standards](https://github.com/Shopify/shopify_python#versioning) that lists the features associated with this release (e.g. [this release PR](https://github.com/Shopify/pyoozie/pull/55))
     - Note that this PR does not necessarily need to be merged to `master` but should be code reviewed
     - Also note that a release does not have to be crafted from current `master` but could branch off and cherry pick specific features to release
-5. Run `make install` to set up dev tools
+5. Check out the latest version of the master branch (unless you have a good reason to release off of master) and run `make install` to set up dev tools
 6. Optionally run `python setup.py register -r https://test.pypi.org/legacy/` if the project has been deleted on Test PyPI
 7. Run `make release` to build the release files locally
 8. Run `make upload_test` to upload the release to Test PyPI
