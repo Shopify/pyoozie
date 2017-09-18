@@ -37,6 +37,7 @@ setuplib.setup(
     ],
     extras_require={
         'deploy': [
+            'twine>=1.9.1',
             'setuptools>=0.9'
         ],
         'test': [
