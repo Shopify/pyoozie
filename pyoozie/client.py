@@ -282,6 +282,9 @@ class OozieClient(object):
     def jobs_all_running_coordinators(self, user=None):
         return self._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.running(), user=user)
 
+    def jobs_all_suspended_coordinators(self, user=None):
+        return self._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.suspended(), user=user)
+
     def jobs_running_coordinators(self, name, user=None):
         return self._jobs_query(
             model.ArtifactType.Coordinator, name=name, status=model.CoordinatorStatus.running(), user=user)
