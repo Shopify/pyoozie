@@ -550,6 +550,17 @@ class TestOozieClientJobsQuery(object):
             api.jobs_all_running_coordinators(user='john_doe')
             mock_query.assert_called_with(model.ArtifactType.Coordinator, user='john_doe', status=expected_statuses)
 
+    def test_jobs_all_suspended_coordinators(self, api, sample_coordinator_suspended):
+        expected_statuses = model.CoordinatorStatus.suspended()
+        with mock.patch.object(api, '_jobs_query') as mock_query:
+            mock_query.return_value = [sample_coordinator_suspended]
+
+            api.jobs_all_suspended_coordinators()
+            mock_query.assert_called_with(model.ArtifactType.Coordinator, user=None, status=expected_statuses)
+
+            api.jobs_all_suspended_coordinators(user='john_doe')
+            mock_query.assert_called_with(model.ArtifactType.Coordinator, user='john_doe', status=expected_statuses)
+
     def test_jobs_running_coordinators(self, api, sample_coordinator_running):
         expected_statuses = model.CoordinatorStatus.running()
         with mock.patch.object(api, '_jobs_query') as mock_query:
