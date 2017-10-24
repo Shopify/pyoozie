@@ -22,6 +22,7 @@ from pyoozie.tags import Action
 from pyoozie.tags import Configuration
 from pyoozie.tags import CoordinatorApp
 from pyoozie.tags import Credential
+from pyoozie.tags import Decision
 from pyoozie.tags import Email
 from pyoozie.tags import ExecutionOrder
 from pyoozie.tags import EXEC_FIFO

@@ -627,10 +627,10 @@ class Decision(_AbstractWorkflowEntity):
 
     def __init__(
             self,
-            default,        # type: _WorkflowEntity
-            choices,        # type: typing.Dict[typing.Text, _WorkflowEntity]
+            default,        # type: _AbstractWorkflowEntity
+            choices,        # type: typing.Dict[typing.Text, _AbstractWorkflowEntity]
             name=None,      # type: typing.Optional[typing.Text]
-            on_error=None,  # type: typing.Optional[_WorkflowEntity]
+            on_error=None,  # type: typing.Optional[_AbstractWorkflowEntity]
     ):
         # type: (...) -> None
         super(Decision, self).__init__(xml_tag='decision', name=name, on_error=on_error)
@@ -659,7 +659,7 @@ class Decision(_AbstractWorkflowEntity):
         return doc
 
     def __iter__(self):
-        # type: () -> typing.Generator[_WorkflowEntity, None, None]
+        # type: () -> typing.Generator[_AbstractWorkflowEntity, None, None]
         for action in self.__choices.values():
             yield action
         yield self.__default
