@@ -644,7 +644,7 @@ class Decision(_AbstractWorkflowEntity):
         _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
 
         # Write switch/case
-        with tag(self.xml_tag, name=self.identifier()):
+        with tag(self.xml_tag(), name=self.identifier()):
             with tag('switch'):
                 for case, dest in self.__choices.items():
                     with tag('case', to=dest.identifier()):

@@ -835,7 +835,7 @@ def test_workflow_app_inherit_parent_error(request):
     app.assert_node("/action[@name='action-error']/ok", to='kill-error')
 
 
-def test_workflow_app_empty_decision_actions():
+def test_workflow_app_empty_decision_entities():
     with pytest.raises(AssertionError) as assertion_info:
         tags.Decision(
             default=None,
@@ -861,8 +861,8 @@ def test_workflow_app_empty_decision_actions():
     assert str(assertion_info.value) == 'At least one choice required'
 
 
-def test_workflow_app_decision_actions(request):
-    actions = tags.Decision(
+def test_workflow_app_decision_entities(request):
+    entities = tags.Decision(
         default=tags.Action(tags.Shell(exec_command='echo', arguments=['default'])),
         choices={
             '${wf:lastErrorNode() eq null}': tags.Action(
@@ -873,13 +873,13 @@ def test_workflow_app_decision_actions(request):
             tags.Kill('A bad thing happened')
         )
     )
-    assert len(set(actions)) == 5
+    assert len(set(entities)) == 5
 
     workflow_app = tags.WorkflowApp(
         name='descriptive-name',
         job_tracker='job-tracker',
         name_node='name-node',
-        actions=actions
+        entities=entities
     )
     assert_workflow(request, workflow_app, """
 <workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
