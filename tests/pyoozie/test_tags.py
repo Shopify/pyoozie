@@ -655,7 +655,7 @@ def test_workflow_with_reused_identifier():
             name='descriptive-name',
             job_tracker='job-tracker',
             name_node='name-node',
-            actions=tags.Serial(
+            entities=tags.Serial(
                 tags.Action(name='build', action=tags.Shell(exec_command='echo', arguments=['build'])),
                 tags.Action(name='resolve', action=tags.Shell(exec_command='echo', arguments=['resolve'])),
                 on_error=tags.Serial(
@@ -667,15 +667,15 @@ def test_workflow_with_reused_identifier():
     assert str(assertion_info.value) == 'Name(s) reused: action-build'
 
 
-def test_workflow_app_empty_serial_actions():
+def test_workflow_app_empty_serial_entities():
     # Empty collections should act empty
     assert len(set(tags.Serial())) == 0
     assert not bool(tags.Serial())
 
 
-def test_workflow_app_serial_actions(request):
-    # Create a serial collection of actions with a serial collection as an error condition
-    actions = tags.Serial(
+def test_workflow_app_serial_entities(request):
+    # Create a serial collection of entities with a serial collection as an error condition
+    entities = tags.Serial(
         tags.Action(tags.Shell(exec_command='echo', arguments=['build'])),
         tags.Action(tags.Shell(exec_command='echo', arguments=['resolve'])),
         on_error=tags.Serial(
@@ -683,14 +683,14 @@ def test_workflow_app_serial_actions(request):
             tags.Kill('A bad thing happened')
         )
     )
-    assert len(set(actions)) == 4
-    assert bool(actions)
+    assert len(set(entities)) == 4
+    assert bool(entities)
 
     workflow_app = tags.WorkflowApp(
         name='descriptive-name',
         job_tracker='job-tracker',
         name_node='name-node',
-        actions=actions
+        entities=entities
     )
     assert_workflow(request, workflow_app, """
 <workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
@@ -731,16 +731,16 @@ def test_workflow_app_serial_actions(request):
 """)
 
 
-def test_workflow_app_empty_parallel_actions():
+def test_workflow_app_empty_parallel_entities():
     # Cannot create an empty parallel collection
     with pytest.raises(AssertionError) as assertion_info:
         tags.Parallel()
-    assert str(assertion_info.value) == 'At least 1 action required'
+    assert str(assertion_info.value) == 'At least 1 entity required'
 
 
-def test_workflow_app_parallel_actions(request):
+def test_workflow_app_parallel_entities(request):
     # Create a simple parallel collection
-    actions = tags.Parallel(
+    entities = tags.Parallel(
         tags.Action(tags.Shell(exec_command='echo', arguments=['build'])),
         tags.Action(tags.Shell(exec_command='echo', arguments=['resolve'])),
         on_error=tags.Serial(
@@ -748,14 +748,14 @@ def test_workflow_app_parallel_actions(request):
             tags.Kill('A bad thing happened')
         )
     )
-    assert len(set(actions)) == 5
-    assert bool(actions)
+    assert len(set(entities)) == 5
+    assert bool(entities)
 
     workflow_app = tags.WorkflowApp(
         name='descriptive-name',
         job_tracker='job-tracker',
         name_node='name-node',
-        actions=actions
+        entities=entities
     )
     assert_workflow(request, workflow_app, """
 <workflow-app xmlns="uri:oozie:workflow:0.5" name="descriptive-name">
@@ -806,7 +806,7 @@ def test_workflow_app_inherit_parent_error(request):
         name='descriptive-name',
         job_tracker='job-tracker',
         name_node='name-node',
-        actions=tags.Serial(
+        entities=tags.Serial(
             tags.Parallel(
                 tags.Action(name='build_a', action=tags.Shell(exec_command='echo', arguments=['build_a'])),
                 tags.Action(name='build_b', action=tags.Shell(exec_command='echo', arguments=['build_b'])),

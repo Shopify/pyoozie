@@ -505,17 +505,25 @@ class _AbstractWorkflowEntity(typing.Iterable):
 
     def __init__(
             self,
+            xml_tag=None,  # type: typing.Optional[typing.Text]
             name=None,     # type: typing.Optional[typing.Text]
             on_error=None  # type: typing.Optional[_AbstractWorkflowEntity]
     ):
         # type: (...) -> None
+        self.__xml_tag = xml_tag
         self.__name = name if name else uuid.uuid4().hex[:8]
         self.__on_error = copy.deepcopy(on_error)
 
-    def _create_identifier(xml_tag):
+    def xml_tag(self):
         # type: () -> typing.Text
-        return  '{tag}-{name}'.format(tag=xml_tag, name=self.__name)
-    
+        return self.__xml_tag
+
+    def identifier(self, xml_tag=None):
+        # type: (typing.Optional[typing.Text]) -> typing.Text
+        if not xml_tag:
+            xml_tag = self.__xml_tag
+        return validate_xml_id('{tag}-{name}'.format(tag=xml_tag, name=self.__name))
+
     def _xml_and_get_on_error(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
         if self.__on_error:
@@ -524,11 +532,6 @@ class _AbstractWorkflowEntity(typing.Iterable):
             on_error if on_error else on_next
         )
 
-    @abc.abstractmethod
-    def identifier():
-        # type: () -> typing.Text
-        raise NotImplementedError()
-    
     @abc.abstractmethod
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
@@ -548,10 +551,7 @@ class _AbstractWorkflowEntity(typing.Iterable):
         return self.__bool__()
 
     def __repr__(self):  # type: () -> str
-        return str('<{_class}({identifiers})>'.format(
-            _class=type(self).__name__,
-            identifiers=repr(list(self.identifiers()))
-        ))
+        return str('<{_class}({identifier})>'.format(_class=type(self).__name__, identifier=self.identifier()))
 
 
 class Kill(_AbstractWorkflowEntity):
@@ -559,18 +559,15 @@ class Kill(_AbstractWorkflowEntity):
 
     def __init__(self, message, name=None):
         # type: (typing.Text, typing.Optional[typing.Text]) -> None
-        super(Kill, self).__init__(name=name)
+        super(Kill, self).__init__(xml_tag='kill', name=name)
         self.message = message
 
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
-        with tag('kill', name=self.identifier()):
+        with tag(self.xml_tag(), name=self.identifier()):
             with tag('message'):
                 doc.text(self.message)
         return doc
-
-    def identifier():
-        super(Kill, self)._create_identifier('kill')
 
 
 ConcreteAction = typing.Union[Shell, SubWorkflow, Email]
@@ -589,7 +586,7 @@ class Action(_AbstractWorkflowEntity):
             on_error=None         # type: typing.Optional[_AbstractWorkflowEntity]
     ):
         # type: (...) -> None
-        super(Action, self).__init__(xml_tags=('action',), name=name, on_error=on_error)
+        super(Action, self).__init__(xml_tag='action', name=name, on_error=on_error)
 
         # XML-document-related values
         self.__action = action
@@ -627,11 +624,11 @@ class Serial(_AbstractWorkflowEntity):
 
     def __init__(self, *entities, **kwargs):
         # type: (*_AbstractWorkflowEntity, **_AbstractWorkflowEntity) -> None
-        super(Serial, self).__init__(xml_tags=tuple(), on_error=kwargs.get(str('on_error')))
+        super(Serial, self).__init__(on_error=kwargs.get(str('on_error')))
         self.__entities = tuple(copy.deepcopy(entities))  # type: typing.Tuple[_AbstractWorkflowEntity, ...]
 
-    def identifier(self):  # type: () -> typing.Text
-        return self.__entities[0].identifier() if self.__entities else None
+    def identifier(self, xml_tag=None):  # type: (typing.Optional[typing.Text]) -> typing.Text
+        return self.__entities[0].identifier(xml_tag) if self.__entities else None
 
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
@@ -663,15 +660,12 @@ class Parallel(_AbstractWorkflowEntity):
         on_error = kwargs.get(str('on_error'))
         on_error = on_error if isinstance(on_error, _AbstractWorkflowEntity) else None
         super(Parallel, self).__init__(
-            xml_tags=('fork', 'join'),
+            xml_tag='fork',
             name=name,
             on_error=on_error
         )
         assert entities, 'At least 1 entity required'
         self.__entities = frozenset(copy.deepcopy(entities))  # type: typing.FrozenSet[_AbstractWorkflowEntity]
-
-    def identifier(self):  # type: () -> typing.Text
-        return super(Parallel, self).identifier('fork')
 
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
@@ -680,7 +674,7 @@ class Parallel(_AbstractWorkflowEntity):
             for entity in self.__entities:
                 doc.stag('path', start=entity.identifier())
         for entity in self.__entities:
-            entity._xml(doc, tag, text, on_next=self.__join_identifier, on_error=_on_error)
+            entity._xml(doc, tag, text, on_next=self.identifier('join'), on_error=_on_error)
         doc.stag('join', name=self.identifier('join'), to=on_next)
         return doc
 
