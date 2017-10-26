@@ -513,15 +513,18 @@ class _AbstractWorkflowEntity(typing.Iterable):
         self.__xml_tag = xml_tag
         self.__name = name if name else uuid.uuid4().hex[:8]
         self.__on_error = copy.deepcopy(on_error)
+        self.__identifier = self.create_identifier(xml_tag)
 
     def xml_tag(self):
         # type: () -> typing.Text
         return self.__xml_tag
 
-    def identifier(self, xml_tag=None):
-        # type: (typing.Optional[typing.Text]) -> typing.Text
-        if not xml_tag:
-            xml_tag = self.__xml_tag
+    def identifier(self):
+        # type: () -> typing.Text
+        return self.__identifier
+
+    def create_identifier(self, xml_tag):
+        # type: (typing.Text) -> typing.Text
         return validate_xml_id('{tag}-{name}'.format(tag=xml_tag, name=self.__name))
 
     def _xml_and_get_on_error(self, doc, tag, text, on_next, on_error):
@@ -627,8 +630,8 @@ class Serial(_AbstractWorkflowEntity):
         super(Serial, self).__init__(on_error=kwargs.get(str('on_error')))
         self.__entities = tuple(copy.deepcopy(entities))  # type: typing.Tuple[_AbstractWorkflowEntity, ...]
 
-    def identifier(self, xml_tag=None):  # type: (typing.Optional[typing.Text]) -> typing.Text
-        return self.__entities[0].identifier(xml_tag) if self.__entities else None
+    def identifier(self):  # type: () -> typing.Text
+        return self.__entities[0].identifier() if self.__entities else None
 
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
@@ -670,12 +673,12 @@ class Parallel(_AbstractWorkflowEntity):
     def _xml(self, doc, tag, text, on_next, on_error):
         # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
         _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
-        with tag('fork', name=self.identifier('fork')):
+        with tag(self.xml_tag(), name=self.identifier()):
             for entity in self.__entities:
                 doc.stag('path', start=entity.identifier())
         for entity in self.__entities:
-            entity._xml(doc, tag, text, on_next=self.identifier('join'), on_error=_on_error)
-        doc.stag('join', name=self.identifier('join'), to=on_next)
+            entity._xml(doc, tag, text, on_next=self.create_identifier('join'), on_error=_on_error)
+        doc.stag('join', name=self.create_identifier('join'), to=on_next)
         return doc
 
     def __iter__(self):
