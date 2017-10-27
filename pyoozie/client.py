@@ -483,9 +483,9 @@ class OozieClient(object):
     # Job API - manage coordinator
     # ===========================================================================
 
-    def _coordinator_perform_simple_action(self, coord, action):
+    def _coordinator_perform_simple_action(self, coord, action, refresh=True):
         if coord.is_action():
-            self._put('job/{}?action={}&type=action&scope={}'.format(coord.coordJobId, action, coord.actionNumber))
+            self._put('job/{}?action={}&type=action&scope={}&refresh={}'.format(coord.coordJobId, action, coord.actionNumber, "true" if refresh else "false"))
         else:
             self._put('job/{}?action={}'.format(coord.coordJobId, action))
 
@@ -512,6 +512,13 @@ class OozieClient(object):
         coord = self._fetch_coordinator_or_action(coordinator_id, name, user)
         if coord.status.is_active():
             self._coordinator_perform_simple_action(coord, 'kill')
+            return True
+        return False
+
+    def job_coordinator_rerun(self, coordinator_id=None, name=None, user=None):
+        coord = self._fetch_coordinator_or_action(coordinator_id, name, user)
+        if not coord.status.is_active():
+            self._coordinator_perform_simple_action(coord, 'coord-rerun')
             return True
         return False
 
