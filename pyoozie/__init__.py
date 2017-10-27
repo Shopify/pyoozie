@@ -30,7 +30,9 @@ from pyoozie.tags import EXEC_LIFO
 from pyoozie.tags import EXEC_NONE
 from pyoozie.tags import GlobalConfiguration
 from pyoozie.tags import Kill
+from pyoozie.tags import Parallel
 from pyoozie.tags import Parameters
+from pyoozie.tags import Serial
 from pyoozie.tags import Shell
 from pyoozie.tags import SubWorkflow
 from pyoozie.tags import validate_xml_id
@@ -72,7 +74,9 @@ __all__ = (
     'EXEC_NONE',
     'GlobalConfiguration',
     'Kill',
+    'Parallel',
     'Parameters',
+    'Serial',
     'Shell',
     'SubWorkflow',
     'validate_xml_id',
