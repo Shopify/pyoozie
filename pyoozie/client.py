@@ -483,11 +483,15 @@ class OozieClient(object):
     # Job API - manage coordinator
     # ===========================================================================
 
-    def _coordinator_perform_simple_action(self, coord, action):
+    def _coordinator_perform_simple_action(self, coord, action, **kwargs):
+        suffix = '&' + '&'.join('='.join(t) for t in kwargs.items()) if kwargs else ''
         if coord.is_action():
-            self._put('job/{}?action={}&type=action&scope={}'.format(coord.coordJobId, action, coord.actionNumber))
+            self._put('job/{}?action={}&type=action&scope={}{}'.format(coord.coordJobId,
+                                                                       action,
+                                                                       coord.actionNumber,
+                                                                       suffix))
         else:
-            self._put('job/{}?action={}'.format(coord.coordJobId, action))
+            self._put('job/{}?action={}{}'.format(coord.coordJobId, action, suffix))
 
     def _fetch_coordinator_or_action(self, coordinator_id=None, name=None, user=None):
         coord_id = self._decode_coord_id(coordinator_id, name, user)
@@ -514,6 +518,36 @@ class OozieClient(object):
             self._coordinator_perform_simple_action(coord, 'kill')
             return True
         return False
+
+    def job_coordinator_rerun(self, coordinator_id):
+        action = self._fetch_coordinator_or_action(coordinator_id)
+        if not action.is_action():
+            raise ValueError('Rerun only supports coordinator action IDs')
+
+        if action.coordinator().status.is_active() and not action.status.is_active():
+            self.logger.info('Rerunning coordinator action %s', coordinator_id)
+            self._coordinator_perform_simple_action(action, 'coord-rerun', refresh='true')
+            return True
+        return False
+
+    def job_coordinator_update(self, coordinator_id, xml_path, configuration=None):
+        user = self._user or 'oozie'
+        coord = self._fetch_coordinator_or_action(coordinator_id)
+        if coord.status.is_active():
+            conf = xml._coordinator_submission_xml(user, xml_path, configuration=configuration)
+            if self._verbose:
+                self.logger.info('Preparing to update coordinator %s:\n%s', xml_path, conf)
+            reply = self._put('job/{}?action=update'.format(coordinator_id), conf)
+
+            if not reply or 'update' not in reply:
+                raise exceptions.OozieException.operation_failed('update coordinator')
+
+            if self._verbose:
+                self.logger.info('Coordinator %s updated with diff %s', coordinator_id, reply['update']['diff'])
+
+            return self.job_coordinator_info(coordinator_id=coordinator_id)
+        else:
+            raise exceptions.OozieException.operation_failed('coordinator status must be active in order to update')
 
     # ===========================================================================
     # Job API - manage workflow
@@ -548,7 +582,7 @@ class OozieClient(object):
         return False
 
     # ===========================================================================
-    # Job API - submit and update jobs
+    # Jobs API - submit and update jobs
     # ===========================================================================
 
     def jobs_submit_coordinator(self, xml_path, configuration=None):
@@ -563,25 +597,6 @@ class OozieClient(object):
             coord = self.job_coordinator_info(coordinator_id=reply['id'])
             return coord
         raise exceptions.OozieException.operation_failed('submit coordinator')
-
-    def jobs_update_coordinator(self, coordinator_id, xml_path, configuration=None):
-        user = self._user or 'oozie'
-        coord = self._fetch_coordinator_or_action(coordinator_id)
-        if coord.status.is_active():
-            conf = xml._coordinator_submission_xml(user, xml_path, configuration=configuration)
-            if self._verbose:
-                self.logger.info('Preparing to update coordinator %s:\n%s', xml_path, conf)
-            reply = self._put('job/{}?action=update'.format(coordinator_id), conf)
-
-            if not reply or 'update' not in reply:
-                raise exceptions.OozieException.operation_failed('update coordinator')
-
-            if self._verbose:
-                self.logger.info('Coordinator %s updated with diff %s', coordinator_id, reply['update']['diff'])
-
-            return self.job_coordinator_info(coordinator_id=coordinator_id)
-        else:
-            raise exceptions.OozieException.operation_failed('coordinator status must be active in order to update')
 
     def jobs_submit_workflow(self, xml_path, configuration=None, start=False):
         user = self._user or 'oozie'
