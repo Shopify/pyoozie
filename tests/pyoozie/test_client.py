@@ -100,6 +100,17 @@ def sample_coordinator_action_killed(api, sample_coordinator_running):
 
 
 @pytest.fixture
+def sample_coordinator_action_killed_with_killed_coordinator(api, sample_coordinator_killed):
+    info = {
+        'id': SAMPLE_COORD_ACTION,
+        'status': 'KILLED'
+    }
+    action = model.CoordinatorAction(api, info, sample_coordinator_killed)
+    action.parent().actions = {12: action}
+    return action
+
+
+@pytest.fixture
 def sample_workflow_running(api):
     info = {
         'id': SAMPLE_WF_ID,
@@ -1114,6 +1125,78 @@ class TestOozieClientJobCoordinatorManage(object):
                 assert not mock_put.called
                 mock_put.reset_mock()
 
+    def test_job_coordinator_rerun(self, api, sample_coordinator_action_running,
+                                   sample_coordinator_action_killed,
+                                   sample_coordinator_action_killed_with_killed_coordinator):
+        with mock.patch.object(api, '_put') as mock_put:
+            with mock.patch.object(api, 'job_action_info') as mock_info:
+                mock_info.return_value = sample_coordinator_action_killed
+                assert api.job_coordinator_rerun(SAMPLE_COORD_ACTION)
+                mock_put.assert_called_with('job/' + SAMPLE_COORD_ID +
+                                            '?action=coord-rerun&type=action&scope=12&refresh=true')
+                mock_put.reset_mock()
+
+                mock_info.return_value = sample_coordinator_action_killed_with_killed_coordinator
+                assert not api.job_coordinator_rerun(SAMPLE_COORD_ACTION)
+                assert not mock_put.called
+                mock_put.reset_mock()
+
+                mock_info.return_value = sample_coordinator_action_running
+                assert not api.job_coordinator_rerun(SAMPLE_COORD_ACTION)
+                assert not mock_put.called
+                mock_put.reset_mock()
+
+    def test_job_coordinator_rerun_only_supports_actions(self, api, sample_coordinator_running):
+        with mock.patch.object(api, 'job_action_info') as mock_info:
+            mock_info.return_value = sample_coordinator_running
+            with pytest.raises(ValueError) as value_error:
+                api.job_coordinator_rerun(SAMPLE_COORD_ID)
+            assert str(value_error.value) == 'Rerun only supports coordinator action IDs'
+
+    def test_job_coordinator_update(self, api, sample_coordinator_running, sample_coordinator_killed):
+        with mock.patch.object(api, '_put') as mock_put:
+            with mock.patch.object(api, 'job_coordinator_info') as mock_info:
+                mock_info.return_value = sample_coordinator_running
+
+                mock_put.return_value = {'update': {'diff': "****Empty Diff****"}}
+
+                coord = api.job_coordinator_update(SAMPLE_COORD_ID, '/dummy/coord-path-minimal')
+
+                conf = xml._coordinator_submission_xml('oozie', '/dummy/coord-path-minimal')
+                mock_put.assert_called_with('job/' + SAMPLE_COORD_ID + "?action=update", conf)
+                mock_info.assert_called_with(coordinator_id=SAMPLE_COORD_ID)
+                assert coord is sample_coordinator_running
+
+                mock_put.reset_mock()
+                mock_info.reset_mock()
+
+                mock_info.return_value = sample_coordinator_running
+                mock_put.return_value = {'update': {'diff': "*****Diffs*****"}}
+
+                coord = api.job_coordinator_update(SAMPLE_COORD_ID, '/dummy/coord-path-full')
+
+                conf = xml._coordinator_submission_xml('oozie', '/dummy/coord-path-full')
+                mock_put.assert_called_with('job/' + SAMPLE_COORD_ID + "?action=update", conf)
+                mock_info.assert_called_with(coordinator_id=SAMPLE_COORD_ID)
+                assert coord is sample_coordinator_running
+
+                mock_put.reset_mock()
+                mock_info.reset_mock()
+
+                mock_info.return_value = sample_coordinator_killed
+
+                with pytest.raises(exceptions.OozieException) as err:
+                    api.job_coordinator_update(SAMPLE_COORD_ID, '/dummy/coord-path-full')
+
+                assert 'coordinator status must be active in order to update' in str(err)
+
+                mock_info.return_value = sample_coordinator_running
+                mock_put.return_value = {}
+                with pytest.raises(exceptions.OozieException) as err:
+                    api.job_coordinator_update(SAMPLE_COORD_ID, '/dummy/coord-path-full')
+
+                assert 'update coordinator' in str(err)
+
 
 class TestOozieClientJobWorkflowManage(object):
 
@@ -1194,53 +1277,6 @@ class TestOozieClientJobWorkflowManage(object):
                 assert not api.job_workflow_start(SAMPLE_WF_ACTION)
                 assert not mock_put.called
                 mock_put.reset_mock()
-
-
-class TestOozieClientJobUpdate(object):
-
-    def test_jobs_update_coordinator(self, api, sample_coordinator_running, sample_coordinator_killed):
-        with mock.patch.object(api, '_put') as mock_put:
-            with mock.patch.object(api, 'job_coordinator_info') as mock_info:
-                mock_info.return_value = sample_coordinator_running
-
-                mock_put.return_value = {'update': {'diff': "****Empty Diff****"}}
-
-                coord = api.jobs_update_coordinator(SAMPLE_COORD_ID, '/dummy/coord-path-minimal')
-
-                conf = xml._coordinator_submission_xml('oozie', '/dummy/coord-path-minimal')
-                mock_put.assert_called_with('job/' + SAMPLE_COORD_ID + "?action=update", conf)
-                mock_info.assert_called_with(coordinator_id=SAMPLE_COORD_ID)
-                assert coord is sample_coordinator_running
-
-                mock_put.reset_mock()
-                mock_info.reset_mock()
-
-                mock_info.return_value = sample_coordinator_running
-                mock_put.return_value = {'update': {'diff': "*****Diffs*****"}}
-
-                coord = api.jobs_update_coordinator(SAMPLE_COORD_ID, '/dummy/coord-path-full')
-
-                conf = xml._coordinator_submission_xml('oozie', '/dummy/coord-path-full')
-                mock_put.assert_called_with('job/' + SAMPLE_COORD_ID + "?action=update", conf)
-                mock_info.assert_called_with(coordinator_id=SAMPLE_COORD_ID)
-                assert coord is sample_coordinator_running
-
-                mock_put.reset_mock()
-                mock_info.reset_mock()
-
-                mock_info.return_value = sample_coordinator_killed
-
-                with pytest.raises(exceptions.OozieException) as err:
-                    api.jobs_update_coordinator(SAMPLE_COORD_ID, '/dummy/coord-path-full')
-
-                assert 'coordinator status must be active in order to update' in str(err)
-
-                mock_info.return_value = sample_coordinator_running
-                mock_put.return_value = {}
-                with pytest.raises(exceptions.OozieException) as err:
-                    api.jobs_update_coordinator(SAMPLE_COORD_ID, '/dummy/coord-path-full')
-
-                assert 'update coordinator' in str(err)
 
 
 class TestOozieClientJobSubmit(object):
