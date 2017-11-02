@@ -622,6 +622,51 @@ class Action(_AbstractWorkflowEntity):
         return doc
 
 
+class Decision(_AbstractWorkflowEntity):
+    """Node specifying a switch/case."""
+
+    def __init__(
+            self,
+            default,        # type: _AbstractWorkflowEntity
+            choices,        # type: typing.Dict[typing.Text, _AbstractWorkflowEntity]
+            name=None,      # type: typing.Optional[typing.Text]
+            on_error=None,  # type: typing.Optional[_AbstractWorkflowEntity]
+    ):
+        # type: (...) -> None
+        super(Decision, self).__init__(xml_tag='decision', name=name, on_error=on_error)
+        assert default, 'A default must be supplied'
+        assert choices, 'At least one choice required'
+        self.__default = copy.deepcopy(default)
+        self.__choices = copy.deepcopy(choices)
+
+    def _xml(self, doc, tag, text, on_next, on_error):
+        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+        _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
+
+        # Write switch/case
+        with tag(self.xml_tag(), name=self.identifier()):
+            with tag('switch'):
+                for case, dest in self.__choices.items():
+                    with tag('case', to=dest.identifier()):
+                        doc.text(case)
+                doc.stag('default', to=self.__default.identifier())
+
+        # Write contained actions
+        self.__default._xml(doc, tag, text, on_next, _on_error)
+        for choice in self.__choices.values():
+            choice._xml(doc, tag, text, on_next, _on_error)
+
+        return doc
+
+    def __iter__(self):
+        # type: () -> typing.Generator[_AbstractWorkflowEntity, None, None]
+        for action in self.__choices.values():
+            yield action
+        yield self.__default
+        for action in super(Decision, self).__iter__():
+            yield action
+
+
 class Serial(_AbstractWorkflowEntity):
     """Sequence of entities to execute (implemented by chaining entities and 'OK' transitions)"""
 
