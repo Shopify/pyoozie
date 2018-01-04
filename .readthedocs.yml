@@ -1,0 +1,11 @@
+formats:
+  - none
+
+build:
+    image: latest  # Needed for 3.6
+
+python:
+  version: 3.6
+  pip_install: true  # Needed for the extra requirements
+  extra_requirements:
+    - docs
