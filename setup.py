@@ -59,6 +59,7 @@ setuplib.setup(
         ],
         'docs': [
             'sphinx >= 1.6',
+            'sphinx_rtd_theme',
         ],
     },
     license="MIT",
