@@ -10,7 +10,7 @@ clean:
 		rm -fr *.egg-info
 
 install:
-		pip install -e ".[test,deploy]"
+		pip install -e ".[test,deploy,docs]"
 		test -d lib || mkdir lib
 		test -f lib/oozie-client-4.1.0.jar || \
 			curl http://central.maven.org/maven2/org/apache/oozie/oozie-client/4.1.0/oozie-client-4.1.0.jar -o lib/oozie-client-4.1.0.jar
@@ -19,6 +19,10 @@ install:
 
 test: clean
 		py.test -vv --durations=10 --cov=pyoozie
+
+test_docs:
+		@echo "Build all Sphinx docs files and fail on errors/warnings."
+		sphinx-build -a -E -W -q docs/source/ build/docs
 
 coverage:
 		py.test -vv --cov=pyoozie --cov-report html tests/
