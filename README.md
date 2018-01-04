@@ -1,5 +1,9 @@
 # Py Oozie
 
+[![Build Status](https://travis-ci.org/Shopify/pyoozie.svg?branch=master)](https://travis-ci.org/Shopify/pyoozie)
+[![PyPI](https://img.shields.io/pypi/v/nine.svg)](https://pypi.python.org/pypi/pyoozie)
+[![PyPI](https://img.shields.io/pypi/pyversions/pyoozie.svg)](https://pypi.python.org/pypi/pyoozie)
+
 This is a library for querying and scheduling with [Apache Oozie](https://oozie.apache.org/).
 
 ## Supported versions
