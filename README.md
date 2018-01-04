@@ -5,7 +5,7 @@ This is a library for querying and scheduling with [Apache Oozie](https://oozie.
 ## Supported versions
 
 - Oozie 4.1.0
-- Python 2.7 and 3.3+
+- Python 2.7 and 3.4+
 
 ## Contributing
 
