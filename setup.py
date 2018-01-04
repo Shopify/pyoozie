@@ -56,7 +56,10 @@ setuplib.setup(
         ],
         'test: python_version >= "3.3"': [
             'mypy',
-        ]
+        ],
+        'docs': [
+            'sphinx >= 1.6',
+        ],
     },
     license="MIT",
     keywords=['oozie'],

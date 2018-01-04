@@ -7,3 +7,4 @@ htmlcov
 lib
 dist
 .mypy_cache
+docs/build
