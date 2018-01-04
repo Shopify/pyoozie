@@ -3,8 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Py Oozie's documentation!
-====================================
+Py Oozie documentation
+======================
+
+This is a library for querying and scheduling with `Apache Oozie <https://oozie.apache.org>`_.
+
+Supported versions
+------------------
+
+- Oozie 4.1.0
+- Python 2.7 and 3.3+
+
 
 .. toctree::
    :maxdepth: 2
