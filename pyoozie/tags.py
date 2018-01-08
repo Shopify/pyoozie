@@ -144,7 +144,7 @@ class Parameters(_PropertyList):
     """Coordinator/workflow parameters.
 
     Allows one to specify properties that can be reused in actions. "Properties that are a valid Java identifier,
-    [A-Za-z_][0-9A-Za-z_]* , are available as '${NAME}' variables within the workflow definition."
+    `[A-Za-z_][0-9A-Za-z_]*` , are available as '${NAME}' variables within the workflow definition."
 
     "Properties that are not valid Java Identifier, for example 'job.tracker', are available via the
     String wf:conf(String name) function. Valid identifier properties are available via this function as well."
@@ -166,22 +166,21 @@ class Configuration(_PropertyList):
 class Credential(_PropertyList):
     """HCatalog, Hive Metastore, HBase, or Hive Server 2 action credentials.
 
-    Generates XML of the form:
-    ```
-    ...
-    <credentials>
-      <credential name='my-hcat-creds' type='hcat'>
-         <property>
-            <name>hcat.metastore.uri</name>
-            <value>HCAT_URI</value>
-         </property>
-         ...
-      </credential>
-     </credentials>
-     <action name='pig' cred='my-hcat-creds'>
-       <pig>
+    Generates XML of the form::
+
        ...
-    ```
+       <credentials>
+         <credential name='my-hcat-creds' type='hcat'>
+            <property>
+               <name>hcat.metastore.uri</name>
+               <value>HCAT_URI</value>
+            </property>
+            ...
+         </credential>
+        </credentials>
+        <action name='pig' cred='my-hcat-creds'>
+          <pig>
+          ...
     """
 
     def __init__(

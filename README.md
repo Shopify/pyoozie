@@ -35,6 +35,27 @@ mkvirtualenv -a $(pwd) pyooziepy2 -p python2
 mkvirtualenv -a $(pwd) pyooziepy3 -p python3
 ```
 
+## Documentation
+
+The documentation is hosted on ReadTheDocs: https://py-oozie.readthedocs.io
+
+The doc is automatically updated from the `master` branch. More info in
+[ReadTheDocs settings](https://readthedocs.org/projects/py-oozie/).
+
+### Local build
+
+Install the dependencies:
+```bash
+$ pip install -e ./[docs]
+```
+
+Generate the html files:
+```bash
+$ make -C docs html
+```
+
+The locally build doc is located at `docs/build/html/index.html`.
+
 ## Testing
 
 All committed code requires quality tests that provide ample code coverage. Functionality that is not covered by tests
