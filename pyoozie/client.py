@@ -78,10 +78,9 @@ class OozieClient(object):
         self._timeout = timeout or 30
         self._verbose = verbose  # Note: change default for verbose!
         self._stats = OozieClient.Stats()
-        if test_connection:
-            self.test_connection()
+        self._valid_server = False
 
-    def test_connection(self):
+    def _test_connection(self):
         response = None
         try:
             response = requests.get('{}/versions'.format(self._url), timeout=self._timeout)
@@ -109,6 +108,10 @@ class OozieClient(object):
         return headers
 
     def _request(self, method, endpoint, content_type, content=None):
+        if not self._valid_server:
+            self._test_connection()
+            self._valid_server = True
+
         response = None
         url = '{}/v2/{}'.format(self._url, endpoint)
 

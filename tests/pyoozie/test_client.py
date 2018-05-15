@@ -34,7 +34,7 @@ def oozie_config():
 
 @pytest.fixture
 def api(oozie_config):
-    with mock.patch('pyoozie.client.OozieClient.test_connection'):
+    with mock.patch('pyoozie.client.OozieClient._test_connection'):
         api = client.OozieClient(**oozie_config)
     return api
 
@@ -148,7 +148,7 @@ def sample_workflow_prep(api):
 
 class TestOozieClientCore(object):
 
-    @mock.patch('pyoozie.client.OozieClient.test_connection')
+    @mock.patch('pyoozie.client.OozieClient._test_connection')
     def test_construction(self, mock_test_conn, oozie_config):
         api = client.OozieClient(**oozie_config)
         assert mock_test_conn.called
