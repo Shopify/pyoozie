@@ -68,7 +68,7 @@ class OozieClient(object):
         def elapsed(self):
             return self._elapsed
 
-    def __init__(self, url=None, user=None, timeout=None, verbose=True, test_connection=True, **_):
+    def __init__(self, url=None, user=None, timeout=None, verbose=True, **_):
         self.logger = logging.getLogger('pyoozie.OozieClient')
         oozie_url = (url or 'http://localhost').rstrip('/')
         if not oozie_url.endswith('/oozie'):
