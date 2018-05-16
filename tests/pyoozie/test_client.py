@@ -35,8 +35,7 @@ def oozie_config():
 @pytest.fixture
 def api(oozie_config):
     with mock.patch('pyoozie.client.OozieClient._test_connection'):
-        api = client.OozieClient(**oozie_config)
-    return api
+        yield client.OozieClient(**oozie_config)
 
 
 @pytest.fixture
@@ -151,31 +150,38 @@ class TestOozieClientCore(object):
     @mock.patch('pyoozie.client.OozieClient._test_connection')
     def test_construction(self, mock_test_conn, oozie_config):
         api = client.OozieClient(**oozie_config)
-        assert mock_test_conn.called
+        assert not mock_test_conn.called
         assert api._url == 'http://localhost:11000/oozie'
 
     def test_test_connection(self, oozie_config):
         with requests_mock.mock() as m:
             m.get('http://localhost:11000/oozie/versions', text='[0, 1, 2]')
-            client.OozieClient(**oozie_config)
+            client.OozieClient(**oozie_config)._test_connection()
 
-        with pytest.raises(exceptions.OozieException) as err:
-            with requests_mock.mock() as m:
-                m.get('http://localhost:11000/oozie/versions', text='[0, 1]')
-                client.OozieClient(**oozie_config)
-        assert 'does not support API version 2' in str(err)
+            m.get('http://localhost:11000/oozie/versions', text='[0, 1]')
+            with pytest.raises(exceptions.OozieException) as err:
+                client.OozieClient(**oozie_config)._test_connection()
+            assert 'does not support API version 2' in str(err)
 
-        with pytest.raises(exceptions.OozieException) as err:
-            with requests_mock.mock() as m:
-                m.get('http://localhost:11000/oozie/versions', status_code=404)
-                client.OozieClient(**oozie_config)
-        assert 'Unable to contact Oozie server' in str(err)
+            m.get('http://localhost:11000/oozie/versions', status_code=404)
+            with pytest.raises(exceptions.OozieException) as err:
+                client.OozieClient(**oozie_config)._test_connection()
+            assert 'Unable to contact Oozie server' in str(err)
 
-        with pytest.raises(exceptions.OozieException) as err:
-            with requests_mock.mock() as m:
-                m.get('http://localhost:11000/oozie/versions', text='>>> fail <<<')
-                client.OozieClient(**oozie_config)
-        assert 'Invalid response from Oozie server' in str(err)
+            m.get('http://localhost:11000/oozie/versions', text='>>> fail <<<')
+            with pytest.raises(exceptions.OozieException) as err:
+                client.OozieClient(**oozie_config)._test_connection()
+            assert 'Invalid response from Oozie server' in str(err)
+
+    def test_test_connection_is_called_once(self, oozie_config):
+        with requests_mock.mock() as m:
+            m.get('http://localhost:11000/oozie/v2/admin/build-version', text='{}')
+
+            with mock.patch('pyoozie.client.OozieClient._test_connection') as m_test:
+                oozie_client = client.OozieClient(**oozie_config)
+                oozie_client.admin_build_version()
+                oozie_client.admin_build_version()
+                m_test.assert_called_once_with()
 
     def test_request(self, api):
         with requests_mock.mock() as m:
