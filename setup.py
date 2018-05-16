@@ -48,7 +48,7 @@ setuplib.setup(
             'pylint>=1.7.1,<1.8',
             'pytest-cov',
             'pytest-randomly',
-            'pytest>=2.7',
+            'pytest>=3.0',
             'requests-mock',
             'shopify_python==0.4.1',
             'xmltodict',
