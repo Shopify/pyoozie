@@ -1,0 +1,31 @@
+up:
+  - python: 3.6.6
+  - python_develop
+  - custom:
+      name: "Download oozie-client-4.1.0.jar"
+      met?: test -f lib/oozie-client-4.1.0.jar
+      meet: |
+        mkdir -p lib
+        curl http://central.maven.org/maven2/org/apache/oozie/oozie-client/4.1.0/oozie-client-4.1.0.jar -o lib/oozie-client-4.1.0.jar
+  - custom:
+      name: "Download commons-cli-1.2.jar"
+      met?: test -f lib/commons-cli-1.2.jar
+      meet: |
+        curl http://central.maven.org/maven2/commons-cli/commons-cli/1.2/commons-cli-1.2.jar -o lib/commons-cli-1.2.jar
+
+commands:
+  test:
+    desc: Run the unittests
+    run: make test
+
+  type:
+    desc: Run the type checking
+    run: make test
+
+  lint:
+    desc: Run the linter
+    run: make lint
+
+  coverage:
+    desc: Run the unittests and display the test coverage
+    run: make coverage
