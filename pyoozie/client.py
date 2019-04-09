@@ -239,7 +239,7 @@ class OozieClient(object):
         job_type, result_type = self.JOB_TYPE_STRINGS[type_enum]
         filters = self._filter_string(type_enum, user=user, name=name, status=status)
         offset = 1
-        chunk = limit if limit else 500
+        chunk = min(limit or 5000, 5000)
         jobs = []
         while True:
             result = self._get('jobs?jobtype={}{}&offset={}&len={}'.format(job_type, filters, offset, chunk))
