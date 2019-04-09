@@ -257,10 +257,12 @@ class OozieClient(object):
         return self._jobs_query(model.ArtifactType.Workflow, name=name, user=user, limit=limit)
 
     def jobs_all_active_workflows(self, user=None, details=True):
-        return self._jobs_query(model.ArtifactType.Workflow, status=model.WorkflowStatus.active(), user=user, details=details)
+        return self._jobs_query(
+            model.ArtifactType.Workflow, status=model.WorkflowStatus.active(), user=user, details=details)
 
     def jobs_all_running_workflows(self, user=None, details=True):
-        return self._jobs_query(model.ArtifactType.Workflow, status=model.WorkflowStatus.running(), user=user, details=details)
+        return self._jobs_query(
+            model.ArtifactType.Workflow, status=model.WorkflowStatus.running(), user=user, details=details)
 
     def jobs_running_workflows(self, name, user=None, details=True):
         return self._jobs_query(
@@ -281,10 +283,12 @@ class OozieClient(object):
         return self._jobs_query(model.ArtifactType.Coordinator, name=name, user=user, limit=limit, details=details)
 
     def jobs_all_active_coordinators(self, user=None, details=True):
-        return self._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.active(), user=user, details=details)
+        return self._jobs_query(
+            model.ArtifactType.Coordinator, status=model.CoordinatorStatus.active(), user=user, details=details)
 
     def jobs_all_running_coordinators(self, user=None, details=True):
-        return self._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.running(), user=user, details=details)
+        return self._jobs_query(
+            model.ArtifactType.Coordinator, status=model.CoordinatorStatus.running(), user=user, details=details)
 
     def jobs_all_suspended_coordinators(self, user=None):
         return self._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.suspended(), user=user)
