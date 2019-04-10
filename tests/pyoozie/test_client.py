@@ -380,8 +380,13 @@ class TestOozieClientJobsQuery(object):
             with pytest.raises(StopIteration):
                 next(mock_results)
 
+    @pytest.mark.parametrize('limit, expected_result_count, expected_queries', [
+        (0, 3, ['jobs?jobtype=coordinator&offset=1&len=5000', 'jobs?jobtype=coordinator&offset=5001&len=5000']),
+        (2, 2, ['jobs?jobtype=coordinator&offset=1&len=2']),
+        (6000, 3, ['jobs?jobtype=coordinator&offset=1&len=5000', 'jobs?jobtype=coordinator&offset=5001&len=5000'])
+    ])
     @mock.patch.object(model.Coordinator, 'fill_in_details', side_effect=lambda c: c, autospec=True)
-    def test_jobs_query_coordinator_pagination(self, _, api):
+    def test_jobs_query_coordinator_pagination(self, _, limit, expected_result_count, expected_queries, api):
         mock_results = iter(
             [
                 {
@@ -397,42 +402,9 @@ class TestOozieClientJobsQuery(object):
 
         with mock.patch.object(api, '_get') as mock_get:
             mock_get.side_effect = lambda url: next(mock_results)
-            result = api._jobs_query(model.ArtifactType.Coordinator)
-            assert len(result) == 3
-            mock_get.assert_any_call('jobs?jobtype=coordinator&offset=1&len=5000')
-            mock_get.assert_any_call('jobs?jobtype=coordinator&offset=5001&len=5000')
-            with pytest.raises(StopIteration):
-                next(mock_results)
-
-    @mock.patch.object(model.Coordinator, 'fill_in_details', side_effect=lambda c: c, autospec=True)
-    def test_jobs_query_coordinator_limit(self, _, api):
-        # mock_result = {'total': 1, 'coordinatorjobs': [{'coordJobId': '3-C'}]}
-        mock_results = iter(
-            [
-                {
-                    'total': 2,
-                    'coordinatorjobs': [{'coordJobId': '1-C'}, {'coordJobId': '2-C'}]
-                },
-                {
-                    'total': 5001,
-                    'coordinatorjobs': [{'coordJobId': '1-C'}, {'coordJobId': '2-C'}]
-                },
-                {
-                    'total': 5001,
-                    'coordinatorjobs': [{'coordJobId': '3-C'}]
-                }
-            ]
-        )
-
-        with mock.patch.object(api, '_get') as mock_get:
-            mock_get.side_effect = lambda url: next(mock_results)
-            api._jobs_query(model.ArtifactType.Coordinator, limit=5)
-            mock_get.assert_called_with('jobs?jobtype=coordinator&offset=1&len=5')
-            api._jobs_query(model.ArtifactType.Coordinator, limit=6000)
-            mock_get.assert_any_call('jobs?jobtype=coordinator&offset=1&len=5000')
-            mock_get.assert_any_call('jobs?jobtype=coordinator&offset=5001&len=5000')
-            with pytest.raises(StopIteration):
-                next(mock_results)
+            result = api._jobs_query(model.ArtifactType.Coordinator, limit=limit)
+            assert len(result) == expected_result_count
+            mock_get.assert_has_calls(mock.call(query) for query in expected_queries)
 
     @mock.patch.object(model.Workflow, 'fill_in_details', side_effect=lambda c: c, autospec=True)
     def test_jobs_query_workflow_details(self, fill_in_details, api):
