@@ -504,7 +504,7 @@ class _AbstractWorkflowEntity(collections.Iterable):
 
     def __init__(
             self,
-            xml_tag=None,  # type: typing.Optional[typing.Text]
+            xml_tag,       # type: typing.Text
             name=None,     # type: typing.Optional[typing.Text]
             on_error=None  # type: typing.Optional[_AbstractWorkflowEntity]
     ):
@@ -701,11 +701,11 @@ class Serial(_AbstractWorkflowEntity):
 
     def __init__(self, *entities, **kwargs):
         # type: (*_AbstractWorkflowEntity, **_AbstractWorkflowEntity) -> None
-        super(Serial, self).__init__(on_error=kwargs.get(str('on_error')))
+        super(Serial, self).__init__(xml_tag='unknown', on_error=kwargs.get(str('on_error')))
         self.__entities = tuple(copy.deepcopy(entities))  # type: typing.Tuple[_AbstractWorkflowEntity, ...]
 
     def identifier(self):  # type: () -> typing.Text
-        return self.__entities[0].identifier() if self.__entities else ''
+        return self.__entities[0].identifier()
 
     def _xml(
             self,
