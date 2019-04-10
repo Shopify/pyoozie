@@ -46,7 +46,7 @@ setuplib.setup(
             'mock',
             'pycodestyle == 2.2.0',
             'pylint>=1.7.1,<1.8',
-            'pytest-cov>=2.4.0,<2.6',  # pinned, see https://github.com/z4r/python-coveralls/issues/66
+            'pytest-cov == 2.5.1',  # pinned, see https://github.com/z4r/python-coveralls/issues/66
             'pytest-randomly',
             'pytest>=3.0',
             'requests-mock',
