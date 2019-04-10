@@ -252,7 +252,7 @@ class _OozieArtifact(object):
 
     REQUIRED_KEYS = {}  # type: typing.Dict[unicode, typing.Callable]
 
-    SUPPORTED_KEYS = {'toString': None}  # type: typing.Dict[unicode, typing.Callable]
+    SUPPORTED_KEYS = {'toString': None}  # type: typing.Dict[unicode, typing.Optional[typing.Callable]]
 
     def __init__(self, oozie_client, details, parent=None):
         self._client = oozie_client

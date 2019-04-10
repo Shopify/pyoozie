@@ -1,17 +1,17 @@
 # Copyright (c) 2017 "Shopify inc." All rights reserved.
 # Use of this source code is governed by a MIT-style license that can be found in the LICENSE file.
 from __future__ import unicode_literals
+
 import abc
 import collections
 import copy
 import datetime
+import enum
 import itertools
 import re
 import string  # pylint: disable=deprecated-module
-import uuid
-
-import enum
 import typing  # pylint: disable=unused-import
+import uuid
 
 import six
 import yattag
@@ -509,10 +509,10 @@ class _AbstractWorkflowEntity(typing.Iterable):
             on_error=None  # type: typing.Optional[_AbstractWorkflowEntity]
     ):
         # type: (...) -> None
-        self.__xml_tag = xml_tag
+        self.__xml_tag = xml_tag or 'unknown'
         self.__name = name if name else uuid.uuid4().hex[:8]
         self.__on_error = copy.deepcopy(on_error)
-        self.__identifier = self.create_identifier(xml_tag)
+        self.__identifier = self.create_identifier(self.__xml_tag)
 
     def xml_tag(self):
         # type: () -> typing.Text
@@ -526,8 +526,14 @@ class _AbstractWorkflowEntity(typing.Iterable):
         # type: (typing.Text) -> typing.Text
         return validate_xml_id('{tag}-{name}'.format(tag=xml_tag, name=self.__name))
 
-    def _xml_and_get_on_error(self, doc, tag, text, on_next, on_error):
-        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+    def _xml_and_get_on_error(
+            self,
+            doc,        # type: yattag.doc.Doc
+            tag,        # type: yattag.doc.Doc.tag
+            text,       # type: yattag.doc.Doc.Text
+            on_next,    # type: typing.Text
+            on_error    # type: typing.Optional[typing.Text]
+    ):
         if self.__on_error:
             self.__on_error._xml(doc, tag, text, on_next, on_error)
         return self.__on_error.identifier() if self.__on_error else (
@@ -535,8 +541,14 @@ class _AbstractWorkflowEntity(typing.Iterable):
         )
 
     @abc.abstractmethod
-    def _xml(self, doc, tag, text, on_next, on_error):
-        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+    def _xml(
+            self,
+            doc,        # type: yattag.doc.Doc
+            tag,        # type: yattag.doc.Doc.tag
+            text,       # type: yattag.doc.Doc.Text
+            on_next,    # type: typing.Text
+            on_error    # type: typing.Optional[typing.Text]
+    ):
         raise NotImplementedError()
 
     def __iter__(self):
@@ -564,8 +576,14 @@ class Kill(_AbstractWorkflowEntity):
         super(Kill, self).__init__(xml_tag='kill', name=name)
         self.message = message
 
-    def _xml(self, doc, tag, text, on_next, on_error):
-        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+    def _xml(
+            self,
+            doc,        # type: yattag.doc.Doc
+            tag,        # type: yattag.doc.Doc.tag
+            text,       # type: yattag.doc.Doc.Text
+            on_next,    # type: typing.Text
+            on_error    # type: typing.Optional[typing.Text]
+    ):
         with tag(self.xml_tag(), name=self.identifier()):
             with tag('message'):
                 doc.text(self.message)
@@ -600,8 +618,14 @@ class Action(_AbstractWorkflowEntity):
         # type: () -> typing.Optional[typing.Text]
         return self.__credential
 
-    def _xml(self, doc, tag, text, on_next, on_error):
-        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+    def _xml(
+            self,
+            doc,        # type: yattag.doc.Doc
+            tag,        # type: yattag.doc.Doc.tag
+            text,       # type: yattag.doc.Doc.Text
+            on_next,    # type: typing.Text
+            on_error    # type: typing.Optional[typing.Text]
+    ):
         _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
 
         attributes = {
@@ -638,8 +662,14 @@ class Decision(_AbstractWorkflowEntity):
         self.__default = copy.deepcopy(default)
         self.__choices = copy.deepcopy(choices)
 
-    def _xml(self, doc, tag, text, on_next, on_error):
-        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+    def _xml(
+            self,
+            doc,        # type: yattag.doc.Doc
+            tag,        # type: yattag.doc.Doc.tag
+            text,       # type: yattag.doc.Doc.Text
+            on_next,    # type: typing.Text
+            on_error    # type: typing.Optional[typing.Text]
+    ):
         _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
 
         # Write switch/case
@@ -675,10 +705,16 @@ class Serial(_AbstractWorkflowEntity):
         self.__entities = tuple(copy.deepcopy(entities))  # type: typing.Tuple[_AbstractWorkflowEntity, ...]
 
     def identifier(self):  # type: () -> typing.Text
-        return self.__entities[0].identifier() if self.__entities else None
+        return self.__entities[0].identifier() if self.__entities else ''
 
-    def _xml(self, doc, tag, text, on_next, on_error):
-        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+    def _xml(
+            self,
+            doc,        # type: yattag.doc.Doc
+            tag,        # type: yattag.doc.Doc.tag
+            text,       # type: yattag.doc.Doc.Text
+            on_next,    # type: typing.Text
+            on_error    # type: typing.Optional[typing.Text]
+    ):
         _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
         entity_nextidentifier = zip(self.__entities, itertools.chain(
             (a.identifier() for a in self.__entities[1:]),
@@ -714,8 +750,14 @@ class Parallel(_AbstractWorkflowEntity):
         assert entities, 'At least 1 entity required'
         self.__entities = frozenset(copy.deepcopy(entities))  # type: typing.FrozenSet[_AbstractWorkflowEntity]
 
-    def _xml(self, doc, tag, text, on_next, on_error):
-        # type: (yattag.doc.Doc, yattag.doc.Doc.tag, yattag.doc.Doc.text, typing.Text, typing.Text) -> yattag.doc.Doc
+    def _xml(
+            self,
+            doc,        # type: yattag.doc.Doc
+            tag,        # type: yattag.doc.Doc.tag
+            text,       # type: yattag.doc.Doc.Text
+            on_next,    # type: typing.Text
+            on_error    # type: typing.Optional[typing.Text]
+    ):
         _on_error = self._xml_and_get_on_error(doc, tag, text, on_next, on_error)
         with tag(self.xml_tag(), name=self.identifier()):
             for entity in self.__entities:
