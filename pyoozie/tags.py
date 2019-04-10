@@ -496,7 +496,7 @@ class CoordinatorApp(XMLSerializable):
         return doc
 
 
-class _AbstractWorkflowEntity(typing.Iterable):
+class _AbstractWorkflowEntity(collections.Iterable):
     """An abstract object representing an Oozie workflow action that can be serialized to XML."""
     # pylint: disable=abstract-method
 
