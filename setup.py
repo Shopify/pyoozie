@@ -54,7 +54,10 @@ setuplib.setup(
             'xmltodict',
             'pywebhdfs>=0.4.1',
         ],
-        'test: python_version >= "3.3"': [
+        'test: python_version ~= "3.4"': [  # mypy 0.700 dropped python 3.4 support
+            'mypy == 0.670',
+        ],
+        'test: python_version >= "3.5"': [
             'mypy',
         ],
         'docs': [
