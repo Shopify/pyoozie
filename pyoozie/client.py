@@ -239,7 +239,7 @@ class OozieClient(object):
         job_type, result_type = self.JOB_TYPE_STRINGS[type_enum]
         filters = self._filter_string(type_enum, user=user, name=name, status=status)
         offset = 1
-        chunk = limit if limit else 500
+        chunk = min(limit or 5000, 5000)
         jobs = []
         while True:
             result = self._get('jobs?jobtype={}{}&offset={}&len={}'.format(job_type, filters, offset, chunk))
@@ -256,15 +256,17 @@ class OozieClient(object):
     def jobs_all_workflows(self, name=None, user=None, limit=0):
         return self._jobs_query(model.ArtifactType.Workflow, name=name, user=user, limit=limit)
 
-    def jobs_all_active_workflows(self, user=None):
-        return self._jobs_query(model.ArtifactType.Workflow, status=model.WorkflowStatus.active(), user=user)
-
-    def jobs_all_running_workflows(self, user=None):
-        return self._jobs_query(model.ArtifactType.Workflow, status=model.WorkflowStatus.running(), user=user)
-
-    def jobs_running_workflows(self, name, user=None):
+    def jobs_all_active_workflows(self, user=None, details=True):
         return self._jobs_query(
-            model.ArtifactType.Workflow, name=name, status=model.WorkflowStatus.running(), user=user)
+            model.ArtifactType.Workflow, status=model.WorkflowStatus.active(), user=user, details=details)
+
+    def jobs_all_running_workflows(self, user=None, details=True):
+        return self._jobs_query(
+            model.ArtifactType.Workflow, status=model.WorkflowStatus.running(), user=user, details=details)
+
+    def jobs_running_workflows(self, name, user=None, details=True):
+        return self._jobs_query(
+            model.ArtifactType.Workflow, name=name, status=model.WorkflowStatus.running(), user=user, details=details)
 
     def jobs_last_workflow(self, name, user=None):
         jobs = self._jobs_query(model.ArtifactType.Workflow, name=name, user=user, limit=1)
@@ -273,18 +275,20 @@ class OozieClient(object):
         else:
             raise exceptions.OozieException.workflow_not_found(name)
 
-    def jobs_workflow_names(self, user=None):
-        jobs = self._jobs_query(model.ArtifactType.Workflow, user=user, details=False)
+    def jobs_workflow_names(self, user=None, limit=0):
+        jobs = self._jobs_query(model.ArtifactType.Workflow, user=user, details=False, limit=limit)
         return set([job.appName for job in jobs])
 
-    def jobs_all_coordinators(self, name=None, user=None, limit=0):
-        return self._jobs_query(model.ArtifactType.Coordinator, name=name, user=user, limit=limit)
+    def jobs_all_coordinators(self, name=None, user=None, limit=0, details=True):
+        return self._jobs_query(model.ArtifactType.Coordinator, name=name, user=user, limit=limit, details=details)
 
-    def jobs_all_active_coordinators(self, user=None):
-        return self._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.active(), user=user)
+    def jobs_all_active_coordinators(self, user=None, details=True):
+        return self._jobs_query(
+            model.ArtifactType.Coordinator, status=model.CoordinatorStatus.active(), user=user, details=details)
 
-    def jobs_all_running_coordinators(self, user=None):
-        return self._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.running(), user=user)
+    def jobs_all_running_coordinators(self, user=None, details=True):
+        return self._jobs_query(
+            model.ArtifactType.Coordinator, status=model.CoordinatorStatus.running(), user=user, details=details)
 
     def jobs_all_suspended_coordinators(self, user=None):
         return self._jobs_query(model.ArtifactType.Coordinator, status=model.CoordinatorStatus.suspended(), user=user)
