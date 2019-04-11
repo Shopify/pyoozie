@@ -46,7 +46,7 @@ setuplib.setup(
             'mock',
             'pycodestyle == 2.2.0',
             'pylint>=1.7.1,<1.8',
-            'pytest-cov',
+            'pytest-cov>=2.4.0,<2.6',  # pinned, see https://github.com/z4r/python-coveralls/issues/66
             'pytest-randomly',
             'pytest>=3.0',
             'requests-mock',
@@ -54,7 +54,10 @@ setuplib.setup(
             'xmltodict',
             'pywebhdfs>=0.4.1',
         ],
-        'test: python_version >= "3.3"': [
+        'test: python_version ~= "3.4"': [  # mypy 0.700 dropped python 3.4 support
+            'mypy == 0.670',
+        ],
+        'test: python_version >= "3.5"': [
             'mypy',
         ],
         'docs': [
