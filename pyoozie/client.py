@@ -156,6 +156,10 @@ class OozieClient(object):
     def _post(self, endpoint, content, content_type='application/xml'):
         return self._request('POST', endpoint, content_type, content)
 
+    @property
+    def url(self):
+        return self._url
+
     def report_stats(self, to_logger=None):
         if not to_logger:
             to_logger = self.logger
