@@ -287,6 +287,10 @@ class _OozieArtifact(object):
         # If values are missing, extrapolate them
         pass
 
+    @property
+    def client_url(self):
+        return self._client.url if self._client else None
+
     def is_coordinator(self):
         return False
 

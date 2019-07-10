@@ -21,6 +21,11 @@ SAMPLE_START_ACTION = '0123456-123456789012345-oozie-oozi-W@:start:'
 
 
 @pytest.fixture
+def mock_client():
+    return mock.Mock(name='oozie_client', url='https://oozie-server:1234/oozie')
+
+
+@pytest.fixture
 def empty_coordinator():
     return {
         'acl': None,
@@ -97,8 +102,8 @@ def valid_coordinator():
 
 
 @pytest.fixture
-def sample_coordinator(valid_coordinator):
-    return model.Coordinator(mock.Mock(), valid_coordinator, None)
+def sample_coordinator(valid_coordinator, mock_client):
+    return model.Coordinator(mock_client, valid_coordinator, None)
 
 
 @pytest.fixture
@@ -154,8 +159,8 @@ def valid_coordinator_action():
 
 
 @pytest.fixture
-def sample_coordinator_action(valid_coordinator_action):
-    return model.CoordinatorAction(mock.Mock(), valid_coordinator_action, None)
+def sample_coordinator_action(valid_coordinator_action, mock_client):
+    return model.CoordinatorAction(mock_client, valid_coordinator_action, None)
 
 
 @pytest.fixture
@@ -219,8 +224,8 @@ def valid_workflow():
 
 
 @pytest.fixture
-def sample_workflow(valid_workflow):
-    return model.Workflow(mock.Mock(), valid_workflow, None)
+def sample_workflow(valid_workflow, mock_client):
+    return model.Workflow(mock_client, valid_workflow, None)
 
 
 @pytest.fixture
@@ -291,8 +296,8 @@ def valid_workflow_action():
 
 
 @pytest.fixture
-def sample_workflow_action(valid_workflow_action):
-    return model.WorkflowAction(mock.Mock(), valid_workflow_action, None)
+def sample_workflow_action(valid_workflow_action, mock_client):
+    return model.WorkflowAction(mock_client, valid_workflow_action, None)
 
 
 @pytest.fixture
@@ -325,8 +330,8 @@ def valid_start_action():
 
 
 @pytest.fixture
-def sample_start_action(valid_start_action):
-    return model.WorkflowAction(mock.Mock(), valid_start_action, None)
+def sample_start_action(valid_start_action, mock_client):
+    return model.WorkflowAction(mock_client, valid_start_action, None)
 
 
 def test_status():
@@ -525,24 +530,25 @@ def test_workflow_action_status_predicates(status, active, running, suspendable,
     assert status.is_suspended() == suspended
 
 
-def test_parse_empty_coordinator(empty_coordinator):
+def test_parse_empty_coordinator(empty_coordinator, mock_client):
     with pytest.raises(exceptions.OozieParsingException) as err:
-        coord = model.Coordinator(None, empty_coordinator, None)
+        coord = model.Coordinator(mock_client, empty_coordinator, None)
     assert "Required key 'coordJobId' missing or invalid in Coordinator" in str(err)
 
     empty_coordinator['coordJobId'] = 'bad-coord-id'
     with pytest.raises(exceptions.OozieParsingException) as err:
-        coord = model.Coordinator(None, empty_coordinator, None)
+        coord = model.Coordinator(mock_client, empty_coordinator, None)
     assert "Required key 'coordJobId' missing or invalid in Coordinator" in str(err)
 
     empty_coordinator['coordJobId'] = SAMPLE_COORD_ID
-    coord = model.Coordinator(None, empty_coordinator, None)
+    coord = model.Coordinator(mock_client, empty_coordinator, None)
     assert coord.coordJobId == SAMPLE_COORD_ID
+    assert coord.client_url == 'https://oozie-server:1234/oozie'
     assert coord._details == {'wat?': 'blarg'}
 
 
-def test_parse_coordinator(valid_coordinator):
-    coord = model.Coordinator(None, valid_coordinator, None)
+def test_parse_coordinator(valid_coordinator, mock_client):
+    coord = model.Coordinator(mock_client, valid_coordinator, None)
     assert coord.conf == {
         'key1': 'value1',
         'key two': 'value two',
@@ -554,6 +560,7 @@ def test_parse_coordinator(valid_coordinator):
     assert coord.lastAction == datetime.datetime(2016, 6, 3, 1, 0, 0)
     assert coord.nextMaterializedTime == datetime.datetime(2016, 6, 3, 1, 0, 0)
     assert coord.status == model.CoordinatorStatus.RUNNING
+    assert coord.client_url == 'https://oozie-server:1234/oozie'
     assert coord._details == {'wat?': 'blarg'}
 
 
@@ -579,24 +586,25 @@ def test_coordinator_extrapolate_degenerate_fields(empty_coordinator):
     assert coord.toString == 'Coordinator application id[' + SAMPLE_COORD_ID + '] status[RUNNING]'
 
 
-def test_parse_empty_coordinator_action(empty_coordinator_action):
+def test_parse_empty_coordinator_action(empty_coordinator_action, mock_client):
     with pytest.raises(exceptions.OozieParsingException) as err:
-        coord = model.CoordinatorAction(None, empty_coordinator_action, None)
+        coord = model.CoordinatorAction(mock_client, empty_coordinator_action, None)
     assert "Required key 'id' missing or invalid in CoordinatorAction" in str(err)
 
     empty_coordinator_action['id'] = 'bad-coord-C@should-be-int'
     with pytest.raises(exceptions.OozieParsingException) as err:
-        coord = model.CoordinatorAction(None, empty_coordinator_action, None)
+        coord = model.CoordinatorAction(mock_client, empty_coordinator_action, None)
     assert "Required key 'id' missing or invalid in CoordinatorAction" in str(err)
 
     empty_coordinator_action['id'] = SAMPLE_COORD_ACTION
-    coord = model.CoordinatorAction(None, empty_coordinator_action, None)
+    coord = model.CoordinatorAction(mock_client, empty_coordinator_action, None)
     assert coord.id == SAMPLE_COORD_ACTION
+    assert coord.client_url == 'https://oozie-server:1234/oozie'
     assert coord._details == {'wat?': 'blarg'}
 
 
-def test_parse_coordinator_action(valid_coordinator_action):
-    coord = model.CoordinatorAction(None, valid_coordinator_action, None)
+def test_parse_coordinator_action(valid_coordinator_action, mock_client):
+    coord = model.CoordinatorAction(mock_client, valid_coordinator_action, None)
     assert coord.actionNumber == 12
     assert coord.id == SAMPLE_COORD_ACTION
     assert coord.coordJobId == SAMPLE_COORD_ID
@@ -605,6 +613,7 @@ def test_parse_coordinator_action(valid_coordinator_action):
     assert coord.lastModifiedTime == datetime.datetime(2016, 6, 2, 21, 40, 38)
     assert coord.nominalTime == datetime.datetime(2016, 6, 2, 13, 0, 0)
     assert coord.status == model.CoordinatorActionStatus.SUCCEEDED
+    assert coord.client_url == 'https://oozie-server:1234/oozie'
     assert coord._details == {'wat?': 'blarg'}
 
 
@@ -647,24 +656,25 @@ def test_coordinator_action_extrapolate_degenerate_fields(empty_coordinator_acti
     assert coord.toString == 'CoordinatorAction name[' + SAMPLE_COORD_ACTION + '] status[RUNNING]'
 
 
-def test_parse_empty_workflow(empty_workflow):
+def test_parse_empty_workflow(empty_workflow, mock_client):
     with pytest.raises(exceptions.OozieParsingException) as err:
-        wf = model.Workflow(None, empty_workflow, None)
+        wf = model.Workflow(mock_client, empty_workflow, None)
     assert "Required key 'id' missing or invalid in Workflow" in str(err)
 
     empty_workflow['id'] = 'bad-wf-id'
     with pytest.raises(exceptions.OozieParsingException) as err:
-        wf = model.Workflow(None, empty_workflow, None)
+        wf = model.Workflow(mock_client, empty_workflow, None)
     assert "Required key 'id' missing or invalid in Workflow" in str(err)
 
     empty_workflow['id'] = SAMPLE_WF_ID
-    wf = model.Workflow(None, empty_workflow, None)
+    wf = model.Workflow(mock_client, empty_workflow, None)
     assert wf.id == SAMPLE_WF_ID
+    assert wf.client_url == 'https://oozie-server:1234/oozie'
     assert wf._details == {'wat?': 'blarg'}
 
 
-def test_parse_workflow(valid_workflow):
-    wf = model.Workflow(None, valid_workflow, None)
+def test_parse_workflow(valid_workflow, mock_client):
+    wf = model.Workflow(mock_client, valid_workflow, None)
     assert wf.id == SAMPLE_WF_ID
     assert wf.appName == 'my-test-workflow'
     assert wf.createdTime == datetime.datetime(2016, 6, 2, 13, 16, 46)
@@ -672,6 +682,7 @@ def test_parse_workflow(valid_workflow):
     assert wf.endTime == datetime.datetime(2016, 6, 2, 21, 40, 38)
     assert wf.lastModTime == datetime.datetime(2016, 6, 2, 21, 40, 38)
     assert wf.status == model.WorkflowStatus.SUCCEEDED
+    assert wf.client_url == 'https://oozie-server:1234/oozie'
     assert wf._details == {'wat?': 'blarg'}
 
 
@@ -697,29 +708,31 @@ def test_workflow_extrapolate_degenerate_fields(empty_workflow):
     assert wf.toString == 'Workflow id[' + SAMPLE_WF_ID + '] status[RUNNING]'
 
 
-def test_parse_empty_workflow_action(empty_workflow_action):
+def test_parse_empty_workflow_action(empty_workflow_action, mock_client):
     with pytest.raises(exceptions.OozieParsingException) as err:
-        wf = model.WorkflowAction(None, empty_workflow_action, None)
+        wf = model.WorkflowAction(mock_client, empty_workflow_action, None)
     assert "Required key 'id' missing or invalid in WorkflowAction" in str(err)
 
     empty_workflow_action['id'] = 'bad-wf-action@foo'
     with pytest.raises(exceptions.OozieParsingException) as err:
-        wf = model.WorkflowAction(None, empty_workflow_action, None)
+        wf = model.WorkflowAction(mock_client, empty_workflow_action, None)
     assert "Required key 'id' missing or invalid in WorkflowAction" in str(err)
 
     empty_workflow_action['id'] = SAMPLE_WF_ACTION
-    wf = model.WorkflowAction(None, empty_workflow_action, None)
+    wf = model.WorkflowAction(mock_client, empty_workflow_action, None)
     assert wf.id == SAMPLE_WF_ACTION
+    assert wf.client_url == 'https://oozie-server:1234/oozie'
     assert wf._details == {'wat?': 'blarg'}
 
 
-def test_parse_workflow_action(valid_workflow_action):
-    wf = model.WorkflowAction(None, valid_workflow_action, None)
+def test_parse_workflow_action(valid_workflow_action, mock_client):
+    wf = model.WorkflowAction(mock_client, valid_workflow_action, None)
     assert wf.id == SAMPLE_SUBWF_ACTION
     assert wf.name == 'my-sub-workflow'
     assert wf.startTime == datetime.datetime(2016, 6, 2, 13, 16, 48)
     assert wf.endTime == datetime.datetime(2016, 6, 2, 13, 23, 47)
     assert wf.status == model.WorkflowActionStatus.OK
+    assert wf.client_url == 'https://oozie-server:1234/oozie'
     assert isinstance(wf.conf, six.string_types)  # Does NOT get parsed
     assert wf._details == {'wat?': 'blarg'}
 
