@@ -4,8 +4,6 @@ from __future__ import unicode_literals
 
 # pylint: disable=import-modules-only
 
-from pyoozie.xml import WorkflowBuilder
-
 from pyoozie.client import OozieClient
 
 from pyoozie.exceptions import OozieException
@@ -44,8 +42,6 @@ from pyoozie.tags import WorkflowApp
 __version__ = '0.0.5'
 
 __all__ = (
-    # builder
-    'WorkflowBuilder',
 
     # client
     'OozieClient',
