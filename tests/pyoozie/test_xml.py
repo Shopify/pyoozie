@@ -7,7 +7,6 @@ import pytest
 import tests.utils
 
 from pyoozie import xml
-from pyoozie import tags
 
 
 @pytest.fixture
@@ -23,18 +22,6 @@ def coord_app_path():
 @pytest.fixture
 def username():
     return 'test'
-
-
-@pytest.fixture
-def workflow_builder():
-    return xml.WorkflowBuilder(
-        name='descriptive-name'
-    ).add_action(
-        name='payload',
-        action=tags.Shell(exec_command='echo "test"'),
-        action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
-        kill_on_error='Failure message 😢',
-    )
 
 
 def test_workflow_submission_xml(username, workflow_app_path):
@@ -126,68 +113,3 @@ def test_coordinator_submission_xml_with_configuration(username, coord_app_path)
             <value>test</value>
         </property>
     </configuration>''') == tests.utils.xml_to_comparable_dict(actual)
-
-
-def test_workflow_builder(workflow_builder):
-    with open('tests/data/workflow.xml', 'r') as fh:
-        expected_xml = fh.read()
-
-    # Is this XML expected
-    actual_xml = workflow_builder.build()
-    assert tests.utils.xml_to_comparable_dict(expected_xml) == tests.utils.xml_to_comparable_dict(actual_xml)
-
-    # Does it validate against the workflow XML schema?
-    tests.utils.assert_valid_workflow(actual_xml)
-
-
-def test_builder_raises_on_bad_workflow_name():
-    # Does it throw an exception on a bad workflow name?
-    with pytest.raises(AssertionError) as assertion_info:
-        xml.WorkflowBuilder(
-            name='l' * (tags.MAX_NAME_LENGTH + 1)
-        ).add_action(
-            name='payload',
-            action=tags.Shell(exec_command='echo "test"'),
-            action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
-            kill_on_error='Failure message',
-        )
-    assert "Name must be less than " in str(assertion_info.value)
-
-
-def test_builder_raises_on_bad_action_name():
-    # Does it throw an exception on a bad action name?
-    with pytest.raises(AssertionError) as assertion_info:
-        xml.WorkflowBuilder(
-            name='descriptive-name'
-        ).add_action(
-            name='Action name with invalid characters',
-            action=tags.Shell(exec_command='echo "test"'),
-            action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
-            kill_on_error='Failure message',
-        )
-    assert "Identifier must match " in str(assertion_info.value) and \
-        "Action name with invalid characters" in str(assertion_info.value)
-
-    # Does it throw an exception on an action name that's too long?
-    with pytest.raises(AssertionError) as assertion_info:
-        xml.WorkflowBuilder(
-            name='descriptive-name'
-        ).add_action(
-            name='l' * (tags.MAX_IDENTIFIER_LENGTH + 1),
-            action=tags.Shell(exec_command='echo "test"'),
-            action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
-            kill_on_error='Failure message',
-        )
-    assert "Identifier must be less than " in str(assertion_info.value)
-
-
-def test_builder_raises_on_multiple_actions(workflow_builder):
-    # Does it raise an exception when you try to add multiple actions?
-    with pytest.raises(NotImplementedError) as assertion_info:
-        workflow_builder.add_action(
-            name='payload',
-            action=tags.Shell(exec_command='echo "test"'),
-            action_on_error=tags.Email(to='person@example.com', subject='Error', body='A bad thing happened'),
-            kill_on_error='Failure message',
-        )
-    assert str(assertion_info.value) == 'Can only add one action in this version'
