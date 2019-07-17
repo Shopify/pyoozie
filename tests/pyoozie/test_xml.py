@@ -7,7 +7,6 @@ import pytest
 import tests.utils
 
 from pyoozie import xml
-from pyoozie import tags
 
 
 @pytest.fixture
