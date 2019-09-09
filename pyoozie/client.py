@@ -68,7 +68,7 @@ class OozieClient(object):
         def elapsed(self):
             return self._elapsed
 
-    def __init__(self, url=None, user=None, timeout=None, verbose=True, **_):
+    def __init__(self, url=None, user=None, timeout=None, verbose=True, session=None, **_):
         self.logger = logging.getLogger('pyoozie.OozieClient')
         oozie_url = (url or 'http://localhost').rstrip('/')
         if not oozie_url.endswith('/oozie'):
@@ -79,11 +79,12 @@ class OozieClient(object):
         self._verbose = verbose  # Note: change default for verbose!
         self._stats = OozieClient.Stats()
         self._valid_server = False
+        self._session = session or requests.Session()
 
     def _test_connection(self):
         response = None
         try:
-            response = requests.get('{}/versions'.format(self._url), timeout=self._timeout)
+            response = self._session.get('{}/versions'.format(self._url), timeout=self._timeout)
             response.raise_for_status()
             self._stats.update(response)
         except requests.RequestException as err:
@@ -122,8 +123,8 @@ class OozieClient(object):
                 self.logger.info("Request: %s %s", method, url)
 
         try:
-            response = requests.request(method, url, data=content, timeout=self._timeout,
-                                        headers=self._headers(content_type))
+            response = self._session.request(method, url, data=content, timeout=self._timeout,
+                                             headers=self._headers(content_type))
             response.raise_for_status()
         except requests.RequestException as err:
             self._stats.update(response)
