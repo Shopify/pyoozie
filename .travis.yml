@@ -1,3 +1,5 @@
+dist: trusty
+
 language: python
 python:
    - "2.7"
@@ -5,6 +7,8 @@ python:
    - "3.5"
    - "3.6"
    - "3.7-dev"
+jdk:
+  - openjdk8
 before_install:
   - pip install -U pip setuptools
 install:
@@ -15,7 +19,3 @@ script:
   - make lint
 notifications:
   email: false
-addons:
-  apt:
-    packages:
-      openjdk-7-jdk
