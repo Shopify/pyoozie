@@ -1,3 +1,5 @@
+dist: trusty
+
 language: python
 python:
    - "2.7"
@@ -15,7 +17,3 @@ script:
   - make lint
 notifications:
   email: false
-addons:
-  apt:
-    packages:
-      openjdk-7-jdk
