@@ -6,6 +6,7 @@ import copy
 import mock
 import pytest
 import requests_mock
+import requests
 
 from pyoozie import exceptions
 from pyoozie import model
@@ -36,6 +37,15 @@ def oozie_config():
 def api(oozie_config):
     with mock.patch('pyoozie.client.OozieClient._test_connection'):
         yield client.OozieClient(**oozie_config)
+
+
+@pytest.fixture
+def api_custom_session(oozie_config):
+    with mock.patch('pyoozie.client.OozieClient._test_connection'):
+        session = requests.Session()
+        session.auth=('user', 'pass')
+
+    yield client.OozieClient(session=session, **oozie_config)
 
 
 @pytest.fixture
@@ -152,11 +162,27 @@ class TestOozieClientCore(object):
         api = client.OozieClient(**oozie_config)
         assert not mock_test_conn.called
         assert api._url == 'http://localhost:11000/oozie'
+        assert api._session 
+
+    @mock.patch('pyoozie.client.OozieClient._test_connection')
+    def test_contruction_custom_session(self, mock_test_conn, oozie_config):
+        session = requests.Session()
+        session.auth=('user', 'pass')
+
+        api = client.OozieClient(session=session, **oozie_config)
+        assert api._session.auth == session.auth
+
+        session = "not a session object"
+        api = client.OozieClient(session=session, **oozie_config)
+        assert type(api._session) == requests.sessions.Session
 
     def test_test_connection(self, oozie_config):
         with requests_mock.mock() as m:
+            session = requests.Session()
+
             m.get('http://localhost:11000/oozie/versions', text='[0, 1, 2]')
             client.OozieClient(**oozie_config)._test_connection()
+            client.OozieClient(session=session, **oozie_config)._test_connection()
 
             m.get('http://localhost:11000/oozie/versions', text='[0, 1]')
             with pytest.raises(exceptions.OozieException) as err:
@@ -188,6 +214,7 @@ class TestOozieClientCore(object):
             m.get('http://localhost:11000/oozie/v2/endpoint', text='{"result": "pass"}')
             result = api._request('GET', 'endpoint', None, None)
             assert result['result'] == 'pass'
+            
 
         with requests_mock.mock() as m:
             m.get('http://localhost:11000/oozie/v2/endpoint')

@@ -79,7 +79,9 @@ class OozieClient(object):
         self._verbose = verbose  # Note: change default for verbose!
         self._stats = OozieClient.Stats()
         self._valid_server = False
-        self._session = session or requests.Session()
+        if not type(session) == requests.sessions.Session: 
+            session = requests.Session()
+        self._session = session
 
     def _test_connection(self):
         response = None
