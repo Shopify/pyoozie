@@ -38,15 +38,13 @@ def api(oozie_config):
     with mock.patch('pyoozie.client.OozieClient._test_connection'):
         yield client.OozieClient(**oozie_config)
 
-
 @pytest.fixture
-def api_custom_session(oozie_config):
+def api_with_session(oozie_config):
     with mock.patch('pyoozie.client.OozieClient._test_connection'):
         session = requests.Session()
-        session.auth=('user', 'pass')
-
-    yield client.OozieClient(session=session, **oozie_config)
-
+        session.headers.update({'test-header': 'true'})
+        yield client.OozieClient(session=session, **oozie_config)
+    
 
 @pytest.fixture
 def sample_coordinator_running(api):
@@ -226,6 +224,13 @@ class TestOozieClientCore(object):
             with pytest.raises(exceptions.OozieException) as err:
                 api._request('GET', 'endpoint', None, None)
             assert 'Invalid response from Oozie server' in str(err)
+
+    def test_request_uses_session_params(self, api_with_session):
+        with requests_mock.mock() as m:
+            m.get('http://localhost:11000/oozie/v2/endpoint', text='{"result": "pass"}')
+
+            result = api_with_session._request('GET', 'endpoint', None, None)
+            assert m.last_request.headers['test-header'] == 'true'
 
     def test_get(self, api):
         with requests_mock.mock() as m:
