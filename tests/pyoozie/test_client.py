@@ -38,13 +38,14 @@ def api(oozie_config):
     with mock.patch('pyoozie.client.OozieClient._test_connection'):
         yield client.OozieClient(**oozie_config)
 
+
 @pytest.fixture
 def api_with_session(oozie_config):
     with mock.patch('pyoozie.client.OozieClient._test_connection'):
         session = requests.Session()
         session.headers.update({'test-header': 'true'})
         yield client.OozieClient(session=session, **oozie_config)
-    
+
 
 @pytest.fixture
 def sample_coordinator_running(api):
@@ -160,19 +161,15 @@ class TestOozieClientCore(object):
         api = client.OozieClient(**oozie_config)
         assert not mock_test_conn.called
         assert api._url == 'http://localhost:11000/oozie'
-        assert api._session 
+        assert api._session
 
     @mock.patch('pyoozie.client.OozieClient._test_connection')
     def test_contruction_custom_session(self, mock_test_conn, oozie_config):
         session = requests.Session()
-        session.auth=('user', 'pass')
-
+        session.auth = ('user', 'pass')
         api = client.OozieClient(session=session, **oozie_config)
+        assert not mock_test_conn.called
         assert api._session.auth == session.auth
-
-        session = "not a session object"
-        api = client.OozieClient(session=session, **oozie_config)
-        assert type(api._session) == requests.sessions.Session
 
     def test_test_connection(self, oozie_config):
         with requests_mock.mock() as m:
@@ -212,7 +209,6 @@ class TestOozieClientCore(object):
             m.get('http://localhost:11000/oozie/v2/endpoint', text='{"result": "pass"}')
             result = api._request('GET', 'endpoint', None, None)
             assert result['result'] == 'pass'
-            
 
         with requests_mock.mock() as m:
             m.get('http://localhost:11000/oozie/v2/endpoint')
@@ -228,8 +224,8 @@ class TestOozieClientCore(object):
     def test_request_uses_session_params(self, api_with_session):
         with requests_mock.mock() as m:
             m.get('http://localhost:11000/oozie/v2/endpoint', text='{"result": "pass"}')
-
             result = api_with_session._request('GET', 'endpoint', None, None)
+            assert result['result'] == 'pass'
             assert m.last_request.headers['test-header'] == 'true'
 
     def test_get(self, api):
