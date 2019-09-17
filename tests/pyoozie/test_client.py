@@ -164,7 +164,7 @@ class TestOozieClientCore(object):
         assert api._session
 
     @mock.patch('pyoozie.client.OozieClient._test_connection')
-    def test_contruction_custom_session(self, mock_test_conn, oozie_config):
+    def test_construction_custom_session(self, mock_test_conn, oozie_config):
         session = requests.Session()
         session.auth = ('user', 'pass')
         api = client.OozieClient(session=session, **oozie_config)
