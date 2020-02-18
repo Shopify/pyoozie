@@ -28,7 +28,7 @@ setuplib.setup(
     url='https://github.com/Shopify/pyoozie',
     packages=['pyoozie'],
     install_requires=[
-        'enum34>=0.9.23',
+        'enum34>=0.9.23 ; python_version<"3.4"',
         'requests>=2.12.3',
         'six>=1.10.0',
         'typing',
