@@ -39,7 +39,7 @@ from pyoozie.tags import validate_xml_name
 from pyoozie.tags import WorkflowApp
 
 
-__version__ = '0.0.7'
+__version__ = '0.0.8'
 
 __all__ = (
 
