@@ -28,12 +28,12 @@ setuplib.setup(
     url='https://github.com/Shopify/pyoozie',
     packages=['pyoozie'],
     install_requires=[
-        'enum34>=0.9.23',
+        'enum34>=0.9.23 ; python_version<"3.4"',
         'requests>=2.12.3',
         'six>=1.10.0',
         'typing',
         'untangle>=1.1.0',
-        'yattag>=1.7.2',
+        'yattag>=1.7.2,<=1.12.2',
     ],
     extras_require={
         'deploy': [
@@ -44,7 +44,7 @@ setuplib.setup(
             'autopep8',
             'flake8',
             'mock',
-            'pycodestyle == 2.2.0',
+            'pycodestyle>=2.2.0,<2.6.0',
             'pylint>=1.7.1,<1.8',
             'pytest-cov>=2.4.0,<2.6',  # pinned, see https://github.com/z4r/python-coveralls/issues/66
             'pytest-randomly',
