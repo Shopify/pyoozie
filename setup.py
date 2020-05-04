@@ -31,7 +31,7 @@ setuplib.setup(
         'enum34>=0.9.23 ; python_version<"3.4"',
         'requests>=2.12.3',
         'six>=1.10.0',
-        'typing',
+        'typing ; python_version<"3.5"',
         'untangle>=1.1.0',
         'yattag>=1.7.2,<=1.12.2',
     ],
